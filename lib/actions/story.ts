@@ -24,6 +24,8 @@ export async function saveStory(
   const brideNote = formData.get("brideNote");
   const heroPhotoUrl = formData.get("heroPhotoUrl");
   const contactEmail = formData.get("contactEmail");
+  const bridePhone = formData.get("bridePhone");
+  const groomPhone = formData.get("groomPhone");
 
   if (typeof brideName !== "string" || !brideName.trim()) {
     return { error: "Bride's name is required" };
@@ -59,6 +61,8 @@ export async function saveStory(
     brideNote: typeof brideNote === "string" && brideNote.trim() ? brideNote.trim() : null,
     heroPhotoUrl: typeof heroPhotoUrl === "string" && heroPhotoUrl.trim() ? heroPhotoUrl.trim() : null,
     contactEmail: typeof contactEmail === "string" && contactEmail.trim() ? contactEmail.trim() : null,
+    bridePhone: typeof bridePhone === "string" && bridePhone.trim() ? bridePhone.trim() : null,
+    groomPhone: typeof groomPhone === "string" && groomPhone.trim() ? groomPhone.trim() : null,
   };
 
   await prisma.storyContent.upsert({

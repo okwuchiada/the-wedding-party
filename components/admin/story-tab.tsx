@@ -28,6 +28,8 @@ export type StoryContentView = {
   brideNote: string | null;
   heroPhotoUrl: string | null;
   contactEmail: string | null;
+  bridePhone: string | null;
+  groomPhone: string | null;
   galleryEnabled: boolean;
 };
 
@@ -442,6 +444,29 @@ export default function StoryTab({
             className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
           />
         </label>
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+            Bride&apos;s RSVP number
+            <input
+              type="tel"
+              name="bridePhone"
+              defaultValue={story.bridePhone ?? ""}
+              placeholder="+234…"
+              className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+            Groom&apos;s RSVP number
+            <input
+              type="tel"
+              name="groomPhone"
+              defaultValue={story.groomPhone ?? ""}
+              placeholder="+234…"
+              className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+            />
+          </label>
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1.5 text-xs text-foreground/60">

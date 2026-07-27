@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const links = [
@@ -35,11 +36,10 @@ export default function GuestNavClient({
       }`}
     >
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
-        <div
-          // href="#top"
-          className="font-semibold tracking-tight text-foreground  flex items-baseline gap-10"
-        >
-          <span
+        <div className="font-semibold tracking-tight text-foreground  flex items-baseline gap-10">
+          <Link
+            href="/"
+            className="transition-opacity hover:opacity-80"
             style={{
               fontFamily: "var(--serif)",
               fontWeight: 600,
@@ -50,7 +50,7 @@ export default function GuestNavClient({
             {brideInitial}
             <span style={{ color: "var(--burnt-orange)" }}>&amp;</span>
             {groomInitial}
-          </span>
+          </Link>
           <span
             style={{
               fontFamily: "var(--sans)",

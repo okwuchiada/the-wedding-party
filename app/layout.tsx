@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, EB_Garamond, Geist, Playfair_Display } from "next/font/google";
+import { Cormorant_Garamond, Dancing_Script, EB_Garamond, Geist, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,6 +28,12 @@ const playfair = Playfair_Display({
   style: ["normal", "italic"],
 });
 
+const dancingScript = Dancing_Script({
+  variable: "--font-dancing-script",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+});
+
 export const metadata: Metadata = {
   title: "The Wedding Party",
   description: "Organize your wedding party with ease and style. Create a personalized wedding website, manage RSVPs, and keep your guests informed.",
@@ -41,11 +47,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${cormorant.variable} ${ebGaramond.variable} ${playfair.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${cormorant.variable} ${ebGaramond.variable} ${playfair.variable} ${dancingScript.variable} h-full antialiased`}
       style={
         {
           "--sans": "var(--font-geist-sans), system-ui, sans-serif",
           "--serif": "var(--font-cormorant), Georgia, serif",
+          "--script": "var(--font-dancing-script), cursive",
         } as React.CSSProperties
       }
     >

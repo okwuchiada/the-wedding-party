@@ -6,7 +6,6 @@ import { useState } from "react";
 import type { BankDetailsView } from "@/lib/types";
 import type { RegistryItemWithContributions } from "@/lib/types";
 import { submitContribution } from "@/lib/actions/contributions";
-import { claimRegistryItem } from "@/lib/actions/registry";
 
 function formatNaira(cents: number) {
   return `₦${(cents / 100).toLocaleString("en-NG")}`;
@@ -79,7 +78,9 @@ function CopyRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-type Action = "BUY" | "CHIPIN" | "BRING";
+type Action = "BUY" | "CHIPIN";
+
+const MIN_CHIPIN_CENTS = 20_000_00;
 
 export default function GiftCard({
   gift,
@@ -92,40 +93,18 @@ export default function GiftCard({
   const remaining = Math.max(0, gift.priceCents - raised);
   const funded = raised >= gift.priceCents;
   const alreadyContributing = raised > 0 && !funded;
+  const minChipInCents = Math.min(MIN_CHIPIN_CENTS, remaining);
 
   const [action, setAction] = useState<Action | null>(null);
-  const [bringing, setBringing] = useState(!!gift.claimedBy);
   const [guestName, setGuestName] = useState("");
   const [amountCents, setAmountCents] = useState(
-    Math.min(Math.max(0, gift.priceCents - raised), 500_000_00),
+    Math.max(minChipInCents, Math.min(remaining, 500_000_00)),
   );
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const claimed = bringing || !!gift.claimedBy;
-
-  const handleClaim = async () => {
-    if (!guestName.trim()) {
-      setError("Please enter your name");
-      return;
-    }
-    setError("");
-    setPending(true);
-
-    const formData = new FormData();
-    formData.set("registryItemId", gift.id);
-    formData.set("guestName", guestName);
-
-    const result = await claimRegistryItem(undefined, formData);
-    setPending(false);
-
-    if (result?.error) {
-      setError(result.error);
-    } else {
-      setBringing(true);
-    }
-  };
+  const claimed = !!gift.claimedBy;
 
   const submitContributionOf = async (amount: number) => {
     if (!guestName.trim()) {
@@ -150,7 +129,13 @@ export default function GiftCard({
     }
   };
 
-  const handleContribution = () => submitContributionOf(amountCents);
+  const handleContribution = () => {
+    if (amountCents < minChipInCents) {
+      setError(`Minimum chip-in is ${formatNaira(minChipInCents)}`);
+      return;
+    }
+    submitContributionOf(amountCents);
+  };
   const handleBuyTransfer = () => submitContributionOf(gift.priceCents);
 
   return (
@@ -237,6 +222,9 @@ export default function GiftCard({
                     {pending ? "…" : "Confirm Transfer"}
                   </button>
                 </div>
+                <div className="mt-1.5 text-[10.5px] text-foreground/50">
+                  Minimum {formatNaira(minChipInCents)}
+                </div>
                 {error && (
                   <div className="mt-2 text-xs text-burnt-orange">{error}</div>
                 )}
@@ -313,40 +301,8 @@ export default function GiftCard({
               disabled
               className="cursor-default border border-olive/30 px-4 py-2.5 text-center text-xs font-medium text-foreground/60"
             >
-              ✓{" "}
-              {gift.claimedBy
-                ? `Claimed by ${gift.claimedBy}`
-                : "Already claimed"}
+              ✓ Claimed by {gift.claimedBy}
             </button>
-          ) : action === "BRING" ? (
-            <div className="flex flex-col gap-2">
-              <input
-                placeholder="Your name"
-                value={guestName}
-                onChange={(e) => setGuestName(e.target.value)}
-                className="border border-olive/20 bg-ivory px-3 py-2.5 text-sm outline-none"
-              />
-              {error && (
-                <div className="text-xs text-burnt-orange">{error}</div>
-              )}
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setAction(null)}
-                  className="border border-olive/30 px-4 py-2.5 text-center text-xs font-medium text-foreground transition-colors hover:border-burnt-orange hover:text-burnt-orange"
-                >
-                  Back
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClaim}
-                  disabled={pending}
-                  className="flex-1 bg-burnt-orange px-4 py-2.5 text-center text-xs font-medium text-ivory transition-colors hover:bg-burnt-orange-dark disabled:opacity-60"
-                >
-                  {pending ? "…" : "I'll Bring It"}
-                </button>
-              </div>
-            </div>
           ) : action === "CHIPIN" || action === "BUY" ? (
             <button
               type="button"
@@ -364,7 +320,7 @@ export default function GiftCard({
               Chip In
             </button>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {gift.externalUrl ? (
                 <a
                   href={gift.externalUrl}
@@ -389,13 +345,6 @@ export default function GiftCard({
                 className="border border-olive/30 px-2 py-2.5 text-center text-[11px] font-medium text-foreground transition-colors hover:border-burnt-orange hover:text-burnt-orange"
               >
                 Chip In
-              </button>
-              <button
-                type="button"
-                onClick={() => setAction("BRING")}
-                className="border border-olive/30 px-2 py-2.5 text-center text-[11px] font-medium text-foreground transition-colors hover:border-burnt-orange hover:text-burnt-orange"
-              >
-                Bring
               </button>
             </div>
           )}

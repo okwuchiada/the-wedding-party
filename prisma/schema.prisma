@@ -87,6 +87,8 @@ model StoryContent {
   brideNote      String?
   heroPhotoUrl   String?
   contactEmail   String?
+  bridePhone     String?
+  groomPhone     String?
   galleryEnabled Boolean  @default(false)
   updatedAt      DateTime @updatedAt
 }

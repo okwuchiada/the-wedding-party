@@ -108,6 +108,8 @@ export default async function AdminPage() {
         brideNote: story?.brideNote ?? null,
         heroPhotoUrl: story?.heroPhotoUrl ?? null,
         contactEmail: story?.contactEmail ?? null,
+        bridePhone: story?.bridePhone ?? null,
+        groomPhone: story?.groomPhone ?? null,
         galleryEnabled: story?.galleryEnabled ?? false,
       }}
       storyPhotos={storyPhotos}

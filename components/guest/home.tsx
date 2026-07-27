@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import LiveRefresh from "@/components/live-refresh";
 import GuestNav from "./nav";
 import NavSkeleton from "./nav-skeleton";
 import Hero from "./hero";
@@ -12,6 +13,7 @@ import FooterSkeleton from "./footer-skeleton";
 export default function GuestHome() {
   return (
     <div>
+      <LiveRefresh />
       <Suspense fallback={<NavSkeleton />}>
         <GuestNav />
       </Suspense>

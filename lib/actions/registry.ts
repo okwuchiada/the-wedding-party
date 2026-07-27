@@ -77,37 +77,6 @@ export async function updateRegistryItem(
   return { success: true };
 }
 
-export type ClaimRegistryItemState = { error?: string; success?: boolean } | undefined;
-
-export async function claimRegistryItem(
-  _prevState: ClaimRegistryItemState,
-  formData: FormData
-): Promise<ClaimRegistryItemState> {
-  const registryItemId = formData.get("registryItemId");
-  const guestName = formData.get("guestName");
-
-  if (typeof registryItemId !== "string" || !registryItemId) {
-    return { error: "Missing item" };
-  }
-  if (typeof guestName !== "string" || !guestName.trim()) {
-    return { error: "Please enter your name" };
-  }
-
-  const result = await prisma.registryItem.updateMany({
-    where: { id: registryItemId, claimedBy: null },
-    data: { claimedBy: guestName.trim() },
-  });
-
-  if (result.count === 0) {
-    return { error: "Sorry, someone already claimed this item." };
-  }
-
-  revalidatePath("/admin");
-  revalidatePath("/");
-
-  return { success: true };
-}
-
 export async function deleteRegistryItem(id: string): Promise<{ error?: string }> {
   await verifySession();
 
