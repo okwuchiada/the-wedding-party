@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Image from "next/image";
+import LiveRefresh from "@/components/live-refresh";
 import GuestNav from "@/components/guest/nav";
 import NavSkeleton from "@/components/guest/nav-skeleton";
 import GalleryUpload from "@/components/guest/gallery-upload";
@@ -47,6 +48,7 @@ export default async function GalleryPage() {
 
   return (
     <div>
+      <LiveRefresh />
       <Suspense fallback={<NavSkeleton />}>
         <GuestNav />
       </Suspense>

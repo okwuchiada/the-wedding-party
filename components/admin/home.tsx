@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import LiveRefresh from "@/components/live-refresh";
+import { useSyncedState } from "./use-synced-state";
 import type {
   ApprovedMediaView,
   ApprovedWishView,
@@ -65,22 +67,18 @@ export default function AdminHome({
 }) {
   const [activeTab, setActiveTab] = useState<Tab>("Registry");
 
-  const [pendingContributions, setPendingContributions] = useState<PendingContributionView[]>(
-    initialPendingContributions
-  );
-  const [confirmedContributions, setConfirmedContributions] = useState<ConfirmedContributionView[]>(
-    initialConfirmedContributions
-  );
+  const [pendingContributions, setPendingContributions] = useSyncedState(initialPendingContributions);
+  const [confirmedContributions, setConfirmedContributions] = useSyncedState(initialConfirmedContributions);
 
-  const [pendingMedia, setPendingMedia] = useState<PendingMediaView[]>(initialPendingMedia);
-  const [approvedMedia, setApprovedMedia] = useState<ApprovedMediaView[]>(initialApprovedMedia);
-  const [hiddenMedia, setHiddenMedia] = useState<HiddenMediaView[]>(initialHiddenMedia);
+  const [pendingMedia, setPendingMedia] = useSyncedState(initialPendingMedia);
+  const [approvedMedia, setApprovedMedia] = useSyncedState(initialApprovedMedia);
+  const [hiddenMedia, setHiddenMedia] = useSyncedState(initialHiddenMedia);
 
-  const [pendingWishes, setPendingWishes] = useState<PendingWishView[]>(initialPendingWishes);
-  const [approvedWishes, setApprovedWishes] = useState<ApprovedWishView[]>(initialApprovedWishes);
-  const [hiddenWishes, setHiddenWishes] = useState<HiddenWishView[]>(initialHiddenWishes);
+  const [pendingWishes, setPendingWishes] = useSyncedState(initialPendingWishes);
+  const [approvedWishes, setApprovedWishes] = useSyncedState(initialApprovedWishes);
+  const [hiddenWishes, setHiddenWishes] = useSyncedState(initialHiddenWishes);
 
-  const [galleryEnabled, setGalleryEnabledState] = useState(story.galleryEnabled);
+  const [galleryEnabled, setGalleryEnabledState] = useSyncedState(story.galleryEnabled);
 
   const handleToggleGallery = async () => {
     const next = !galleryEnabled;
@@ -198,6 +196,7 @@ export default function AdminHome({
 
   return (
     <div className="min-h-screen bg-ivory px-4 py-12 sm:px-8">
+      <LiveRefresh />
       <div className="mx-auto max-w-5xl">
         <div className="flex items-start justify-between gap-4">
           <div>

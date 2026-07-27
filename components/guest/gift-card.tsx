@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { BankDetailsView } from "@/lib/types";
 import type { RegistryItemWithContributions } from "@/lib/types";
 import { submitContribution } from "@/lib/actions/contributions";
+import { claimRegistryItem } from "@/lib/actions/registry";
 
 function formatNaira(cents: number) {
   return `₦${(cents / 100).toLocaleString("en-NG")}`;
@@ -104,22 +105,7 @@ export default function GiftCard({
 
   const claimed = bringing || !!gift.claimedBy;
 
-  const simulateSubmit = (onDone: () => void) => {
-    if (!guestName.trim()) {
-      setError("Please enter your name");
-      return;
-    }
-    setError("");
-    setPending(true);
-    setTimeout(() => {
-      setPending(false);
-      onDone();
-    }, 500);
-  };
-
-  const handleClaim = () => simulateSubmit(() => setBringing(true));
-
-  const handleContribution = async () => {
+  const handleClaim = async () => {
     if (!guestName.trim()) {
       setError("Please enter your name");
       return;
@@ -130,7 +116,29 @@ export default function GiftCard({
     const formData = new FormData();
     formData.set("registryItemId", gift.id);
     formData.set("guestName", guestName);
-    formData.set("amountCents", String(amountCents));
+
+    const result = await claimRegistryItem(undefined, formData);
+    setPending(false);
+
+    if (result?.error) {
+      setError(result.error);
+    } else {
+      setBringing(true);
+    }
+  };
+
+  const submitContributionOf = async (amount: number) => {
+    if (!guestName.trim()) {
+      setError("Please enter your name");
+      return;
+    }
+    setError("");
+    setPending(true);
+
+    const formData = new FormData();
+    formData.set("registryItemId", gift.id);
+    formData.set("guestName", guestName);
+    formData.set("amountCents", String(amount));
 
     const result = await submitContribution(undefined, formData);
     setPending(false);
@@ -141,6 +149,9 @@ export default function GiftCard({
       setSubmitted(true);
     }
   };
+
+  const handleContribution = () => submitContributionOf(amountCents);
+  const handleBuyTransfer = () => submitContributionOf(gift.priceCents);
 
   return (
     <article className="flex flex-col bg-white shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
@@ -234,6 +245,59 @@ export default function GiftCard({
           </div>
         )}
 
+        {action === "BUY" && (
+          <div className="mt-4.5 bg-ivory p-4">
+            {submitted ? (
+              <div>
+                <p className="text-sm text-foreground/80">
+                  Payment sent — waiting for the couple to confirm.
+                </p>
+                <p className="mt-2 font-(family-name:--serif) text-sm text-burnt-orange italic">
+                  Thank you
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-2 text-[10.5px] tracking-[.2em] text-burnt-orange uppercase">
+                  Transfer to the couple
+                </div>
+                <CopyRow label="Account name" value={bankDetails.name} />
+                <CopyRow label="Bank" value={bankDetails.bank} />
+                <CopyRow label="Account no." value={bankDetails.account} />
+                <CopyRow label="Routing" value={bankDetails.routing} />
+                <CopyRow label="Reference" value={gift.name} />
+                <div className="flex items-baseline justify-between gap-3 border-b border-olive/20 py-2">
+                  <span className="text-[10.5px] uppercase tracking-[.16em] text-foreground/55">
+                    Amount
+                  </span>
+                  <span className="text-[13.5px] font-medium text-burnt-orange">
+                    {formatNaira(gift.priceCents)}
+                  </span>
+                </div>
+
+                <input
+                  placeholder="Your name"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  className="mt-3 w-full border border-olive/20 bg-white px-3 py-2.5 text-sm outline-none"
+                />
+
+                <button
+                  type="button"
+                  onClick={handleBuyTransfer}
+                  disabled={pending}
+                  className="mt-2.5 w-full bg-burnt-orange px-4 py-2.5 text-xs font-medium text-ivory transition-colors hover:bg-burnt-orange-dark disabled:opacity-60"
+                >
+                  {pending ? "…" : "Confirm Transfer"}
+                </button>
+                {error && (
+                  <div className="mt-2 text-xs text-burnt-orange">{error}</div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
         <div className="mt-auto flex flex-col gap-2 pt-5">
           {funded ? (
             <button
@@ -283,7 +347,7 @@ export default function GiftCard({
                 </button>
               </div>
             </div>
-          ) : action === "CHIPIN" ? (
+          ) : action === "CHIPIN" || action === "BUY" ? (
             <button
               type="button"
               onClick={() => setAction(null)}
@@ -301,14 +365,24 @@ export default function GiftCard({
             </button>
           ) : (
             <div className="grid grid-cols-3 gap-2">
-              <a
-                href={gift.externalUrl ?? "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-burnt-orange px-2 py-2.5 text-center text-[11px] font-medium text-ivory transition-colors hover:bg-burnt-orange-dark"
-              >
-                Buy
-              </a>
+              {gift.externalUrl ? (
+                <a
+                  href={gift.externalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-burnt-orange px-2 py-2.5 text-center text-[11px] font-medium text-ivory transition-colors hover:bg-burnt-orange-dark"
+                >
+                  Buy
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAction("BUY")}
+                  className="bg-burnt-orange px-2 py-2.5 text-center text-[11px] font-medium text-ivory transition-colors hover:bg-burnt-orange-dark"
+                >
+                  Buy
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setAction("CHIPIN")}

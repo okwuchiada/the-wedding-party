@@ -1,0 +1,15 @@
+"use client";
+
+import { useState } from "react";
+
+export function useSyncedState<T>(value: T) {
+  const [state, setState] = useState(value);
+  const [prevValue, setPrevValue] = useState(value);
+
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setState(value);
+  }
+
+  return [state, setState] as const;
+}

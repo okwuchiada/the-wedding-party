@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import LiveRefresh from "@/components/live-refresh";
 import GuestNav from "@/components/guest/nav";
 import NavSkeleton from "@/components/guest/nav-skeleton";
 import WishForm from "@/components/guest/wish-form";
@@ -30,6 +31,7 @@ async function WishesList() {
 export default function WishesPage() {
   return (
     <div>
+      <LiveRefresh />
       <Suspense fallback={<NavSkeleton />}>
         <GuestNav />
       </Suspense>
