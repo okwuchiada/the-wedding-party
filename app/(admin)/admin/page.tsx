@@ -108,6 +108,7 @@ export default async function AdminPage() {
         brideNote: story?.brideNote ?? null,
         heroPhotoUrl: story?.heroPhotoUrl ?? null,
         contactEmail: story?.contactEmail ?? null,
+        galleryEnabled: story?.galleryEnabled ?? false,
       }}
       storyPhotos={storyPhotos}
       pendingMedia={pendingMedia.map((m) => ({

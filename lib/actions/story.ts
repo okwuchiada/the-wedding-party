@@ -72,3 +72,22 @@ export async function saveStory(
 
   return { success: true };
 }
+
+export async function setGalleryEnabled(enabled: boolean) {
+  await verifySession();
+
+  await prisma.storyContent.upsert({
+    where: { id: "main" },
+    update: { galleryEnabled: enabled },
+    create: {
+      id: "main",
+      brideName: "",
+      groomName: "",
+      weddingDate: new Date(),
+      galleryEnabled: enabled,
+    },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/gallery");
+}

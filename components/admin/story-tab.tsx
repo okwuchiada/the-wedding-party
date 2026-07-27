@@ -25,6 +25,7 @@ export type StoryContentView = {
   brideNote: string | null;
   heroPhotoUrl: string | null;
   contactEmail: string | null;
+  galleryEnabled: boolean;
 };
 
 export type StoryPhotoView = {

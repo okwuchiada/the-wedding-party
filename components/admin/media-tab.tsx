@@ -9,20 +9,24 @@ export default function MediaTab({
   pending,
   approved,
   hidden,
+  galleryEnabled,
   onApprove,
   onHide,
   onHideApproved,
   onDeleteApproved,
   onRestore,
+  onToggleGallery,
 }: {
   pending: PendingMediaView[];
   approved: ApprovedMediaView[];
   hidden: HiddenMediaView[];
+  galleryEnabled: boolean;
   onApprove: (media: PendingMediaView) => Promise<void>;
   onHide: (media: PendingMediaView) => Promise<void>;
   onHideApproved: (media: ApprovedMediaView) => Promise<void>;
   onDeleteApproved: (media: ApprovedMediaView) => Promise<void>;
   onRestore: (media: HiddenMediaView) => Promise<void>;
+  onToggleGallery: () => Promise<void>;
 }) {
   const { confirm, confirmDialog } = useConfirm();
   const { run, isPending } = useActionPending();
@@ -37,6 +41,33 @@ export default function MediaTab({
   };
   return (
     <div>
+      <div className="mb-10 flex items-center justify-between gap-4 bg-white p-4 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+        <div>
+          <h2 className="font-(family-name:--serif) text-xl text-foreground">Gallery Wall</h2>
+          <p className="mt-1 text-xs text-foreground/60">
+            {galleryEnabled
+              ? "Live — guests can view and upload photos."
+              : "Hidden from guests. Turn this on when it's time (e.g. the wedding day)."}
+          </p>
+        </div>
+        <button
+          type="button"
+          disabled={isPending("gallery")}
+          onClick={() => run("gallery", "toggle", onToggleGallery)}
+          className={`shrink-0 px-4 py-2 text-xs font-medium transition-colors disabled:opacity-60 ${
+            galleryEnabled
+              ? "border border-olive/30 text-foreground hover:border-burnt-orange hover:text-burnt-orange"
+              : "bg-burnt-orange text-ivory hover:bg-burnt-orange-dark"
+          }`}
+        >
+          {isPending("gallery", "toggle")
+            ? "Saving…"
+            : galleryEnabled
+              ? "Disable Gallery Wall"
+              : "Enable Gallery Wall"}
+        </button>
+      </div>
+
       <h2 className="mb-5 font-(family-name:--serif) text-2xl text-foreground">Pending Uploads</h2>
 
       {pending.length === 0 ? (

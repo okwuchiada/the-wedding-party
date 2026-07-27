@@ -25,6 +25,7 @@ import { logout } from "@/lib/actions/auth";
 import { confirmContribution } from "@/lib/actions/contributions";
 import { approveWish, hideWish } from "@/lib/actions/wishes";
 import { approveMedia, deleteMedia, hideMedia } from "@/lib/actions/media";
+import { setGalleryEnabled } from "@/lib/actions/story";
 
 function formatNaira(cents: number) {
   return `₦${(cents / 100).toLocaleString("en-NG")}`;
@@ -78,6 +79,14 @@ export default function AdminHome({
   const [pendingWishes, setPendingWishes] = useState<PendingWishView[]>(initialPendingWishes);
   const [approvedWishes, setApprovedWishes] = useState<ApprovedWishView[]>(initialApprovedWishes);
   const [hiddenWishes, setHiddenWishes] = useState<HiddenWishView[]>(initialHiddenWishes);
+
+  const [galleryEnabled, setGalleryEnabledState] = useState(story.galleryEnabled);
+
+  const handleToggleGallery = async () => {
+    const next = !galleryEnabled;
+    await setGalleryEnabled(next);
+    setGalleryEnabledState(next);
+  };
 
   const handleConfirmContribution = async (contribution: PendingContributionView) => {
     await confirmContribution(contribution.id);
@@ -244,11 +253,13 @@ export default function AdminHome({
             pending={pendingMedia}
             approved={approvedMedia}
             hidden={hiddenMedia}
+            galleryEnabled={galleryEnabled}
             onApprove={handleApproveMedia}
             onHide={handleHideMedia}
             onHideApproved={handleHideApprovedMedia}
             onDeleteApproved={handleDeleteApprovedMedia}
             onRestore={handleRestoreMedia}
+            onToggleGallery={handleToggleGallery}
           />
         )}
         {activeTab === "Wishes" && (

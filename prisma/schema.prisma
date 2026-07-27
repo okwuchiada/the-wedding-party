@@ -75,19 +75,20 @@ model Wish {
 }
 
 model StoryContent {
-  id           String   @id @default("main")
-  brideName    String
-  groomName    String
-  weddingDate  DateTime
-  tagline      String?
-  location     String?
-  howWeMet     String?
-  whatWeLove   String?
-  groomNote    String?
-  brideNote    String?
-  heroPhotoUrl String?
-  contactEmail String?
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default("main")
+  brideName      String
+  groomName      String
+  weddingDate    DateTime
+  tagline        String?
+  location       String?
+  howWeMet       String?
+  whatWeLove     String?
+  groomNote      String?
+  brideNote      String?
+  heroPhotoUrl   String?
+  contactEmail   String?
+  galleryEnabled Boolean  @default(false)
+  updatedAt      DateTime @updatedAt
 }
 
 model Rsvp {
@@ -100,11 +101,11 @@ model Rsvp {
 }
 
 model StoryPhoto {
-  id          String  @id @default(cuid())
-  url         String
-  caption     String
-  order       Int     @default(0)
-  showInHero  Boolean @default(false)
+  id         String  @id @default(cuid())
+  url        String
+  caption    String
+  order      Int     @default(0)
+  showInHero Boolean @default(false)
 }
 
 model BankDetails {
