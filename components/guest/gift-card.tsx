@@ -195,7 +195,7 @@ export default function GiftCard({
                 <CopyRow label="Account name" value={bankDetails.name} />
                 <CopyRow label="Bank" value={bankDetails.bank} />
                 <CopyRow label="Account no." value={bankDetails.account} />
-                <CopyRow label="Routing" value={bankDetails.routing} />
+                {/* <CopyRow label="Routing" value={bankDetails.routing} /> */}
                 <CopyRow label="Reference" value={gift.name} />
 
                 <input
@@ -264,7 +264,7 @@ export default function GiftCard({
                 <CopyRow label="Account name" value={bankDetails.name} />
                 <CopyRow label="Bank" value={bankDetails.bank} />
                 <CopyRow label="Account no." value={bankDetails.account} />
-                <CopyRow label="Routing" value={bankDetails.routing} />
+                {/* <CopyRow label="Routing" value={bankDetails.routing} /> */}
                 <CopyRow label="Reference" value={gift.name} />
                 <div className="flex items-baseline justify-between gap-3 border-b border-olive/20 py-2">
                   <span className="text-[10.5px] uppercase tracking-[.16em] text-foreground/55">

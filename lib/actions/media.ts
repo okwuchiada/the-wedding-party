@@ -2,44 +2,60 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { uploadFileToS3 } from "@/lib/s3";
+import { createPresignedUploadUrl } from "@/lib/s3";
 import { verifySession } from "@/lib/dal";
 
 const ALLOWED_TYPES = ["image/", "video/"];
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
-export type UploadMediaState = { error?: string; success?: boolean } | undefined;
+export type CreateUploadUrlState =
+  | { error?: string; uploadUrl?: string; publicUrl?: string }
+  | undefined;
 
-export async function uploadMedia(
-  _prevState: UploadMediaState,
-  formData: FormData
-): Promise<UploadMediaState> {
-  const guestName = formData.get("guestName");
-  const file = formData.get("file");
-
-  if (typeof guestName !== "string" || !guestName.trim()) {
-    return { error: "Please enter your name" };
-  }
-  if (!(file instanceof File)) {
-    return { error: "Missing file" };
-  }
-  if (!ALLOWED_TYPES.some((prefix) => file.type.startsWith(prefix))) {
+export async function createMediaUploadUrl(
+  fileName: string,
+  fileType: string,
+  fileSize: number
+): Promise<CreateUploadUrlState> {
+  if (!ALLOWED_TYPES.some((prefix) => fileType.startsWith(prefix))) {
     return { error: "Only photos and videos are allowed" };
   }
-  if (file.size > MAX_FILE_SIZE) {
+  if (fileSize > MAX_FILE_SIZE) {
     return { error: "File is over the 25MB limit" };
   }
 
-  const type = file.type.startsWith("video/") ? "VIDEO" : "PHOTO";
-  const url = await uploadFileToS3(file, "uploads");
+  const { uploadUrl, publicUrl } = await createPresignedUploadUrl("uploads", fileName, fileType);
+  return { uploadUrl, publicUrl };
+}
 
-  await prisma.media.create({
+export type CreateMediaState = { error?: string; success?: boolean; id?: string } | undefined;
+
+export async function createMediaRecord(
+  guestName: string,
+  url: string,
+  type: "PHOTO" | "VIDEO"
+): Promise<CreateMediaState> {
+  if (!guestName.trim()) return { error: "Please enter your name" };
+  if (!url) return { error: "Missing upload URL" };
+
+  const media = await prisma.media.create({
     data: { guestName: guestName.trim(), url, type, status: "PENDING" },
   });
 
   revalidatePath("/admin");
 
-  return { success: true };
+  return { success: true, id: media.id };
+}
+
+export async function getMediaStatuses(ids: string[]) {
+  if (ids.length === 0) return {};
+
+  const rows = await prisma.media.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, status: true },
+  });
+
+  return Object.fromEntries(rows.map((row) => [row.id, row.status]));
 }
 
 export async function approveMedia(id: string) {

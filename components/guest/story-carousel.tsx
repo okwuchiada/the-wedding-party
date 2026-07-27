@@ -88,7 +88,7 @@ export default function StoryCarousel({ items }: { items: StoryItem[] }) {
               alt={current.alt}
               fill
               sizes="(min-width: 768px) 672px, 100vw"
-              className="object-cover"
+              className="object-contain"
               priority={index === 0}
               loading="eager"
             />

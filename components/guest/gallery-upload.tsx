@@ -1,17 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { uploadMedia } from "@/lib/actions/media";
+import { useEffect, useState } from "react";
+import { createMediaUploadUrl, createMediaRecord, getMediaStatuses } from "@/lib/actions/media";
+import { convertHeicToJpeg, isImageFile } from "@/lib/heic";
 
 type UploadStatus = "uploading" | "done" | "error";
 
 type PendingUpload = {
   id: string;
+  mediaId?: string;
   previewUrl: string;
   isVideo: boolean;
   fileName: string;
   status: UploadStatus;
 };
+
+const STATUS_POLL_INTERVAL_MS = 5_000;
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
@@ -21,21 +25,57 @@ export default function GalleryUpload() {
   const [uploads, setUploads] = useState<PendingUpload[]>([]);
 
   const uploadFile = async (file: File, id: string) => {
-    const formData = new FormData();
-    formData.set("guestName", guestName);
-    formData.set("file", file);
-
-    const result = await uploadMedia(undefined, formData);
-    if (result?.error) {
+    const markError = (message: string) => {
       setUploads((prev) => prev.map((u) => (u.id === id ? { ...u, status: "error" } : u)));
-      setError(result.error);
+      setError(message);
+    };
+
+    const urlResult = await createMediaUploadUrl(file.name, file.type, file.size);
+    if (!urlResult || urlResult.error || !urlResult.uploadUrl || !urlResult.publicUrl) {
+      markError(urlResult?.error ?? "Upload failed. Please try again.");
       return;
     }
 
-    setUploads((prev) => prev.map((u) => (u.id === id ? { ...u, status: "done" } : u)));
+    const putResponse = await fetch(urlResult.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!putResponse.ok) {
+      markError("Upload failed. Please try again.");
+      return;
+    }
+
+    const type = file.type.startsWith("video/") ? "VIDEO" : "PHOTO";
+    const result = await createMediaRecord(guestName, urlResult.publicUrl, type);
+    if (result?.error) {
+      markError(result.error);
+      return;
+    }
+
+    setUploads((prev) =>
+      prev.map((u) => (u.id === id ? { ...u, status: "done", mediaId: result?.id } : u))
+    );
   };
 
-  const handleFiles = (files: FileList | null) => {
+  useEffect(() => {
+    const trackedIds = uploads
+      .filter((u): u is PendingUpload & { mediaId: string } => u.status === "done" && !!u.mediaId)
+      .map((u) => u.mediaId);
+
+    if (trackedIds.length === 0) return;
+
+    const interval = setInterval(async () => {
+      const statuses = await getMediaStatuses(trackedIds);
+      setUploads((prev) =>
+        prev.filter((u) => !u.mediaId || statuses[u.mediaId] === "PENDING")
+      );
+    }, STATUS_POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [uploads]);
+
+  const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     if (!guestName.trim()) {
       setError("Please enter your name first");
@@ -43,19 +83,20 @@ export default function GalleryUpload() {
     }
     setError("");
 
-    for (const file of Array.from(files)) {
-      const isImage = file.type.startsWith("image/");
-      const isVideo = file.type.startsWith("video/");
-      if (!isImage && !isVideo) {
-        setError(`${file.name} isn't a photo or video`);
+    for (const rawFile of Array.from(files)) {
+      const isVideo = rawFile.type.startsWith("video/");
+      if (!isImageFile(rawFile) && !isVideo) {
+        setError(`${rawFile.name} isn't a photo or video`);
         continue;
       }
-      if (file.size > MAX_FILE_SIZE) {
-        setError(`${file.name} is over the 25MB limit`);
+      if (rawFile.size > MAX_FILE_SIZE) {
+        setError(`${rawFile.name} is over the 25MB limit`);
         continue;
       }
 
-      const id = `${file.name}-${file.lastModified}-${Math.random()}`;
+      const file = isVideo ? rawFile : await convertHeicToJpeg(rawFile);
+
+      const id = `${file.name}-${rawFile.lastModified}-${Math.random()}`;
       setUploads((prev) => [
         { id, previewUrl: URL.createObjectURL(file), isVideo, fileName: file.name, status: "uploading" },
         ...prev,
@@ -81,9 +122,11 @@ export default function GalleryUpload() {
           <span className="text-xs text-foreground/60">JPG, PNG, MP4 up to 25MB</span>
           <input
             type="file"
-            accept="image/*,video/*"
+            accept="image/*,video/*,.heic,.heif"
             multiple
-            onChange={(e) => handleFiles(e.target.files)}
+            onChange={(e) => {
+              void handleFiles(e.target.files);
+            }}
             className="hidden"
           />
         </label>

@@ -2,12 +2,34 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { uploadFileToS3 } from "@/lib/s3";
+import { createPresignedUploadUrl } from "@/lib/s3";
 import { verifySession } from "@/lib/dal";
 
 export type StoryPhotoFormState = { error?: string; success?: boolean } | undefined;
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
+
+export type CreateStoryPhotoUploadUrlState =
+  | { error?: string; uploadUrl?: string; publicUrl?: string }
+  | undefined;
+
+export async function createStoryPhotoUploadUrl(
+  fileName: string,
+  fileType: string,
+  fileSize: number
+): Promise<CreateStoryPhotoUploadUrlState> {
+  await verifySession();
+
+  if (!fileType.startsWith("image/")) {
+    return { error: "Only image files are allowed" };
+  }
+  if (fileSize > MAX_FILE_SIZE) {
+    return { error: "Image is over the 25MB limit" };
+  }
+
+  const { uploadUrl, publicUrl } = await createPresignedUploadUrl("story-photos", fileName, fileType);
+  return { uploadUrl, publicUrl };
+}
 
 function parseStoryPhotoMeta(formData: FormData) {
   const caption = formData.get("caption");
@@ -29,19 +51,9 @@ function parseStoryPhotoMeta(formData: FormData) {
   } as const;
 }
 
-async function resolvePhotoUrl(formData: FormData, existingUrl?: string) {
-  const file = formData.get("file");
-
-  if (file instanceof File && file.size > 0) {
-    if (!file.type.startsWith("image/")) {
-      return { error: "Only image files are allowed" } as const;
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      return { error: "Image is over the 25MB limit" } as const;
-    }
-    const url = await uploadFileToS3(file, "story-photos");
-    return { url } as const;
-  }
+function resolvePhotoUrl(formData: FormData, existingUrl?: string) {
+  const url = formData.get("url");
+  if (typeof url === "string" && url) return { url } as const;
 
   if (existingUrl) return { url: existingUrl } as const;
 
@@ -57,7 +69,7 @@ export async function addStoryPhoto(
   const meta = parseStoryPhotoMeta(formData);
   if ("error" in meta) return { error: meta.error };
 
-  const resolved = await resolvePhotoUrl(formData);
+  const resolved = resolvePhotoUrl(formData);
   if ("error" in resolved) return { error: resolved.error };
 
   await prisma.storyPhoto.create({ data: { ...meta.data, url: resolved.url } });
@@ -81,7 +93,7 @@ export async function updateStoryPhoto(
   if ("error" in meta) return { error: meta.error };
 
   const existingUrl = formData.get("existingUrl");
-  const resolved = await resolvePhotoUrl(
+  const resolved = resolvePhotoUrl(
     formData,
     typeof existingUrl === "string" ? existingUrl : undefined
   );
@@ -102,4 +114,29 @@ export async function deleteStoryPhoto(id: string) {
 
   revalidatePath("/admin");
   revalidatePath("/");
+}
+
+export type BulkAddStoryPhotosState = { error?: string; success?: boolean } | undefined;
+
+export async function bulkAddStoryPhotos(urls: string[]): Promise<BulkAddStoryPhotosState> {
+  await verifySession();
+
+  if (urls.length === 0) return { error: "No photos to add" };
+
+  const last = await prisma.storyPhoto.findFirst({ orderBy: { order: "desc" } });
+  const startOrder = (last?.order ?? -1) + 1;
+
+  await prisma.storyPhoto.createMany({
+    data: urls.map((url, i) => ({
+      url,
+      caption: "",
+      order: startOrder + i,
+      showInHero: false,
+    })),
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/");
+
+  return { success: true };
 }
