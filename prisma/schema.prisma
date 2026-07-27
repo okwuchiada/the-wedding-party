@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model RegistryItem {
+  id            String         @id @default(cuid())
+  name          String
+  category      String
+  priceCents    Int
+  image         String
+  externalUrl   String?
+  claimedBy     String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  contributions Contribution[]
+}
+
+enum ContributionStatus {
+  AWAITING_CONFIRMATION
+  CONFIRMED
+}
+
+model Contribution {
+  id             String             @id @default(cuid())
+  registryItem   RegistryItem       @relation(fields: [registryItemId], references: [id])
+  registryItemId String
+  guestName      String
+  amountCents    Int
+  note           String?
+  status         ContributionStatus @default(AWAITING_CONFIRMATION)
+  createdAt      DateTime           @default(now())
+  confirmedAt    DateTime?
+}
+
+enum MediaType {
+  PHOTO
+  VIDEO
+}
+
+enum MediaStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+}
+
+model Media {
+  id        String      @id @default(cuid())
+  guestName String
+  url       String
+  type      MediaType
+  status    MediaStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+}
+
+enum WishStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+}
+
+model Wish {
+  id        String     @id @default(cuid())
+  guestName String
+  message   String
+  status    WishStatus @default(PENDING)
+  createdAt DateTime   @default(now())
+}
+
+model StoryContent {
+  id           String   @id @default("main")
+  brideName    String
+  groomName    String
+  weddingDate  DateTime
+  tagline      String?
+  location     String?
+  howWeMet     String?
+  whatWeLove   String?
+  groomNote    String?
+  brideNote    String?
+  heroPhotoUrl String?
+  contactEmail String?
+  updatedAt    DateTime @updatedAt
+}
+
+model Rsvp {
+  id         String   @id @default(cuid())
+  guestName  String
+  attending  Boolean
+  guestCount Int      @default(1)
+  message    String?
+  createdAt  DateTime @default(now())
+}
+
+model StoryPhoto {
+  id          String  @id @default(cuid())
+  url         String
+  caption     String
+  order       Int     @default(0)
+  showInHero  Boolean @default(false)
+}
+
+model BankDetails {
+  id        String   @id @default("main")
+  name      String
+  bank      String
+  account   String
+  routing   String
+  updatedAt DateTime @updatedAt
+}
