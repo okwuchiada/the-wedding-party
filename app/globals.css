@@ -2,12 +2,13 @@
 
 :root {
   --background: #fdf6ec;
-  --foreground: #2b2a24;
+  --foreground: #252a1a;
   --olive: #6b7a44;
   --olive-dark: #4f5a32;
   --burnt-orange: #c1440e;
   --burnt-orange-dark: #9c3709;
   --ivory: #fdf6ec;
+  --cream: #f0ead9;
 }
 
 @theme inline {
@@ -18,6 +19,7 @@
   --color-burnt-orange: var(--burnt-orange);
   --color-burnt-orange-dark: var(--burnt-orange-dark);
   --color-ivory: var(--ivory);
+  --color-cream: var(--cream);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

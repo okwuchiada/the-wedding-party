@@ -13,7 +13,9 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
       <div className="mb-8 grid grid-cols-2 gap-4 sm:max-w-md">
         <div className="bg-white p-4 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
           <p className="text-[10.5px] tracking-[.16em] text-foreground/55 uppercase">Attending</p>
-          <p className="mt-2 font-(family-name:--serif) text-2xl text-foreground">{attendingGuests}</p>
+          <p className="mt-2 font-(family-name:--serif) text-2xl text-foreground">
+            {attendingGuests} <span className="text-base text-foreground/40">/ 100</span>
+          </p>
         </div>
         <div className="bg-white p-4 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
           <p className="text-[10.5px] tracking-[.16em] text-foreground/55 uppercase">Declined</p>

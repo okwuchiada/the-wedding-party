@@ -27,7 +27,7 @@ async function OurStoryContent() {
 
 export default function OurStory() {
   return (
-    <section id="our-story" className="bg-ivory px-4 py-20 sm:px-6 sm:py-28">
+    <section id="our-story" className="bg-cream px-4 py-20 sm:px-6 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
         <p className="mb-3 text-xs uppercase tracking-[0.2em] text-olive">
           Our Story

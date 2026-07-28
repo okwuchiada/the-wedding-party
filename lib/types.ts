@@ -83,4 +83,5 @@ export type BankDetailsView = {
   bank: string;
   account: string;
   routing: string;
+  swift: string | null;
 };

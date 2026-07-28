@@ -14,6 +14,7 @@ import {
 import { convertHeicToJpeg, isImageFile } from "@/lib/heic";
 import { useConfirm } from "./use-confirm";
 import { useActionPending } from "./use-action-pending";
+import StoryBeatsSection, { type StoryBeatView } from "./story-beats-section";
 
 export type StoryContentView = {
   brideName: string;
@@ -380,9 +381,11 @@ function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
 export default function StoryTab({
   story,
   photos,
+  storyBeats,
 }: {
   story: StoryContentView;
   photos: StoryPhotoView[];
+  storyBeats: StoryBeatView[];
 }) {
   const [state, formAction, pending] = useActionState(saveStory, undefined);
 
@@ -555,6 +558,7 @@ export default function StoryTab({
       </form>
 
       <StoryPhotosSection photos={photos} />
+      <StoryBeatsSection beats={storyBeats} />
     </div>
   );
 }

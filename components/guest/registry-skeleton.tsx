@@ -8,8 +8,7 @@ function GiftCardSkeleton() {
         <Pulse className="h-6 w-3/4" />
         <Pulse className="h-3 w-16" />
         <Pulse className="mt-2 h-1 w-full" />
-        <div className="mt-auto grid grid-cols-3 gap-2 pt-5">
-          <Pulse className="h-9" />
+        <div className="mt-auto grid grid-cols-2 gap-2 pt-5">
           <Pulse className="h-9" />
           <Pulse className="h-9" />
         </div>

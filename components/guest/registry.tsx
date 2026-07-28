@@ -16,7 +16,7 @@ async function RegistryContent() {
     <RegistryGrid
       items={registryItems}
       bankDetails={
-        bankDetails ?? { name: "", bank: "", account: "", routing: "" }
+        bankDetails ?? { name: "", bank: "", account: "", routing: "", swift: null }
       }
     />
   );
@@ -35,8 +35,9 @@ export default function Registry() {
         <p className="mt-6 text-base text-foreground/80 sm:text-lg">
           Your presence at our wedding is the greatest gift of all. If you wish
           to celebrate with us further, we&apos;ve put together a small list of
-          things we&apos;d love for our new home together. Chip in to a group
-          gift, buy online, or bring something to the celebration.
+          things for our new home. You can chip in toward a group gift, shop an
+          item online, or send a direct cash contribution using our bank details
+          below.
         </p>
       </div>
 

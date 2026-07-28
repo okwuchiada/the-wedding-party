@@ -7,7 +7,7 @@ export type SubmitRsvpState =
   | { error?: string; success?: boolean; guestName?: string; attending?: boolean }
   | undefined;
 
-const MAX_GUESTS = 10;
+const MAX_TOTAL_GUESTS = 100;
 
 export async function submitRsvp(
   _prevState: SubmitRsvpState,
@@ -15,7 +15,6 @@ export async function submitRsvp(
 ): Promise<SubmitRsvpState> {
   const guestName = formData.get("guestName");
   const attendingRaw = formData.get("attending");
-  const guestCountRaw = formData.get("guestCount");
   const message = formData.get("message");
 
   if (typeof guestName !== "string" || !guestName.trim()) {
@@ -26,16 +25,23 @@ export async function submitRsvp(
   }
 
   const attending = attendingRaw === "yes";
-  const guestCountNum = Number(guestCountRaw);
-  const guestCount = attending
-    ? Math.min(MAX_GUESTS, Math.max(1, Number.isFinite(guestCountNum) ? Math.round(guestCountNum) : 1))
-    : 1;
+
+  if (attending) {
+    const { _sum } = await prisma.rsvp.aggregate({
+      where: { attending: true },
+      _sum: { guestCount: true },
+    });
+    const currentTotal = _sum.guestCount ?? 0;
+    if (currentTotal + 1 > MAX_TOTAL_GUESTS) {
+      return { error: "Sorry, we've reached full capacity and can no longer accept RSVPs." };
+    }
+  }
 
   await prisma.rsvp.create({
     data: {
       guestName: guestName.trim(),
       attending,
-      guestCount,
+      guestCount: 1,
       message: typeof message === "string" && message.trim() ? message.trim() : null,
     },
   });

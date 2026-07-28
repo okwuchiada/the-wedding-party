@@ -68,20 +68,6 @@ export default function RsvpForm() {
           </label>
         </div>
 
-        {attending === "yes" && (
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-            Number attending (including you)
-            <input
-              type="number"
-              name="guestCount"
-              min={1}
-              max={10}
-              defaultValue={1}
-              className="w-full border border-olive/20 bg-white px-4 py-3 text-sm text-foreground outline-none"
-            />
-          </label>
-        )}
-
         <textarea
           placeholder="Anything else you'd like us to know? (optional)"
           name="message"

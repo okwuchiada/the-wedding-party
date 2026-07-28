@@ -94,7 +94,7 @@ export default function StoryCarousel({ items }: { items: StoryItem[] }) {
             />
           </div>
           <p
-            className={`px-4 pt-5 pb-6 text-center font-(family-name:--serif) text-lg italic text-foreground transition-opacity duration-350 ease-out ${
+            className={`line-clamp-3 min-h-24 px-4 pt-5 pb-6 text-center font-(family-name:--serif) text-lg italic text-foreground transition-opacity duration-350 ease-out ${
               visible ? "opacity-100" : "opacity-0"
             }`}
           >

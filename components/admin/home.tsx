@@ -22,6 +22,7 @@ import MediaTab from "./media-tab";
 import WishesTab from "./wishes-tab";
 import RsvpTab from "./rsvp-tab";
 import StoryTab, { type StoryContentView, type StoryPhotoView } from "./story-tab";
+import type { StoryBeatView } from "./story-beats-section";
 import SignOutButton from "./sign-out-button";
 import { logout } from "@/lib/actions/auth";
 import { confirmContribution } from "@/lib/actions/contributions";
@@ -45,6 +46,7 @@ export default function AdminHome({
   hiddenWishes: initialHiddenWishes,
   story,
   storyPhotos,
+  storyBeats,
   pendingMedia: initialPendingMedia,
   approvedMedia: initialApprovedMedia,
   hiddenMedia: initialHiddenMedia,
@@ -59,6 +61,7 @@ export default function AdminHome({
   hiddenWishes: HiddenWishView[];
   story: StoryContentView;
   storyPhotos: StoryPhotoView[];
+  storyBeats: StoryBeatView[];
   pendingMedia: PendingMediaView[];
   approvedMedia: ApprovedMediaView[];
   hiddenMedia: HiddenMediaView[];
@@ -272,7 +275,9 @@ export default function AdminHome({
           />
         )}
         {activeTab === "RSVPs" && <RsvpTab rsvps={rsvps} />}
-        {activeTab === "Our Story" && <StoryTab story={story} photos={storyPhotos} />}
+        {activeTab === "Our Story" && (
+          <StoryTab story={story} photos={storyPhotos} storyBeats={storyBeats} />
+        )}
       </div>
     </div>
   );

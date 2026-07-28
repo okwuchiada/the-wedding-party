@@ -11,6 +11,7 @@ export default async function AdminPage() {
     hiddenWishes,
     story,
     storyPhotos,
+    storyBeats,
     pendingMedia,
     approvedMedia,
     hiddenMedia,
@@ -45,6 +46,7 @@ export default async function AdminPage() {
     }),
     prisma.storyContent.findUnique({ where: { id: "main" } }),
     prisma.storyPhoto.findMany({ orderBy: { order: "asc" } }),
+    prisma.storyBeat.findMany({ orderBy: { order: "asc" } }),
     prisma.media.findMany({
       where: { status: "PENDING" },
       orderBy: { createdAt: "asc" },
@@ -113,6 +115,7 @@ export default async function AdminPage() {
         galleryEnabled: story?.galleryEnabled ?? false,
       }}
       storyPhotos={storyPhotos}
+      storyBeats={storyBeats}
       pendingMedia={pendingMedia.map((m) => ({
         id: m.id,
         guestName: m.guestName,
@@ -143,7 +146,7 @@ export default async function AdminPage() {
         dateSubmitted: r.createdAt.toISOString().slice(0, 10),
       }))}
       bankDetails={
-        bankDetails ?? { name: "", bank: "", account: "", routing: "" }
+        bankDetails ?? { name: "", bank: "", account: "", routing: "", swift: null }
       }
     />
   );

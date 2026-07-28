@@ -110,11 +110,21 @@ model StoryPhoto {
   showInHero Boolean @default(false)
 }
 
+model StoryBeat {
+  id       String  @id @default(cuid())
+  year     String
+  title    String
+  text     String
+  photoUrl String?
+  order    Int     @default(0)
+}
+
 model BankDetails {
   id        String   @id @default("main")
   name      String
   bank      String
   account   String
   routing   String
+  swift     String?
   updatedAt DateTime @updatedAt
 }

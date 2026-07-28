@@ -35,13 +35,21 @@ export default function LoveNote({ notes }: { notes: Note[] }) {
       <div
         className={`text-center transition-opacity duration-400 ${visible ? "opacity-100" : "opacity-0"}`}
       >
-        <span className={`font-(family-name:--serif) text-6xl leading-none opacity-30 ${accent}`}>
+        <span
+          className={`font-(family-name:--serif) text-6xl leading-none opacity-30 ${accent}`}
+        >
           &ldquo;
         </span>
         <div className={`mx-auto mt-2 h-0.5 w-10 ${divider}`} />
         <p className="mt-6 font-(family-name:--serif) text-lg leading-relaxed text-foreground italic">
           {note.text}
         </p>
+        <span
+          className={`font-(family-name:--serif) text-6xl leading-none opacity-30 ${accent}`}
+        >
+          &rdquo;
+        </span>
+        <div className={`mx-auto mt-2 h-0.5 w-10 ${divider}`} />
         <p className="mt-5 text-xs uppercase tracking-[0.2em] text-foreground/60">
           {note.caption}
         </p>

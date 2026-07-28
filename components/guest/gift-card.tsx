@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { Copy } from "lucide-react";
 import { useState } from "react";
 import type { BankDetailsView } from "@/lib/types";
 import type { RegistryItemWithContributions } from "@/lib/types";
 import { submitContribution } from "@/lib/actions/contributions";
+import CopyRow from "./copy-row";
 
 function formatNaira(cents: number) {
   return `₦${(cents / 100).toLocaleString("en-NG")}`;
@@ -41,39 +41,6 @@ function ProgressBar({ raised, goal }: { raised: number; goal: number }) {
           }`}
         />
       </div>
-    </div>
-  );
-}
-
-function CopyRow({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const copy = () => {
-    navigator.clipboard?.writeText(value).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1400);
-  };
-
-  return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-olive/20 py-2">
-      <span className="text-[10.5px] uppercase tracking-[.16em] text-foreground/55">
-        {label}
-      </span>
-      <button
-        type="button"
-        onClick={copy}
-        title="Copy"
-        className="flex items-center gap-1.5 p-0 text-right text-[13.5px] text-foreground"
-      >
-        {value}
-        {copied ? (
-          <span className="text-[10.5px] tracking-widest text-burnt-orange">
-            COPIED
-          </span>
-        ) : (
-          <Copy className="h-3.5 w-3.5 shrink-0 text-burnt-orange" />
-        )}
-      </button>
     </div>
   );
 }

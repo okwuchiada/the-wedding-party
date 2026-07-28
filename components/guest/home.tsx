@@ -5,8 +5,10 @@ import NavSkeleton from "./nav-skeleton";
 import Hero from "./hero";
 import HeroSkeleton from "./hero-skeleton";
 import Rsvp from "./rsvp";
-import OurStory from "./our-story";
+import HowWeMet from "./how-we-met";
+import LoveNotes from "./love-notes";
 import Registry from "./registry";
+import MonetaryGift from "./monetary-gift";
 import Footer from "./footer";
 import FooterSkeleton from "./footer-skeleton";
 
@@ -21,9 +23,11 @@ export default function GuestHome() {
         <Suspense fallback={<HeroSkeleton />}>
           <Hero />
         </Suspense>
-        <Rsvp />
-        <OurStory />
+        <HowWeMet />
+        <LoveNotes />
         <Registry />
+        <MonetaryGift />
+        <Rsvp />
       </main>
       <Suspense fallback={<FooterSkeleton />}>
         <Footer />

@@ -169,6 +169,14 @@ function BankDetailsForm({
           className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
       </label>
+      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+        SWIFT / BIC (optional)
+        <input
+          name="swift"
+          defaultValue={bankDetails.swift ?? ""}
+          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+        />
+      </label>
 
       {state?.error && <p className="text-xs text-burnt-orange sm:col-span-2">{state.error}</p>}
 
@@ -255,6 +263,10 @@ export default function RegistryTab({
           <div>
             <p className="text-[10.5px] tracking-widest text-foreground/50 uppercase">Routing</p>
             <p className="mt-1 text-foreground">{bankDetails.routing}</p>
+          </div>
+          <div>
+            <p className="text-[10.5px] tracking-widest text-foreground/50 uppercase">SWIFT / BIC</p>
+            <p className="mt-1 text-foreground">{bankDetails.swift ?? "—"}</p>
           </div>
         </div>
       )}
