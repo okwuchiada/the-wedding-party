@@ -7,6 +7,7 @@ import HeroSkeleton from "./hero-skeleton";
 import Rsvp from "./rsvp";
 import HowWeMet from "./how-we-met";
 import LoveNotes from "./love-notes";
+import CoupleGallery from "./couple-gallery";
 import Registry from "./registry";
 import MonetaryGift from "./monetary-gift";
 import Footer from "./footer";
@@ -25,6 +26,7 @@ export default function GuestHome() {
         </Suspense>
         <HowWeMet />
         <LoveNotes />
+        {/* <CoupleGallery /> */}
         <Registry />
         <MonetaryGift />
         <Rsvp />
