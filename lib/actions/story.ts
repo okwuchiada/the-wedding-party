@@ -18,6 +18,7 @@ export async function saveStory(
   const weddingTime = formData.get("weddingTime");
   const tagline = formData.get("tagline");
   const location = formData.get("location");
+  const venueAddress = formData.get("venueAddress");
   const howWeMet = formData.get("howWeMet");
   const whatWeLove = formData.get("whatWeLove");
   const groomNote = formData.get("groomNote");
@@ -55,6 +56,8 @@ export async function saveStory(
     weddingDate: parsedDate,
     tagline: typeof tagline === "string" && tagline.trim() ? tagline.trim() : null,
     location: typeof location === "string" && location.trim() ? location.trim() : null,
+    venueAddress:
+      typeof venueAddress === "string" && venueAddress.trim() ? venueAddress.trim() : null,
     howWeMet: typeof howWeMet === "string" && howWeMet.trim() ? howWeMet.trim() : null,
     whatWeLove: typeof whatWeLove === "string" && whatWeLove.trim() ? whatWeLove.trim() : null,
     groomNote: typeof groomNote === "string" && groomNote.trim() ? groomNote.trim() : null,

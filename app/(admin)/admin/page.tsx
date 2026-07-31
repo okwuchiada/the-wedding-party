@@ -104,6 +104,7 @@ export default async function AdminPage() {
         weddingTime: (story?.weddingDate ?? new Date()).toISOString().slice(11, 16),
         tagline: story?.tagline ?? null,
         location: story?.location ?? null,
+        venueAddress: story?.venueAddress ?? null,
         howWeMet: story?.howWeMet ?? null,
         whatWeLove: story?.whatWeLove ?? null,
         groomNote: story?.groomNote ?? null,

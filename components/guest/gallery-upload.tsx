@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createMediaUploadUrl, createMediaRecord, getMediaStatuses } from "@/lib/actions/media";
 import { convertHeicToJpeg, isImageFile } from "@/lib/heic";
+import { compressImage } from "@/lib/image-compress";
 
 type UploadStatus = "uploading" | "done" | "error";
 
@@ -94,7 +95,7 @@ export default function GalleryUpload() {
         continue;
       }
 
-      const file = isVideo ? rawFile : await convertHeicToJpeg(rawFile);
+      const file = isVideo ? rawFile : await compressImage(await convertHeicToJpeg(rawFile));
 
       const id = `${file.name}-${rawFile.lastModified}-${Math.random()}`;
       setUploads((prev) => [

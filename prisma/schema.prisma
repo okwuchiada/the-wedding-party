@@ -81,6 +81,7 @@ model StoryContent {
   weddingDate    DateTime
   tagline        String?
   location       String?
+  venueAddress   String?
   howWeMet       String?
   whatWeLove     String?
   groomNote      String?
@@ -96,6 +97,7 @@ model StoryContent {
 model Rsvp {
   id         String   @id @default(cuid())
   guestName  String
+  email      String
   attending  Boolean
   guestCount Int      @default(1)
   message    String?

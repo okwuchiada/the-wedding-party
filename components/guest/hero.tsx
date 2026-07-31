@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import CountdownBar from "./countdown-bar";
 import Polaroid from "./polaroid";
@@ -16,6 +17,7 @@ export default async function Hero() {
   const groomName = story?.groomName ?? "";
   const tagline = story?.tagline ?? "";
   const location = story?.location ?? "";
+  const heroPhotoUrl = "/images/hero.jpg";
   const weddingDateISO = (story?.weddingDate ?? new Date()).toISOString();
 
   const weddingDate = new Date(weddingDateISO).toLocaleDateString("en-US", {
@@ -36,9 +38,25 @@ export default async function Hero() {
       id="top"
       className="relative overflow-hidden pt-28 pb-16 sm:pt-36 sm:pb-24"
     >
+      {heroPhotoUrl && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 opacity-10 lg:hidden"
+        >
+          <Image
+            src={heroPhotoUrl}
+            alt=""
+            fill
+            sizes="100vw"
+            className="object-cover"
+            loading="eager"
+          />
+        </div>
+      )}
+
       <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-2/5 bg-linear-to-b from-ivory to-transparent opacity-60 lg:block" />
 
-      <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="relative z-10 mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr]">
         <div>
           <p className="mb-5 text-xs uppercase tracking-[0.2em] text-olive">
             {tagline} &middot;
@@ -53,8 +71,8 @@ export default async function Hero() {
           </h1>
 
           <p className="mt-6 max-w-md text-base text-foreground/80 sm:text-lg">
-            We&apos;re getting married and we&apos;d be honored to have
-            you celebrate with us.
+            We&apos;re getting married and we&apos;d be honored to have you
+            celebrate with us.
           </p>
 
           <div className="mt-8 mb-3 flex flex-wrap items-center gap-4">

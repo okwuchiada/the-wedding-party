@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
+import { sendMail, contributionNotificationEmail } from "@/lib/mail";
 
 export type SubmitContributionState = { error?: string; success?: boolean } | undefined;
 
@@ -26,7 +27,7 @@ export async function submitContribution(
     return { error: "Enter a valid amount" };
   }
 
-  await prisma.contribution.create({
+  const contribution = await prisma.contribution.create({
     data: {
       registryItemId,
       guestName: guestName.trim(),
@@ -34,9 +35,25 @@ export async function submitContribution(
       note: typeof note === "string" && note.trim() ? note.trim() : null,
       status: "AWAITING_CONFIRMATION",
     },
+    include: { registryItem: true },
   });
 
   revalidatePath("/admin");
+
+  const story = await prisma.storyContent.findUnique({ where: { id: "main" } });
+  if (story?.contactEmail) {
+    await sendMail({
+      to: story.contactEmail,
+      ...contributionNotificationEmail({
+        guestName: contribution.guestName,
+        itemName: contribution.registryItem.name,
+        amountCents: contribution.amountCents,
+        note: contribution.note,
+      }),
+    });
+  } else {
+    console.warn("[mail] Skipped contribution notification — no contactEmail configured");
+  }
 
   return { success: true };
 }

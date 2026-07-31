@@ -31,6 +31,14 @@ export default function RsvpForm() {
           className="w-full border border-olive/20 bg-white px-4 py-3 text-sm outline-none"
         />
 
+        <input
+          type="email"
+          placeholder="Your email"
+          name="email"
+          required
+          className="w-full border border-olive/20 bg-white px-4 py-3 text-sm outline-none"
+        />
+
         <div className="grid grid-cols-2 gap-3">
           <label
             className={`flex cursor-pointer items-center justify-center border px-4 py-3 text-center text-sm transition-colors ${

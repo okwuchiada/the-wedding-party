@@ -10,6 +10,7 @@ import {
   type StoryBeatFormState,
 } from "@/lib/actions/story-beats";
 import { convertHeicToJpeg } from "@/lib/heic";
+import { compressImage } from "@/lib/image-compress";
 import { useConfirm } from "./use-confirm";
 import { useActionPending } from "./use-action-pending";
 
@@ -51,7 +52,7 @@ function BeatForm({
 
     if (rawFile instanceof File && rawFile.size > 0) {
       setUploading(true);
-      const file = await convertHeicToJpeg(rawFile);
+      const file = await compressImage(await convertHeicToJpeg(rawFile));
       const urlResult = await createStoryBeatUploadUrl(file.name, file.type, file.size);
       if (!urlResult || urlResult.error || !urlResult.uploadUrl || !urlResult.publicUrl) {
         setUploading(false);

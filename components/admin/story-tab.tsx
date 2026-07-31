@@ -12,6 +12,7 @@ import {
   type StoryPhotoFormState,
 } from "@/lib/actions/story-photos";
 import { convertHeicToJpeg, isImageFile } from "@/lib/heic";
+import { compressImage } from "@/lib/image-compress";
 import { useConfirm } from "./use-confirm";
 import { useActionPending } from "./use-action-pending";
 import StoryBeatsSection, { type StoryBeatView } from "./story-beats-section";
@@ -23,6 +24,7 @@ export type StoryContentView = {
   weddingTime: string;
   tagline: string | null;
   location: string | null;
+  venueAddress: string | null;
   howWeMet: string | null;
   whatWeLove: string | null;
   groomNote: string | null;
@@ -71,7 +73,7 @@ function PhotoForm({
 
     if (rawFile instanceof File && rawFile.size > 0) {
       setUploading(true);
-      const file = await convertHeicToJpeg(rawFile);
+      const file = await compressImage(await convertHeicToJpeg(rawFile));
       const urlResult = await createStoryPhotoUploadUrl(file.name, file.type, file.size);
       if (!urlResult || urlResult.error || !urlResult.uploadUrl || !urlResult.publicUrl) {
         setUploading(false);
@@ -199,7 +201,7 @@ function BulkUploadButton() {
         continue;
       }
 
-      const file = await convertHeicToJpeg(rawFile);
+      const file = await compressImage(await convertHeicToJpeg(rawFile));
       const urlResult = await createStoryPhotoUploadUrl(file.name, file.type, file.size);
       if (!urlResult || urlResult.error || !urlResult.uploadUrl || !urlResult.publicUrl) {
         setError(urlResult?.error ?? `Couldn't upload ${file.name}`);
@@ -491,6 +493,20 @@ export default function StoryTab({
             />
           </label>
         </div>
+
+        <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+          Full venue address (RSVP confirmation email only)
+          <input
+            name="venueAddress"
+            defaultValue={story.venueAddress ?? ""}
+            placeholder="123 Main Street, Victoria Island, Lagos"
+            className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+          />
+          <span className="text-[11px] text-foreground/45">
+            Shown only to guests who RSVP as attending — the site itself keeps showing just
+            &quot;Venue / location&quot; above.
+          </span>
+        </label>
 
         <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
           How we met

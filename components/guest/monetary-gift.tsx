@@ -35,7 +35,7 @@ async function MonetaryGiftCard() {
 
 export default function MonetaryGift() {
   return (
-    <section id="monetary-gift" className="bg-ivory pl-2 py-20 sm:py-28">
+    <section id="monetary-gift" className="bg-ivory pl-4 py-20 sm:py-28">
       <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-[0.9fr_1.1fr]">
         <div>
           <p className="mb-3 text-xs uppercase tracking-[0.2em] text-olive">
