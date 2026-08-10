@@ -35,9 +35,9 @@ export default function Registry() {
         <p className="mt-6 text-base text-foreground/80 sm:text-lg">
           Your presence at our wedding is the greatest gift of all. If you wish
           to celebrate with us further, we&apos;ve put together a small list of
-          things for our new home. You can chip in toward a group gift, shop an
-          item online, or send a direct cash contribution using our bank details
-          below.
+          things for our new home. Buy an item outright, or contribute any
+          amount toward one — several guests can pitch in together until it&apos;s
+          fully funded.
         </p>
       </div>
 
