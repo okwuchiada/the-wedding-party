@@ -4,11 +4,14 @@ import { useActionState, useEffect, useState } from "react";
 import type { BankDetailsView, RegistryItemWithContributions } from "@/lib/types";
 import {
   createRegistryItem,
+  createRegistryItemUploadUrl,
   deleteRegistryItem,
   updateRegistryItem,
   type RegistryItemFormState,
 } from "@/lib/actions/registry";
 import { saveBankDetails } from "@/lib/actions/bank-details";
+import { convertHeicToJpeg } from "@/lib/heic";
+import { compressImage } from "@/lib/image-compress";
 import { useConfirm } from "./use-confirm";
 import { useActionPending } from "./use-action-pending";
 
@@ -41,14 +44,52 @@ function RegistryItemForm({
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState(action, undefined);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     if (state?.success) onCancel();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.success]);
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setUploadError("");
+
+    const formData = new FormData(e.currentTarget);
+    const rawFile = formData.get("file");
+
+    if (rawFile instanceof File && rawFile.size > 0) {
+      setUploading(true);
+      const file = await compressImage(await convertHeicToJpeg(rawFile));
+      const urlResult = await createRegistryItemUploadUrl(file.name, file.type, file.size);
+      if (!urlResult || urlResult.error || !urlResult.uploadUrl || !urlResult.publicUrl) {
+        setUploading(false);
+        setUploadError(urlResult?.error ?? "Upload failed. Please try again.");
+        return;
+      }
+
+      const putResponse = await fetch(urlResult.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      setUploading(false);
+
+      if (!putResponse.ok) {
+        setUploadError("Upload failed. Please try again.");
+        return;
+      }
+
+      formData.set("image", urlResult.publicUrl);
+    }
+    formData.delete("file");
+
+    formAction(formData);
+  };
+
   return (
-    <form action={formAction} className="grid grid-cols-1 gap-3 bg-ivory p-4 sm:grid-cols-2">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 bg-ivory p-4 sm:grid-cols-2">
       {initialValues?.id && <input type="hidden" name="id" defaultValue={initialValues.id} />}
 
       <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
@@ -91,6 +132,21 @@ function RegistryItemForm({
       </label>
 
       <label className="flex flex-col gap-1.5 text-xs text-foreground/60 sm:col-span-2">
+        …or upload a photo
+        <input
+          name="file"
+          type="file"
+          accept="image/*,.heic,.heif"
+          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none file:mr-3 file:border-0 file:bg-burnt-orange file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ivory"
+        />
+        {initialValues?.image && (
+          <span className="mt-1 text-[11px] text-foreground/50">
+            Leave blank to keep the current image
+          </span>
+        )}
+      </label>
+
+      <label className="flex flex-col gap-1.5 text-xs text-foreground/60 sm:col-span-2">
         Buy link (optional)
         <input
           name="externalUrl"
@@ -99,7 +155,9 @@ function RegistryItemForm({
         />
       </label>
 
-      {state?.error && <p className="text-xs text-burnt-orange sm:col-span-2">{state.error}</p>}
+      {(uploadError || state?.error) && (
+        <p className="text-xs text-burnt-orange sm:col-span-2">{uploadError || state?.error}</p>
+      )}
 
       <div className="flex gap-2 sm:col-span-2">
         <button
@@ -111,10 +169,10 @@ function RegistryItemForm({
         </button>
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || uploading}
           className="bg-burnt-orange px-4 py-2 text-xs font-medium text-ivory transition-colors hover:bg-burnt-orange-dark disabled:opacity-60"
         >
-          {pending ? "Saving…" : submitLabel}
+          {uploading ? "Uploading…" : pending ? "Saving…" : submitLabel}
         </button>
       </div>
     </form>
