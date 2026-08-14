@@ -1,12 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import type { RsvpView } from "@/lib/types";
+import { deleteRsvp } from "@/lib/actions/rsvp";
+import { useConfirm } from "./use-confirm";
+import { useActionPending } from "./use-action-pending";
 
 export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
   const attendingGuests = rsvps
     .filter((r) => r.attending)
     .reduce((sum, r) => sum + r.guestCount, 0);
   const declinedCount = rsvps.filter((r) => !r.attending).length;
+  const [deleteError, setDeleteError] = useState("");
+  const { confirm, confirmDialog } = useConfirm();
+  const { run, isPending } = useActionPending();
+
+  const handleDelete = async (id: string, name: string) => {
+    const ok = await confirm({
+      title: `Delete "${name}"?`,
+      description: "This can't be undone.",
+    });
+    if (!ok) return;
+    setDeleteError("");
+    await run(id, "delete", async () => {
+      const result = await deleteRsvp(id);
+      if (result.error) setDeleteError(result.error);
+    });
+  };
 
   return (
     <div>
@@ -25,6 +45,8 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
 
       <h2 className="mb-5 font-(family-name:--serif) text-2xl text-foreground">RSVPs</h2>
 
+      {deleteError && <p className="mb-3 text-xs text-burnt-orange">{deleteError}</p>}
+
       {rsvps.length === 0 ? (
         <p className="text-sm text-foreground/60">No responses yet.</p>
       ) : (
@@ -37,6 +59,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
                 <th className="px-4 py-3 font-medium">Guests</th>
                 <th className="px-4 py-3 font-medium">Message</th>
                 <th className="px-4 py-3 font-medium">Submitted</th>
+                <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -53,12 +76,23 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
                   <td className="px-4 py-3 text-foreground/70">{r.attending ? r.guestCount : "—"}</td>
                   <td className="px-4 py-3 text-foreground/70">{r.message || "—"}</td>
                   <td className="px-4 py-3 text-foreground/70">{r.dateSubmitted}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      disabled={isPending(r.id)}
+                      onClick={() => handleDelete(r.id, r.guestName)}
+                      className="text-xs text-foreground/60 hover:text-burnt-orange disabled:opacity-60"
+                    >
+                      {isPending(r.id, "delete") ? "Deleting…" : "Delete"}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }
