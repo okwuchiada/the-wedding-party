@@ -98,7 +98,7 @@ export default function GiftCard({
 
   const handleContribution = () => {
     if (amountCents < minChipInCents) {
-      setError(`Minimum chip-in is ${formatNaira(minChipInCents)}`);
+      setError(`Minimum contribution is ${formatNaira(minChipInCents)}`);
       return;
     }
     submitContributionOf(amountCents);
@@ -144,11 +144,20 @@ export default function GiftCard({
                 <div className="mb-2 text-[10.5px] tracking-[.2em] text-burnt-orange uppercase">
                   Transfer to the couple
                 </div>
+                <p className="mb-3 text-[12.5px] leading-relaxed text-foreground/70">
+                  Contribute any amount toward this gift — other guests may
+                  be chipping in too. Transfer below with your bank app,
+                  then confirm here.
+                </p>
                 <CopyRow label="Account name" value={bankDetails.name} />
                 <CopyRow label="Bank" value={bankDetails.bank} />
                 <CopyRow label="Account no." value={bankDetails.account} />
                 {/* <CopyRow label="Routing" value={bankDetails.routing} /> */}
                 <CopyRow label="Reference" value={gift.name} />
+                <p className="mt-1.5 text-[10.5px] text-foreground/50">
+                  Use this exact reference on your transfer — it&apos;s how
+                  we match your payment to this gift.
+                </p>
 
                 <input
                   placeholder="Your name"
@@ -221,6 +230,10 @@ export default function GiftCard({
                 <CopyRow label="Account no." value={bankDetails.account} />
                 {/* <CopyRow label="Routing" value={bankDetails.routing} /> */}
                 <CopyRow label="Reference" value={gift.name} />
+                <p className="mt-1.5 text-[10.5px] text-foreground/50">
+                  Use this exact reference on your transfer — it&apos;s how
+                  we match your payment to this gift.
+                </p>
                 <div className="flex items-baseline justify-between gap-3 border-b border-olive/20 py-2">
                   <span className="text-[10.5px] uppercase tracking-[.16em] text-foreground/55">
                     Amount
@@ -284,7 +297,7 @@ export default function GiftCard({
               onClick={() => setAction("CHIPIN")}
               className="bg-burnt-orange px-4 py-2.5 text-center text-xs font-medium text-ivory transition-colors hover:bg-burnt-orange-dark"
             >
-              Chip In
+              Contribute More
             </button>
           ) : (
             <div className="grid grid-cols-2 gap-2">
@@ -311,7 +324,7 @@ export default function GiftCard({
                 onClick={() => setAction("CHIPIN")}
                 className="border border-olive/30 px-2 py-2.5 text-center text-[11px] font-medium text-foreground transition-colors hover:border-burnt-orange hover:text-burnt-orange"
               >
-                Chip In
+                Contribute
               </button>
             </div>
           )}

@@ -25,6 +25,11 @@ export default function RsvpForm() {
   return (
     <div className="mx-auto max-w-xl">
       <form action={formAction} className="flex flex-col gap-3">
+        <div style={{ position: "absolute", left: "-9999px", top: "-9999px" }} aria-hidden="true">
+          <label htmlFor="website">Website</label>
+          <input type="text" id="website" name="website" tabIndex={-1} autoComplete="off" />
+        </div>
+
         <input
           placeholder="Your name"
           name="guestName"

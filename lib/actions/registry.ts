@@ -2,7 +2,32 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { createPresignedUploadUrl } from "@/lib/s3";
 import { verifySession } from "@/lib/dal";
+
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
+
+export type CreateRegistryItemUploadUrlState =
+  | { error?: string; uploadUrl?: string; publicUrl?: string }
+  | undefined;
+
+export async function createRegistryItemUploadUrl(
+  fileName: string,
+  fileType: string,
+  fileSize: number
+): Promise<CreateRegistryItemUploadUrlState> {
+  await verifySession();
+
+  if (!fileType.startsWith("image/")) {
+    return { error: "Only image files are allowed" };
+  }
+  if (fileSize > MAX_FILE_SIZE) {
+    return { error: "Image is over the 25MB limit" };
+  }
+
+  const { uploadUrl, publicUrl } = await createPresignedUploadUrl("registry", fileName, fileType);
+  return { uploadUrl, publicUrl };
+}
 
 export type RegistryItemFormState = { error?: string; success?: boolean } | undefined;
 
@@ -24,7 +49,7 @@ function parseRegistryItemForm(formData: FormData) {
     return { error: "Enter a valid price" } as const;
   }
   if (typeof image !== "string" || !image.trim()) {
-    return { error: "Image URL is required" } as const;
+    return { error: "An image URL or uploaded photo is required" } as const;
   }
 
   return {

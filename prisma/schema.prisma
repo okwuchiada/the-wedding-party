@@ -101,7 +101,11 @@ model Rsvp {
   attending  Boolean
   guestCount Int      @default(1)
   message    String?
+  ipAddress  String?
+  userAgent  String?
   createdAt  DateTime @default(now())
+
+  @@index([ipAddress, createdAt])
 }
 
 model StoryPhoto {
