@@ -76,6 +76,7 @@ export type RsvpView = {
   guestCount: number;
   message: string | null;
   dateSubmitted: string;
+  confirmationSentAt: string | null;
 };
 
 export type BankDetailsView = {

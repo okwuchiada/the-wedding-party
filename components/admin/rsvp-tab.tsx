@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { RsvpView } from "@/lib/types";
-import { deleteRsvp } from "@/lib/actions/rsvp";
+import { deleteRsvp, sendRsvpConfirmation } from "@/lib/actions/rsvp";
 import { useConfirm } from "./use-confirm";
 import { useActionPending } from "./use-action-pending";
 
@@ -12,6 +12,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
     .reduce((sum, r) => sum + r.guestCount, 0);
   const declinedCount = rsvps.filter((r) => !r.attending).length;
   const [deleteError, setDeleteError] = useState("");
+  const [sendError, setSendError] = useState("");
   const { confirm, confirmDialog } = useConfirm();
   const { run, isPending } = useActionPending();
 
@@ -25,6 +26,14 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
     await run(id, "delete", async () => {
       const result = await deleteRsvp(id);
       if (result.error) setDeleteError(result.error);
+    });
+  };
+
+  const handleSend = async (id: string) => {
+    setSendError("");
+    await run(id, "send", async () => {
+      const result = await sendRsvpConfirmation(id);
+      if (result.error) setSendError(result.error);
     });
   };
 
@@ -46,6 +55,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
       <h2 className="mb-5 font-(family-name:--serif) text-2xl text-foreground">RSVPs</h2>
 
       {deleteError && <p className="mb-3 text-xs text-burnt-orange">{deleteError}</p>}
+      {sendError && <p className="mb-3 text-xs text-burnt-orange">{sendError}</p>}
 
       {rsvps.length === 0 ? (
         <p className="text-sm text-foreground/60">No responses yet.</p>
@@ -59,6 +69,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
                 <th className="px-4 py-3 font-medium">Guests</th>
                 <th className="px-4 py-3 font-medium">Message</th>
                 <th className="px-4 py-3 font-medium">Submitted</th>
+                <th className="px-4 py-3 font-medium">Confirmation</th>
                 <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
@@ -76,6 +87,20 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
                   <td className="px-4 py-3 text-foreground/70">{r.attending ? r.guestCount : "—"}</td>
                   <td className="px-4 py-3 text-foreground/70">{r.message || "—"}</td>
                   <td className="px-4 py-3 text-foreground/70">{r.dateSubmitted}</td>
+                  <td className="px-4 py-3">
+                    {r.confirmationSentAt ? (
+                      <span className="text-xs text-olive">Sent {r.confirmationSentAt}</span>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isPending(r.id)}
+                        onClick={() => handleSend(r.id)}
+                        className="bg-burnt-orange px-3 py-1.5 text-xs font-medium text-ivory hover:bg-burnt-orange-dark disabled:opacity-60"
+                      >
+                        {isPending(r.id, "send") ? "Sending…" : "Send confirmation"}
+                      </button>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <button
                       type="button"

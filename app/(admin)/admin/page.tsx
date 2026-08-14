@@ -145,6 +145,9 @@ export default async function AdminPage() {
         guestCount: r.guestCount,
         message: r.message,
         dateSubmitted: r.createdAt.toISOString().slice(0, 10),
+        confirmationSentAt: r.confirmationSentAt
+          ? r.confirmationSentAt.toISOString().slice(0, 10)
+          : null,
       }))}
       bankDetails={
         bankDetails ?? { name: "", bank: "", account: "", routing: "", swift: null }
