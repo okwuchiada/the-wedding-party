@@ -32,7 +32,7 @@ const BLOCKED_HTML = `<!doctype html>
     </style>
   </head>
   <body>
-    <p>This site is currently only available to guests in Nigeria. If you're joining us from abroad, please reach out to us directly.</p>
+    <p>This site is currently unavailable in your country. Please reach out to us directly for more information.</p>
   </body>
 </html>`;
 
@@ -58,7 +58,10 @@ export function proxy(request: NextRequest) {
     return response;
   }
 
-  if (bypassToken && request.cookies.get(BYPASS_COOKIE)?.value === bypassToken) {
+  if (
+    bypassToken &&
+    request.cookies.get(BYPASS_COOKIE)?.value === bypassToken
+  ) {
     return NextResponse.next();
   }
 
