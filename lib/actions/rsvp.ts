@@ -98,29 +98,41 @@ export async function submitRsvp(
 
   revalidatePath("/admin");
 
-  const story = await prisma.storyContent.findUnique({ where: { id: "main" } });
-  if (story) {
-    await sendMail({
-      to: trimmedEmail,
-      ...rsvpConfirmationEmail({
-        guestName: guestName.trim(),
-        attending,
-        brideName: story.brideName,
-        groomName: story.groomName,
-        weddingDate: story.weddingDate,
-        location: story.location,
-        venueAddress: story.venueAddress,
-        bridePhone: story.bridePhone,
-      }),
-    });
-  }
-
   return { success: true, guestName: guestName.trim(), attending };
 }
 
 export async function deleteRsvp(id: string): Promise<{ error?: string }> {
   await verifySession();
   await prisma.rsvp.delete({ where: { id } });
+  revalidatePath("/admin");
+  return {};
+}
+
+export async function sendRsvpConfirmation(id: string): Promise<{ error?: string }> {
+  await verifySession();
+
+  const rsvp = await prisma.rsvp.findUnique({ where: { id } });
+  if (!rsvp) return { error: "RSVP not found" };
+  if (rsvp.confirmationSentAt) return { error: "Confirmation already sent" };
+
+  const story = await prisma.storyContent.findUnique({ where: { id: "main" } });
+  if (!story) return { error: "Story details not configured" };
+
+  await sendMail({
+    to: rsvp.email,
+    ...rsvpConfirmationEmail({
+      guestName: rsvp.guestName,
+      attending: rsvp.attending,
+      brideName: story.brideName,
+      groomName: story.groomName,
+      weddingDate: story.weddingDate,
+      location: story.location,
+      venueAddress: story.venueAddress,
+      bridePhone: story.bridePhone,
+    }),
+  });
+
+  await prisma.rsvp.update({ where: { id }, data: { confirmationSentAt: new Date() } });
   revalidatePath("/admin");
   return {};
 }
