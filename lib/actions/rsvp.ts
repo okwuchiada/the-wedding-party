@@ -28,13 +28,16 @@ export async function submitRsvp(
   formData: FormData
 ): Promise<SubmitRsvpState> {
   const honeypot = formData.get("website");
-  const guestName = formData.get("guestName");
+  const firstName = formData.get("firstName");
+  const lastName = formData.get("lastName");
   const attendingRaw = formData.get("attending");
 
   if (typeof honeypot === "string" && honeypot.trim() !== "") {
+    const trimmedFirst =
+      typeof firstName === "string" && firstName.trim() ? firstName.trim() : "Guest";
     return {
       success: true,
-      guestName: typeof guestName === "string" && guestName.trim() ? guestName.trim() : "Guest",
+      guestName: trimmedFirst,
       attending: attendingRaw === "yes",
     };
   }
@@ -59,9 +62,14 @@ export async function submitRsvp(
   const email = formData.get("email");
   const message = formData.get("message");
 
-  if (typeof guestName !== "string" || !guestName.trim()) {
-    return { error: "Please enter your name" };
+  if (typeof firstName !== "string" || !firstName.trim()) {
+    return { error: "Please enter your first name" };
   }
+  if (typeof lastName !== "string" || !lastName.trim()) {
+    return { error: "Please enter your last name" };
+  }
+
+  const guestName = `${firstName.trim()} ${lastName.trim()}`;
   if (typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
     return { error: "Please enter a valid email" };
   }
@@ -86,7 +94,7 @@ export async function submitRsvp(
 
   await prisma.rsvp.create({
     data: {
-      guestName: guestName.trim(),
+      guestName,
       email: trimmedEmail,
       attending,
       guestCount: 1,
@@ -98,7 +106,7 @@ export async function submitRsvp(
 
   revalidatePath("/admin");
 
-  return { success: true, guestName: guestName.trim(), attending };
+  return { success: true, guestName: firstName.trim(), attending };
 }
 
 export async function deleteRsvp(id: string): Promise<{ error?: string }> {

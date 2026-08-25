@@ -30,11 +30,20 @@ export default function RsvpForm() {
           <input type="text" id="website" name="website" tabIndex={-1} autoComplete="off" />
         </div>
 
-        <input
-          placeholder="Your name"
-          name="guestName"
-          className="w-full border border-olive/20 bg-white px-4 py-3 text-sm outline-none"
-        />
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            placeholder="First name"
+            name="firstName"
+            autoComplete="given-name"
+            className="w-full border border-olive/20 bg-white px-4 py-3 text-sm outline-none"
+          />
+          <input
+            placeholder="Last name"
+            name="lastName"
+            autoComplete="family-name"
+            className="w-full border border-olive/20 bg-white px-4 py-3 text-sm outline-none"
+          />
+        </div>
 
         <input
           type="email"
