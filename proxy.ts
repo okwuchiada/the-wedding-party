@@ -6,7 +6,8 @@ const BYPASS_COOKIE = "geo-bypass";
 const BYPASS_PARAM = "access";
 const BYPASS_MAX_AGE = 60 * 60 * 24 * 90; // 90 days
 
-const BLOCKED_HTML = `<!doctype html>
+function renderBlockedHtml(showError: boolean) {
+  return `<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -25,16 +26,56 @@ const BLOCKED_HTML = `<!doctype html>
         font-family: Georgia, serif;
         text-align: center;
       }
-      p {
+      main {
         max-width: 32rem;
+      }
+      p {
         line-height: 1.6;
+      }
+      form {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 20px;
+      }
+      input {
+        font-family: Georgia, serif;
+        font-size: 1rem;
+        padding: 10px 12px;
+        border: 1px solid #cbb89d;
+        border-radius: 4px;
+        background: #fff;
+        color: #3a2e28;
+      }
+      button {
+        font-family: Georgia, serif;
+        font-size: 1rem;
+        padding: 10px 16px;
+        border: 1px solid #3a2e28;
+        border-radius: 4px;
+        background: #3a2e28;
+        color: #faf6f0;
+        cursor: pointer;
+      }
+      .error {
+        color: #a33b2c;
+        margin-top: 12px;
+        font-size: 0.9rem;
       }
     </style>
   </head>
   <body>
-    <p>This site is currently unavailable in your country. Please reach out to us directly for more information.</p>
+    <main>
+      <p>This site is currently unavailable in your country. If you have an access code, please enter it below.</p>
+      <form method="GET">
+        <input type="text" name="${BYPASS_PARAM}" placeholder="Access code" autocomplete="off" required />
+        <button type="submit">Enter</button>
+      </form>
+      ${showError ? `<p class="error">That code didn't work. Please try again or reach out to us directly.</p>` : ""}
+    </main>
   </body>
 </html>`;
+}
 
 export function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
@@ -71,7 +112,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  return new NextResponse(BLOCKED_HTML, {
+  const showError = Boolean(providedToken);
+
+  return new NextResponse(renderBlockedHtml(showError), {
     status: 403,
     headers: { "content-type": "text/html; charset=utf-8" },
   });
