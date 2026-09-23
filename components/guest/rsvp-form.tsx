@@ -25,9 +25,21 @@ export default function RsvpForm() {
   return (
     <div className="mx-auto max-w-xl">
       <form action={formAction} className="flex flex-col gap-3">
+        {/* Honeypot. The name and label are deliberately meaningless so browser and
+            password-manager autofill leave it empty for real guests. */}
         <div style={{ position: "absolute", left: "-9999px", top: "-9999px" }} aria-hidden="true">
-          <label htmlFor="website">Website</label>
-          <input type="text" id="website" name="website" tabIndex={-1} autoComplete="off" />
+          <label htmlFor="hp_rsvp_x7">Leave this empty</label>
+          <input
+            type="text"
+            id="hp_rsvp_x7"
+            name="hp_rsvp_x7"
+            tabIndex={-1}
+            autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
+            data-bwignore
+            data-form-type="other"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">

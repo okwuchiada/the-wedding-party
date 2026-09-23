@@ -72,6 +72,7 @@ export type HiddenMediaView = {
 export type RsvpView = {
   id: string;
   guestName: string;
+  email: string;
   attending: boolean;
   guestCount: number;
   message: string | null;
