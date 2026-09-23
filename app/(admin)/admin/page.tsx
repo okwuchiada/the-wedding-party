@@ -141,6 +141,7 @@ export default async function AdminPage() {
       rsvps={rsvps.map((r) => ({
         id: r.id,
         guestName: r.guestName,
+        email: r.email,
         attending: r.attending,
         guestCount: r.guestCount,
         message: r.message,
