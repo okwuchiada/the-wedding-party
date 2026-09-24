@@ -45,7 +45,7 @@ export default function ConfirmModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm bg-white p-6 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]"
+        className="w-full max-w-sm bg-white p-6 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]"
       >
         <h2 id="confirm-modal-title" className="font-(family-name:--serif) text-xl text-foreground">
           {title}

@@ -6,7 +6,7 @@ export default function OurStorySkeleton() {
       <div className="mx-auto w-full max-w-2xl lg:w-auto lg:min-w-xl">
         <div className="flex items-center gap-4">
           <div className="h-10 w-10 shrink-0" />
-          <div className="w-full bg-white p-3 pb-0 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+          <div className="w-full bg-white p-3 pb-0 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
             <Pulse className="aspect-4/3 w-full" />
             <div className="px-4 pt-5 pb-6">
               <Pulse className="mx-auto h-3 w-2/3" />

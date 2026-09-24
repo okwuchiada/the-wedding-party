@@ -20,7 +20,7 @@ export default function Polaroid({
   return (
     <figure
       style={{ ["--r" as string]: `${rotate}deg`, width } as React.CSSProperties}
-      className={`rotate-(--r) bg-white pt-3 px-3 pb-0 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)] transition-transform duration-400 ease-[cubic-bezier(.2,.7,.2,1)] hover:rotate-[calc(var(--r)/2)] hover:scale-[1.03] ${className ?? ""}`}
+      className={`rotate-(--r) bg-white pt-3 px-3 pb-0 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)] transition-transform duration-400 ease-[cubic-bezier(.2,.7,.2,1)] hover:rotate-[calc(var(--r)/2)] hover:scale-[1.03] ${className ?? ""}`}
     >
       <div style={{ height }} className="relative overflow-hidden bg-olive/10">
         <Image src={src} alt={alt} fill sizes={`${width}px`} className="object-cover" loading="eager" />

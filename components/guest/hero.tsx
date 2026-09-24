@@ -1,12 +1,14 @@
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
-import { getStory } from "@/lib/tenant";
+import { copyText } from "@/lib/copy";
+import { getStory, getWeddingById } from "@/lib/tenant";
 import CountdownBar from "./countdown-bar";
 import Polaroid from "./polaroid";
 
 export default async function Hero({ weddingId }: { weddingId: string }) {
-  const [story, photos] = await Promise.all([
+  const [story, wedding, photos] = await Promise.all([
     getStory(weddingId),
+    getWeddingById(weddingId),
     prisma.storyPhoto.findMany({
       where: { weddingId, showInHero: true },
       orderBy: { order: "asc" },
@@ -18,8 +20,9 @@ export default async function Hero({ weddingId }: { weddingId: string }) {
   const groomName = story?.groomName ?? "";
   const tagline = story?.tagline ?? "";
   const location = story?.location ?? "";
-  const heroPhotoUrl = "/images/hero.jpg";
+  const heroPhotoUrl = story?.heroPhotoUrl ?? null;
   const weddingDateISO = (story?.weddingDate ?? new Date()).toISOString();
+  const year = new Date(weddingDateISO).getUTCFullYear();
 
   const weddingDate = new Date(weddingDateISO).toLocaleDateString("en-US", {
     weekday: "long",
@@ -72,8 +75,7 @@ export default async function Hero({ weddingId }: { weddingId: string }) {
           </h1>
 
           <p className="mt-6 max-w-md text-base text-foreground/80 sm:text-lg">
-            We&apos;re getting married and we&apos;d be honored to have you
-            celebrate with us.
+            {copyText(wedding.copy, "heroIntro")}
           </p>
 
           <div className="mt-8 mb-3 flex flex-wrap items-center gap-4">
@@ -144,7 +146,7 @@ export default async function Hero({ weddingId }: { weddingId: string }) {
             />
           )}
           <span className="absolute -top-2 right-[30%] rotate-[8deg] font-(family-name:--serif) text-xl italic text-burnt-orange opacity-90">
-            est. 2026 &#9825;
+            {copyText(wedding.copy, "heroEyebrow", { year })}
           </span>
         </div>
       </div>

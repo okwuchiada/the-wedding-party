@@ -13,12 +13,10 @@ import { saveBankDetails } from "@/lib/actions/bank-details";
 import { convertHeicToJpeg } from "@/lib/heic";
 import { compressImage } from "@/lib/image-compress";
 import { useConfirm } from "./use-confirm";
-import { useAdminWeddingId } from "./wedding-context";
+import { currencySymbol, formatMoney } from "@/lib/money";
+import { useAdminMoney, useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
 
-function formatNaira(cents: number) {
-  return `₦${(cents / 100).toLocaleString("en-NG")}`;
-}
 
 function sumContributions(contributions: { amountCents: number }[]) {
   return contributions.reduce((sum, c) => sum + c.amountCents, 0);
@@ -45,6 +43,7 @@ function RegistryItemForm({
   submitLabel: string;
 }) {
   const weddingId = useAdminWeddingId();
+  const money = useAdminMoney();
   const [state, formAction, pending] = useActionState(action, undefined);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -113,7 +112,7 @@ function RegistryItemForm({
       </label>
 
       <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-        Price (₦)
+        Price ({currencySymbol(money)})
         <input
           name="price"
           type="number"
@@ -269,6 +268,7 @@ export default function RegistryTab({
   bankDetails: BankDetailsView;
 }) {
   const weddingId = useAdminWeddingId();
+  const money = useAdminMoney();
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBank, setEditingBank] = useState(false);
@@ -390,9 +390,9 @@ export default function RegistryTab({
                 <tr key={item.id} className="border-b border-olive/10 last:border-0">
                   <td className="px-4 py-3 text-foreground">{item.name}</td>
                   <td className="px-4 py-3 text-foreground/70">{item.category}</td>
-                  <td className="px-4 py-3 text-foreground/70">{formatNaira(item.priceCents)}</td>
+                  <td className="px-4 py-3 text-foreground/70">{formatMoney(item.priceCents, money)}</td>
                   <td className="px-4 py-3 text-foreground/70">
-                    {formatNaira(sumContributions(item.contributions))}
+                    {formatMoney(sumContributions(item.contributions), money)}
                   </td>
                   <td className="px-4 py-3 text-foreground/70">{item.claimedBy ?? "—"}</td>
                   <td className="px-4 py-3">

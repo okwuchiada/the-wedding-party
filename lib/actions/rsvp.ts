@@ -3,8 +3,8 @@
 import { headers } from "next/headers";
 import type { ScopedPrisma } from "@/lib/db-scoped";
 import { requireWeddingAccess } from "@/lib/dal";
-import { resolveGuestAction, revalidateDashboard } from "@/lib/tenant";
-import { sendMail, rsvpConfirmationEmail } from "@/lib/mail";
+import { getWeddingById, resolveGuestAction, revalidateDashboard, weddingTheme } from "@/lib/tenant";
+import { emailPalette, sendMail, rsvpConfirmationEmail } from "@/lib/mail";
 import { getClientIp } from "@/lib/request";
 
 export type SubmitRsvpState =
@@ -338,7 +338,10 @@ export async function sendRsvpConfirmation(
   if (rsvp.confirmationSentAt) return { error: "Confirmation already sent" };
   if (!rsvp.email) return { error: "This guest has no email address" };
 
-  const story = await db.storyContent.findUnique({ where: { weddingId: wedding.id } });
+  const [story, settings] = await Promise.all([
+    db.storyContent.findUnique({ where: { weddingId: wedding.id } }),
+    getWeddingById(wedding.id),
+  ]);
   if (!story) return { error: "Story details not configured" };
 
   await sendMail({
@@ -352,6 +355,12 @@ export async function sendRsvpConfirmation(
       location: story.location,
       venueAddress: story.venueAddress,
       bridePhone: story.bridePhone,
+      phoneCountryCode: settings.phoneCountryCode,
+      asoebi: {
+        enabled: settings.copy?.asoebiEnabled ?? false,
+        fabric: settings.copy?.asoebiFabric ?? null,
+      },
+      palette: emailPalette(weddingTheme(settings).colors),
     }),
   });
 

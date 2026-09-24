@@ -1,5 +1,7 @@
 import { Suspense } from "react";
+import { copyText } from "@/lib/copy";
 import { prisma } from "@/lib/prisma";
+import { getWeddingById } from "@/lib/tenant";
 import CopyRow from "./copy-row";
 import MonetaryGiftSkeleton from "./monetary-gift-skeleton";
 
@@ -9,7 +11,7 @@ async function MonetaryGiftCard({ weddingId }: { weddingId: string }) {
   if (!bankDetails?.account) return null;
 
   return (
-    <div className="bg-olive-dark p-9 text-ivory shadow-[0_26px_50px_-28px_rgba(58,46,40,0.55)] sm:rotate-[-0.6deg]">
+    <div className="bg-olive-dark p-9 text-ivory shadow-[0_26px_50px_-28px_rgb(var(--ink)/0.55)] sm:rotate-[-0.6deg]">
       <div className="font-(family-name:--serif) text-2xl italic">
         Account Details
       </div>
@@ -31,7 +33,8 @@ async function MonetaryGiftCard({ weddingId }: { weddingId: string }) {
   );
 }
 
-export default function MonetaryGift({ weddingId }: { weddingId: string }) {
+export default async function MonetaryGift({ weddingId }: { weddingId: string }) {
+  const wedding = await getWeddingById(weddingId);
   return (
     <section id="monetary-gift" className="bg-ivory pl-4 py-20 sm:py-28">
       <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-[0.9fr_1.1fr]">
@@ -43,8 +46,7 @@ export default function MonetaryGift({ weddingId }: { weddingId: string }) {
             A Monetary Gift
           </h2>
           <p className="mt-4.5 max-w-md text-base text-foreground/80">
-            Should you wish to gift outside of our registry, bank transfers
-            toward our future together are warmly welcomed.
+            {copyText(wedding.copy, "giftIntro")}
           </p>
         </div>
 

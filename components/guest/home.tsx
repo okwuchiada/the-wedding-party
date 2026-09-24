@@ -28,7 +28,7 @@ export default function GuestHome({ weddingId, slug }: { weddingId: string; slug
         {/* <CoupleGallery weddingId={weddingId} /> */}
         <Registry weddingId={weddingId} />
         <MonetaryGift weddingId={weddingId} />
-        <Rsvp />
+        <Rsvp weddingId={weddingId} />
       </main>
       <Suspense fallback={<FooterSkeleton />}>
         <Footer weddingId={weddingId} />

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { getStory } from "@/lib/tenant";
+import { copyText } from "@/lib/copy";
+import { getStory, getWeddingById } from "@/lib/tenant";
 import LoveNotesSkeleton from "./love-notes-skeleton";
 
 function LoveNoteCard({
@@ -16,7 +17,7 @@ function LoveNoteCard({
   return (
     <figure
       style={{ ["--r" as string]: `${tilt}deg` } as React.CSSProperties}
-      className="rotate-(--r) border border-olive/15 bg-white p-8 pb-7 shadow-[0_20px_44px_-24px_rgba(58,46,40,0.4)]"
+      className="rotate-(--r) border border-olive/15 bg-white p-8 pb-7 shadow-[0_20px_44px_-24px_rgb(var(--ink)/0.4)]"
     >
       <div className="mb-4 text-xs uppercase tracking-[0.2em] text-olive">
         {/* To {to}, from {from} */}
@@ -72,7 +73,8 @@ async function LoveNotesContent({ weddingId }: { weddingId: string }) {
   );
 }
 
-export default function LoveNotes({ weddingId }: { weddingId: string }) {
+export default async function LoveNotes({ weddingId }: { weddingId: string }) {
+  const wedding = await getWeddingById(weddingId);
   return (
     <section id="love-notes" className="bg-cream px-4 py-20 sm:px-6 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
@@ -83,8 +85,7 @@ export default function LoveNotes({ weddingId }: { weddingId: string }) {
           Love Notes to Each Other
         </h2>
         <p className="mt-4 text-base text-foreground/70">
-          A few words we wanted to say to one another, out loud, before the day
-          arrives.
+          {copyText(wedding.copy, "loveNotesIntro")}
         </p>
       </div>
 

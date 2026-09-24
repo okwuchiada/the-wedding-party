@@ -56,7 +56,7 @@ export default async function DashboardIndexPage() {
             {weddings.map((wedding) => (
               <li
                 key={wedding.id}
-                className="flex flex-wrap items-center justify-between gap-3 bg-white p-5 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]"
+                className="flex flex-wrap items-center justify-between gap-3 bg-white p-5 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]"
               >
                 <div>
                   <Link

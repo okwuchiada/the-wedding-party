@@ -1,5 +1,7 @@
 import { Suspense } from "react";
+import { copyText } from "@/lib/copy";
 import { prisma } from "@/lib/prisma";
+import { getWeddingById } from "@/lib/tenant";
 import RegistryGrid from "./registry-grid";
 import RegistrySkeleton from "./registry-skeleton";
 
@@ -23,7 +25,8 @@ async function RegistryContent({ weddingId }: { weddingId: string }) {
   );
 }
 
-export default function Registry({ weddingId }: { weddingId: string }) {
+export default async function Registry({ weddingId }: { weddingId: string }) {
+  const wedding = await getWeddingById(weddingId);
   return (
     <section id="registry" className="bg-ivory px-4 py-20 sm:px-6 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
@@ -34,11 +37,7 @@ export default function Registry({ weddingId }: { weddingId: string }) {
           A few things we&apos;d love
         </h2>
         <p className="mt-6 text-base text-foreground/80 sm:text-lg">
-          Your presence at our wedding is the greatest gift of all. If you wish
-          to celebrate with us further, we&apos;ve put together a small list of
-          things for our new home. Buy an item outright, or contribute any
-          amount toward one — several guests can pitch in together until it&apos;s
-          fully funded.
+          {copyText(wedding.copy, "registryIntro")}
         </p>
       </div>
 

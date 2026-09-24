@@ -9,6 +9,8 @@
   --burnt-orange-dark: #9c3709;
   --ivory: #fdf6ec;
   --cream: #f0ead9;
+  /* Shadow color as an RGB triplet, e.g. rgb(var(--ink) / 0.45) */
+  --ink: 58 46 40;
 }
 
 @theme inline {
@@ -20,7 +22,7 @@
   --color-burnt-orange-dark: var(--burnt-orange-dark);
   --color-ivory: var(--ivory);
   --color-cream: var(--cream);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--sans);
   --font-mono: var(--font-geist-mono);
 }
 

@@ -1,22 +1,27 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import type { MoneyFormat } from "@/lib/money";
 
-const AdminWeddingContext = createContext<string | null>(null);
+type AdminWedding = { weddingId: string; money: MoneyFormat };
 
-export function AdminWeddingProvider({
-  weddingId,
-  children,
-}: {
-  weddingId: string;
-  children: React.ReactNode;
-}) {
-  return <AdminWeddingContext.Provider value={weddingId}>{children}</AdminWeddingContext.Provider>;
+const AdminWeddingContext = createContext<AdminWedding | null>(null);
+
+export function AdminWeddingProvider({ children, ...value }: AdminWedding & { children: React.ReactNode }) {
+  return <AdminWeddingContext.Provider value={value}>{children}</AdminWeddingContext.Provider>;
+}
+
+function useAdminWedding() {
+  const ctx = useContext(AdminWeddingContext);
+  if (!ctx) throw new Error("Admin components must be used inside AdminWeddingProvider");
+  return ctx;
 }
 
 /** The wedding being managed; every admin server action takes it first. */
 export function useAdminWeddingId() {
-  const weddingId = useContext(AdminWeddingContext);
-  if (!weddingId) throw new Error("useAdminWeddingId must be used inside AdminWeddingProvider");
-  return weddingId;
+  return useAdminWedding().weddingId;
+}
+
+export function useAdminMoney() {
+  return useAdminWedding().money;
 }

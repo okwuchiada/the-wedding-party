@@ -2,7 +2,7 @@ import { Pulse } from "@/components/skeleton";
 
 function LoveNoteCardSkeleton() {
   return (
-    <div className="border border-olive/15 bg-white p-8 pb-7 shadow-[0_20px_44px_-24px_rgba(58,46,40,0.4)]">
+    <div className="border border-olive/15 bg-white p-8 pb-7 shadow-[0_20px_44px_-24px_rgb(var(--ink)/0.4)]">
       <Pulse className="h-2.5 w-40" />
       <Pulse className="mt-5 h-4 w-full" />
       <Pulse className="mt-2 h-4 w-11/12" />

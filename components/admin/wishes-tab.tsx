@@ -29,7 +29,7 @@ export default function WishesTab({
       ) : (
         <div className="flex flex-col gap-4">
           {pending.map((wish) => (
-            <div key={wish.id} className="flex items-start justify-between gap-4 bg-white p-4 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+            <div key={wish.id} className="flex items-start justify-between gap-4 bg-white p-4 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
               <div>
                 <p className="font-(family-name:--serif) text-base text-foreground italic">&ldquo;{wish.message}&rdquo;</p>
                 <p className="mt-2 text-xs text-foreground/60">
@@ -66,7 +66,7 @@ export default function WishesTab({
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {approved.map((wish) => (
-            <div key={wish.id} className="bg-white p-4 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+            <div key={wish.id} className="bg-white p-4 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
               <p className="font-(family-name:--serif) text-base text-foreground italic">&ldquo;{wish.message}&rdquo;</p>
               <p className="mt-2 text-xs text-foreground/60">— {wish.guestName}</p>
             </div>
@@ -85,7 +85,7 @@ export default function WishesTab({
       ) : (
         <div className="flex flex-col gap-4">
           {hidden.map((wish) => (
-            <div key={wish.id} className="flex items-start justify-between gap-4 bg-white p-4 opacity-70 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+            <div key={wish.id} className="flex items-start justify-between gap-4 bg-white p-4 opacity-70 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
               <div>
                 <p className="font-(family-name:--serif) text-base text-foreground italic">&ldquo;{wish.message}&rdquo;</p>
                 <p className="mt-2 text-xs text-foreground/60">

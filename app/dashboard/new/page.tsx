@@ -19,7 +19,7 @@ export default async function NewWeddingPage() {
           Your site starts as a private draft. You can preview it and fill in the details before
           publishing.
         </p>
-        <div className="mt-8 bg-white p-6 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+        <div className="mt-8 bg-white p-6 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
           <CreateWeddingForm />
         </div>
       </div>

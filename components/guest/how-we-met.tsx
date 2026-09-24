@@ -33,7 +33,7 @@ async function HowWeMetContent({ weddingId }: { weddingId: string }) {
               >
                 <figure
                   style={{ ["--r" as string]: `${tilt}deg` } as React.CSSProperties}
-                  className="w-60 rotate-(--r) bg-white p-3 pb-0 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.4)]"
+                  className="w-60 rotate-(--r) bg-white p-3 pb-0 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.4)]"
                 >
                   <div className="relative h-52 w-full overflow-hidden bg-olive/10">
                     {beat.photoUrl && (

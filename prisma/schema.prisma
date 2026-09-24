@@ -253,34 +253,34 @@ model WeddingMember {
 }
 
 model WeddingTheme {
-  id           String  @id @default(cuid())
-  wedding      Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
-  weddingId    String  @unique
-  presetKey    String  @default("terracotta-olive")
+  id         String  @id @default(cuid())
+  wedding    Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId  String  @unique
+  presetKey  String  @default("terracotta-olive")
   // Overrides on top of the preset: { background, foreground, primary, ... }
-  colors       Json    @default("{}")
-  serifFont    String?
-  scriptFont   String?
-  sansFont     String?
-  heroImageUrl String?
+  colors     Json    @default("{}")
+  serifFont  String?
+  scriptFont String?
+  sansFont   String?
 }
 
 // Section copy overrides; null fields fall back to the component defaults.
 model WeddingCopy {
-  id             String  @id @default(cuid())
-  wedding        Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
-  weddingId      String  @unique
-  heroEyebrow    String?
-  heroIntro      String?
-  rsvpIntro      String?
-  registryIntro  String?
-  giftIntro      String?
-  loveNotesIntro String?
-  galleryIntro   String?
-  wishesIntro    String?
-  footerCredit   String?
-  asoebiEnabled  Boolean @default(false)
-  asoebiFabric   String?
+  id              String  @id @default(cuid())
+  wedding         Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId       String  @unique
+  heroEyebrow     String?
+  heroIntro       String?
+  rsvpIntro       String?
+  registryIntro   String?
+  giftIntro       String?
+  loveNotesIntro  String?
+  galleryIntro    String?
+  wishesIntro     String?
+  footerCredit    String?
+  footerCreditUrl String?
+  asoebiEnabled   Boolean @default(false)
+  asoebiFabric    String?
 }
 
 model Plan {

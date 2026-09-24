@@ -1,8 +1,8 @@
 "use server";
 
 import { requireWeddingAccess } from "@/lib/dal";
-import { resolveGuestAction, revalidateDashboard, revalidateWedding } from "@/lib/tenant";
-import { sendMail, contributionNotificationEmail } from "@/lib/mail";
+import { moneyFormat, resolveGuestAction, revalidateDashboard, revalidateWedding, weddingTheme } from "@/lib/tenant";
+import { contributionNotificationEmail, emailPalette, sendMail } from "@/lib/mail";
 
 export type SubmitContributionState = { error?: string; success?: boolean } | undefined;
 
@@ -61,6 +61,8 @@ export async function submitContribution(
         itemName: contribution.registryItem.name,
         amountCents: contribution.amountCents,
         note: contribution.note,
+        money: moneyFormat(wedding),
+        palette: emailPalette(weddingTheme(wedding).colors),
       }),
     });
   } else {

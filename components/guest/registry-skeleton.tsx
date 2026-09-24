@@ -2,7 +2,7 @@ import { Pulse } from "@/components/skeleton";
 
 function GiftCardSkeleton() {
   return (
-    <article className="flex flex-col bg-white shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+    <article className="flex flex-col bg-white shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
       <Pulse className="h-45 w-full" />
       <div className="flex flex-1 flex-col gap-3 p-5.5">
         <Pulse className="h-6 w-3/4" />

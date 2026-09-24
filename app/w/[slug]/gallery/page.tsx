@@ -8,6 +8,7 @@ import GalleryGridSkeleton from "@/components/guest/gallery-grid-skeleton";
 import Footer from "@/components/guest/footer";
 import FooterSkeleton from "@/components/guest/footer-skeleton";
 import { prisma } from "@/lib/prisma";
+import { copyText } from "@/lib/copy";
 import { hasFeature } from "@/lib/plans";
 import { getGuestWedding, getStory } from "@/lib/tenant";
 
@@ -64,9 +65,7 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
                 Share your moments with us
               </h1>
               <p className="mt-6 text-base text-foreground/80 sm:text-lg">
-                Snap a photo or video from the celebration and share it here. The
-                couple will approve it before it appears on the wall for everyone to
-                see.
+                {copyText(wedding.copy, "galleryIntro")}
               </p>
             </div>
 

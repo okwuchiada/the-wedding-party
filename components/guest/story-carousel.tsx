@@ -77,7 +77,7 @@ export default function StoryCarousel({ items }: { items: StoryItem[] }) {
           </svg>
         </button>
 
-        <div className="relative w-full overflow-hidden bg-white p-3 pb-0 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+        <div className="relative w-full overflow-hidden bg-white p-3 pb-0 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
           <div
             className={`relative aspect-4/3 w-full overflow-hidden bg-olive/10 transition-opacity duration-350 ease-out ${
               visible ? "opacity-100" : "opacity-0"

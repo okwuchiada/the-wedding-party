@@ -26,25 +26,31 @@ import StoryTab, { type StoryContentView, type StoryPhotoView } from "./story-ta
 import type { StoryBeatView } from "./story-beats-section";
 import SignOutButton from "./sign-out-button";
 import MembersTab, { type MemberView } from "./members-tab";
+import DesignTab from "./design-tab";
+import WordingTab, { type CopyView } from "./wording-tab";
+import SettingsTab, { type SettingsView } from "./settings-tab";
+import type { ResolvedTheme } from "@/lib/themes";
 import { AdminWeddingProvider } from "./wedding-context";
+import { formatMoney, type MoneyFormat } from "@/lib/money";
 import { logout } from "@/lib/actions/auth";
 import { confirmContribution } from "@/lib/actions/contributions";
 import { approveWish, hideWish } from "@/lib/actions/wishes";
 import { approveMedia, deleteMedia, hideMedia } from "@/lib/actions/media";
 import { setGalleryEnabled } from "@/lib/actions/story";
 
-function formatNaira(cents: number) {
-  return `₦${(cents / 100).toLocaleString("en-NG")}`;
-}
 
-const tabs = ["Registry", "Contributions", "Media", "Wishes", "RSVPs", "Our Story", "People"] as const;
+const tabs = ["Registry", "Contributions", "Media", "Wishes", "RSVPs", "Our Story", "Design", "Wording", "People", "Settings"] as const;
 type Tab = (typeof tabs)[number];
 
 export default function AdminHome({
   weddingId,
+  money,
   guestUrl,
   members,
   isOwner,
+  design,
+  copy,
+  settings,
   registryItems,
   pendingContributions: initialPendingContributions,
   confirmedContributions: initialConfirmedContributions,
@@ -61,9 +67,13 @@ export default function AdminHome({
   bankDetails,
 }: {
   weddingId: string;
+  money: MoneyFormat;
   guestUrl: string;
   members: MemberView[];
   isOwner: boolean;
+  design: { theme: ResolvedTheme; allowCustom: boolean; isDraft: boolean };
+  copy: CopyView & { canRemoveBranding: boolean };
+  settings: SettingsView;
   registryItems: RegistryItemWithContributions[];
   pendingContributions: PendingContributionView[];
   confirmedContributions: ConfirmedContributionView[];
@@ -202,14 +212,14 @@ export default function AdminHome({
   }).length;
 
   const stats = [
-    { label: "Total Raised", value: formatNaira(totalRaisedCents) },
+    { label: "Total Raised", value: formatMoney(totalRaisedCents, money) },
     { label: "Items Fully Funded", value: `${itemsFullyFunded} / ${registryItems.length}` },
     { label: "Guest Uploads", value: approvedMedia.length },
     { label: "Wishes", value: approvedWishes.length },
   ];
 
   return (
-    <AdminWeddingProvider weddingId={weddingId}>
+    <AdminWeddingProvider weddingId={weddingId} money={money}>
     <div className="min-h-screen bg-ivory px-4 py-12 sm:px-8">
       <LiveRefresh />
       <div className="mx-auto max-w-5xl">
@@ -238,7 +248,7 @@ export default function AdminHome({
 
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {stats.map((stat) => (
-            <div key={stat.label} className="bg-white p-4 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+            <div key={stat.label} className="bg-white p-4 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
               <p className="text-[10.5px] tracking-[.16em] text-foreground/55 uppercase">{stat.label}</p>
               <p className="mt-2 font-(family-name:--serif) text-2xl text-foreground">{stat.value}</p>
             </div>
@@ -246,7 +256,7 @@ export default function AdminHome({
         </div>
 
         <div className="mt-10 mb-8 flex gap-1 overflow-x-auto border-b border-olive/20">
-          {tabs.map((tab) => {
+          {tabs.filter((tab) => tab !== "Settings" || isOwner).map((tab) => {
             const isActive = tab === activeTab;
             return (
               <button
@@ -301,7 +311,10 @@ export default function AdminHome({
         {activeTab === "Our Story" && (
           <StoryTab story={story} photos={storyPhotos} storyBeats={storyBeats} />
         )}
+        {activeTab === "Design" && <DesignTab {...design} guestUrl={guestUrl} />}
+        {activeTab === "Wording" && <WordingTab copy={copy} canRemoveBranding={copy.canRemoveBranding} />}
         {activeTab === "People" && <MembersTab members={members} isOwner={isOwner} />}
+        {activeTab === "Settings" && isOwner && <SettingsTab settings={settings} />}
       </div>
     </div>
     </AdminWeddingProvider>

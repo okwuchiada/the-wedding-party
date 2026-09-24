@@ -7,6 +7,7 @@ import WishesListSkeleton from "@/components/guest/wishes-list-skeleton";
 import Footer from "@/components/guest/footer";
 import FooterSkeleton from "@/components/guest/footer-skeleton";
 import { prisma } from "@/lib/prisma";
+import { copyText } from "@/lib/copy";
 import { getGuestWedding } from "@/lib/tenant";
 
 async function WishesList({ weddingId }: { weddingId: string }) {
@@ -18,7 +19,7 @@ async function WishesList({ weddingId }: { weddingId: string }) {
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
       {wishes.map((wish) => (
-        <div key={wish.id} className="bg-white p-5 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+        <div key={wish.id} className="bg-white p-5 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
           <p className="font-(family-name:--serif) text-base text-foreground italic">
             &ldquo;{wish.message}&rdquo;
           </p>
@@ -48,9 +49,7 @@ export default async function WishesPage({ params }: { params: Promise<{ slug: s
             Leave the couple a wish
           </h1>
           <p className="mt-6 text-base text-foreground/80 sm:text-lg">
-            A few kind words mean the world. Share a wish below, and once the
-            couple approves it, it&apos;ll appear on the wall for everyone to
-            see.
+            {copyText(wedding.copy, "wishesIntro")}
           </p>
         </div>
 

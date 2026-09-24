@@ -5,10 +5,34 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { scopedPrisma } from "@/lib/db-scoped";
 import { canManageWedding } from "@/lib/dal";
+import { hasFeature } from "@/lib/plans";
+import { resolveTheme } from "@/lib/themes";
+
+const WEDDING_INCLUDE = { plan: true, theme: true, copy: true } as const;
 
 export const getWeddingBySlug = cache(async (slug: string) =>
-  prisma.wedding.findUnique({ where: { slug }, include: { plan: true } })
+  prisma.wedding.findUnique({ where: { slug }, include: WEDDING_INCLUDE })
 );
+
+/** The wedding with its plan, theme and copy, for components that only get an id. */
+export const getWeddingById = cache(async (weddingId: string) =>
+  prisma.wedding.findUniqueOrThrow({ where: { id: weddingId }, include: WEDDING_INCLUDE })
+);
+
+type ThemedWedding = {
+  status: string;
+  plan: { features: unknown } | null;
+  theme: Parameters<typeof resolveTheme>[0];
+};
+
+/** Custom colors and fonts need the plan feature; drafts preview them regardless. */
+export function weddingTheme(wedding: ThemedWedding) {
+  return resolveTheme(wedding.theme, wedding.status === "DRAFT" || hasFeature(wedding.plan, "customTheme"));
+}
+
+export function moneyFormat(wedding: { currency: string; locale: string }) {
+  return { currency: wedding.currency, locale: wedding.locale };
+}
 
 export type GuestWedding = NonNullable<Awaited<ReturnType<typeof getWeddingBySlug>>>;
 

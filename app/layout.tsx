@@ -1,38 +1,7 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Dancing_Script, EB_Garamond, Geist, Playfair_Display } from "next/font/google";
+import { FONT_VARIABLE_CLASSES, themeFontVars } from "@/lib/fonts";
+import { DEFAULT_PRESET } from "@/lib/themes";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  style: ["normal", "italic"],
-});
-
-const ebGaramond = EB_Garamond({
-  variable: "--font-eb-garamond",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-});
-
-const dancingScript = Dancing_Script({
-  variable: "--font-dancing-script",
-  subsets: ["latin"],
-  weight: ["400", "700"],
-});
 
 export const metadata: Metadata = {
   title: "The Wedding Party",
@@ -47,14 +16,8 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${cormorant.variable} ${ebGaramond.variable} ${playfair.variable} ${dancingScript.variable} h-full antialiased`}
-      style={
-        {
-          "--sans": "var(--font-geist-sans), system-ui, sans-serif",
-          "--serif": "var(--font-cormorant), Georgia, serif",
-          "--script": "var(--font-dancing-script), cursive",
-        } as React.CSSProperties
-      }
+      className={`${FONT_VARIABLE_CLASSES} h-full antialiased`}
+      style={themeFontVars(DEFAULT_PRESET.fonts) as React.CSSProperties}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

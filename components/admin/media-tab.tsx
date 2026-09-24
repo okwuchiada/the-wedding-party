@@ -41,7 +41,7 @@ export default function MediaTab({
   };
   return (
     <div>
-      <div className="mb-10 flex items-center justify-between gap-4 bg-white p-4 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+      <div className="mb-10 flex items-center justify-between gap-4 bg-white p-4 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
         <div>
           <h2 className="font-(family-name:--serif) text-xl text-foreground">Gallery Wall</h2>
           <p className="mt-1 text-xs text-foreground/60">
@@ -75,7 +75,7 @@ export default function MediaTab({
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {pending.map((media) => (
-            <div key={media.id} className="bg-white shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+            <div key={media.id} className="bg-white shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
               <div className="relative aspect-square w-full overflow-hidden bg-olive/10">
                 {media.type === "VIDEO" ? (
                   <video src={media.url} muted playsInline controls className="h-full w-full object-cover" />
@@ -118,7 +118,7 @@ export default function MediaTab({
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {approved.map((media) => (
-            <div key={media.id} className="bg-white shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+            <div key={media.id} className="bg-white shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
               <div className="relative aspect-square w-full overflow-hidden bg-olive/10">
                 {media.type === "VIDEO" ? (
                   <video src={media.url} muted playsInline controls className="h-full w-full object-cover" />
@@ -165,7 +165,7 @@ export default function MediaTab({
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {hidden.map((media) => (
-            <div key={media.id} className="bg-white opacity-70 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+            <div key={media.id} className="bg-white opacity-70 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
               <div className="relative aspect-square w-full overflow-hidden bg-olive/10">
                 {media.type === "VIDEO" ? (
                   <video src={media.url} muted playsInline controls className="h-full w-full object-cover" />

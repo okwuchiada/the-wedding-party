@@ -1,7 +1,10 @@
 import AdminHome from "@/components/admin/home";
 import { canManageWedding, requireWeddingAccess } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
-import { guestPath } from "@/lib/tenant";
+import { COPY_FIELDS } from "@/lib/copy";
+import { hasFeature } from "@/lib/plans";
+import { getWeddingById, guestPath, moneyFormat } from "@/lib/tenant";
+import { resolveTheme } from "@/lib/themes";
 
 export default async function WeddingDashboardPage({
   params,
@@ -29,6 +32,7 @@ export default async function WeddingDashboardPage({
     bankDetails,
     members,
     isOwner,
+    settings,
   ] = await Promise.all([
     db.registryItem.findMany({
       where: scope,
@@ -80,13 +84,45 @@ export default async function WeddingDashboardPage({
       orderBy: { createdAt: "asc" },
     }),
     canManageWedding(wedding.id, "OWNER"),
+    getWeddingById(wedding.id),
   ]);
+  const copy = settings.copy;
 
   return (
     <AdminHome
       weddingId={wedding.id}
+      money={moneyFormat(wedding)}
       guestUrl={guestPath(wedding.slug)}
       isOwner={isOwner}
+      design={{
+        // Show what they saved even if their plan doesn't render it.
+        theme: resolveTheme(settings.theme, true),
+        allowCustom: hasFeature(wedding.plan, "customTheme"),
+        isDraft: wedding.status === "DRAFT",
+      }}
+      copy={{
+        ...(Object.fromEntries(COPY_FIELDS.map((f) => [f.key, copy?.[f.key] ?? null])) as Record<
+          (typeof COPY_FIELDS)[number]["key"],
+          string | null
+        >),
+        footerCredit: copy?.footerCredit ?? null,
+        footerCreditUrl: copy?.footerCreditUrl ?? null,
+        asoebiEnabled: copy?.asoebiEnabled ?? false,
+        asoebiFabric: copy?.asoebiFabric ?? null,
+        canRemoveBranding: hasFeature(wedding.plan, "removeBranding"),
+      }}
+      settings={{
+        slug: wedding.slug,
+        status: wedding.status,
+        canPublish: Boolean(wedding.paidAt || wedding.comped),
+        currency: wedding.currency,
+        locale: wedding.locale,
+        phoneCountryCode: wedding.phoneCountryCode,
+        maxGuests: wedding.maxGuests,
+        guestLimit: wedding.plan?.maxGuests ?? 10_000,
+        allowedCountries: wedding.allowedCountries,
+        geoBypassToken: isOwner ? wedding.geoBypassToken : null,
+      }}
       members={members.map((m) => ({
         id: m.id,
         email: m.user.email,

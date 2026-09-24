@@ -1,11 +1,10 @@
 "use client";
 
 import type { ConfirmedContributionView, PendingContributionView } from "@/lib/types";
+import { formatMoney } from "@/lib/money";
 import { useActionPending } from "./use-action-pending";
+import { useAdminMoney } from "./wedding-context";
 
-function formatNaira(cents: number) {
-  return `₦${(cents / 100).toLocaleString("en-NG")}`;
-}
 
 export default function ContributionsTab({
   pending,
@@ -17,6 +16,7 @@ export default function ContributionsTab({
   onConfirm: (contribution: PendingContributionView) => Promise<void>;
 }) {
   const { run, isPending } = useActionPending();
+  const money = useAdminMoney();
 
   return (
     <div>
@@ -41,7 +41,7 @@ export default function ContributionsTab({
                 <tr key={c.id} className="border-b border-olive/10 last:border-0">
                   <td className="px-4 py-3 text-foreground">{c.guestName}</td>
                   <td className="px-4 py-3 text-foreground/70">{c.itemName}</td>
-                  <td className="px-4 py-3 text-foreground/70">{formatNaira(c.amountCents)}</td>
+                  <td className="px-4 py-3 text-foreground/70">{formatMoney(c.amountCents, money)}</td>
                   <td className="px-4 py-3 text-foreground/70">{c.dateRequested}</td>
                   <td className="px-4 py-3">
                     <button
@@ -80,7 +80,7 @@ export default function ContributionsTab({
                 <tr key={c.id} className="border-b border-olive/10 last:border-0">
                   <td className="px-4 py-3 text-foreground">{c.guestName}</td>
                   <td className="px-4 py-3 text-foreground/70">{c.itemName}</td>
-                  <td className="px-4 py-3 text-foreground/70">{formatNaira(c.amountCents)}</td>
+                  <td className="px-4 py-3 text-foreground/70">{formatMoney(c.amountCents, money)}</td>
                   <td className="px-4 py-3 text-foreground/70">{c.dateConfirmed}</td>
                 </tr>
               ))}

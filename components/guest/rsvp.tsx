@@ -1,6 +1,9 @@
+import { copyText } from "@/lib/copy";
+import { getWeddingById } from "@/lib/tenant";
 import RsvpForm from "./rsvp-form";
 
-export default function Rsvp() {
+export default async function Rsvp({ weddingId }: { weddingId: string }) {
+  const wedding = await getWeddingById(weddingId);
   return (
     <section id="rsvp" className="bg-cream px-4 py-20 sm:px-6 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
@@ -9,8 +12,7 @@ export default function Rsvp() {
           Will you join us?
         </h2>
         <p className="mt-6 text-base text-foreground/80 sm:text-lg">
-          We&apos;d love to celebrate with you. Please let us know if you&apos;ll
-          be able to make it.
+          {copyText(wedding.copy, "rsvpIntro")}
         </p>
       </div>
 

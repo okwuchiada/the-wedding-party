@@ -1,7 +1,16 @@
-import { getStory } from "@/lib/tenant";
+import { hasFeature } from "@/lib/plans";
+import { getStory, getWeddingById } from "@/lib/tenant";
+
+const PLATFORM_CREDIT = { name: "The Wedding Party", url: process.env.SITE_URL || "/" };
 
 export default async function Footer({ weddingId }: { weddingId: string }) {
-  const story = await getStory(weddingId);
+  const [story, wedding] = await Promise.all([getStory(weddingId), getWeddingById(weddingId)]);
+  // Plans with removeBranding may credit anyone (or no one) instead of the platform.
+  const credit = hasFeature(wedding.plan, "removeBranding")
+    ? wedding.copy?.footerCredit
+      ? { name: wedding.copy.footerCredit, url: wedding.copy.footerCreditUrl }
+      : null
+    : PLATFORM_CREDIT;
 
   const brideName = story?.brideName ?? "";
   const groomName = story?.groomName ?? "";
@@ -54,16 +63,25 @@ export default async function Footer({ weddingId }: { weddingId: string }) {
           </div>
         )}
         <div className="text-xs text-ivory/40">
-          Made with love by{" "}
-          <a
-            href="https://adaokwuchi.dev"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-(family-name:--script) text-base text-ivory/50 transition-colors hover:text-burnt-orange"
-          >
-            Salem
-          </a>{" "}
-          &middot; Questions? {contactEmail}
+          {credit && (
+            <>
+              Made with love by{" "}
+              {credit.url ? (
+                <a
+                  href={credit.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-(family-name:--script) text-base text-ivory/50 transition-colors hover:text-burnt-orange"
+                >
+                  {credit.name}
+                </a>
+              ) : (
+                <span className="font-(family-name:--script) text-base text-ivory/50">{credit.name}</span>
+              )}
+            </>
+          )}
+          {credit && contactEmail && " · "}
+          {contactEmail && <>Questions? {contactEmail}</>}
         </div>
       </div>
     </footer>

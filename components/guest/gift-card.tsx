@@ -6,17 +6,15 @@ import type { BankDetailsView } from "@/lib/types";
 import type { RegistryItemWithContributions } from "@/lib/types";
 import { submitContribution } from "@/lib/actions/contributions";
 import CopyRow from "./copy-row";
-import { useGuestSlug } from "./wedding-context";
-
-function formatNaira(cents: number) {
-  return `₦${(cents / 100).toLocaleString("en-NG")}`;
-}
+import { currencySymbol, formatAmount, formatMoney, minContribution } from "@/lib/money";
+import { useGuestMoney, useGuestSlug } from "./wedding-context";
 
 function sumContributions(contributions: { amountCents: number }[]) {
   return contributions.reduce((sum, c) => sum + c.amountCents, 0);
 }
 
 function ProgressBar({ raised, goal }: { raised: number; goal: number }) {
+  const money = useGuestMoney();
   const pct = Math.min(100, Math.round((raised / goal) * 100));
   const done = pct >= 100;
 
@@ -26,7 +24,7 @@ function ProgressBar({ raised, goal }: { raised: number; goal: number }) {
         <span>
           {done
             ? "Fully funded — thank you"
-            : `${formatNaira(raised)} of ${formatNaira(goal)}`}
+            : `${formatMoney(raised, money)} of ${formatMoney(goal, money)}`}
         </span>
         <span
           className={`font-medium ${done ? "text-burnt-orange-dark" : "text-burnt-orange"}`}
@@ -48,7 +46,6 @@ function ProgressBar({ raised, goal }: { raised: number; goal: number }) {
 
 type Action = "BUY" | "CHIPIN";
 
-const MIN_CHIPIN_CENTS = 20_000_00;
 
 export default function GiftCard({
   gift,
@@ -61,7 +58,8 @@ export default function GiftCard({
   const remaining = Math.max(0, gift.priceCents - raised);
   const funded = raised >= gift.priceCents;
   const alreadyContributing = raised > 0 && !funded;
-  const minChipInCents = Math.min(MIN_CHIPIN_CENTS, remaining);
+  const money = useGuestMoney();
+  const minChipInCents = Math.min(minContribution(money.currency), remaining);
 
   const slug = useGuestSlug();
   const [action, setAction] = useState<Action | null>(null);
@@ -100,7 +98,7 @@ export default function GiftCard({
 
   const handleContribution = () => {
     if (amountCents < minChipInCents) {
-      setError(`Minimum contribution is ${formatNaira(minChipInCents)}`);
+      setError(`Minimum contribution is ${formatMoney(minChipInCents, money)}`);
       return;
     }
     submitContributionOf(amountCents);
@@ -108,7 +106,7 @@ export default function GiftCard({
   const handleBuyTransfer = () => submitContributionOf(gift.priceCents);
 
   return (
-    <article className="flex flex-col bg-white shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+    <article className="flex flex-col bg-white shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
       <div className="relative h-45 w-full overflow-hidden bg-olive/10">
         <Image
           src={gift.image}
@@ -125,7 +123,7 @@ export default function GiftCard({
           {gift.name}
         </h3>
         <div className="text-sm font-medium text-burnt-orange">
-          {formatNaira(gift.priceCents)}
+          {formatMoney(gift.priceCents, money)}
         </div>
 
         <ProgressBar raised={raised} goal={gift.priceCents} />
@@ -171,14 +169,12 @@ export default function GiftCard({
                 <div className="mt-2.5 flex items-center gap-2.5">
                   <label className="relative flex-1">
                     <span className="absolute top-1/2 left-3 -translate-y-1/2 font-(family-name:--serif) text-lg text-burnt-orange">
-                      ₦
+                      {currencySymbol(money)}
                     </span>
                     <input
                       type="text"
                       inputMode="numeric"
-                      value={Math.ceil(amountCents / 100).toLocaleString(
-                        "en-NG",
-                      )}
+                      value={formatAmount(Math.ceil(amountCents / 100), money)}
                       onChange={(e) => {
                         const digits = e.target.value.replace(/[^0-9]/g, "");
                         const naira = digits ? Number(digits) : 0;
@@ -188,7 +184,9 @@ export default function GiftCard({
                         );
                         setAmountCents(capped * 100);
                       }}
-                      className="w-full border border-olive/20 bg-white py-2.5 pr-3 pl-7 text-[15px] text-foreground outline-none"
+                      // Leave room for wider symbols like "KSh" or "CA$".
+                      style={{ paddingLeft: `${1 + currencySymbol(money).length * 0.65}rem` }}
+                      className="w-full border border-olive/20 bg-white py-2.5 pr-3 text-[15px] text-foreground outline-none"
                     />
                   </label>
                   <button
@@ -201,7 +199,7 @@ export default function GiftCard({
                   </button>
                 </div>
                 <div className="mt-1.5 text-[10.5px] text-foreground/50">
-                  Minimum {formatNaira(minChipInCents)}
+                  Minimum {formatMoney(minChipInCents, money)}
                 </div>
                 {error && (
                   <div className="mt-2 text-xs text-burnt-orange">{error}</div>
@@ -241,7 +239,7 @@ export default function GiftCard({
                     Amount
                   </span>
                   <span className="text-[13.5px] font-medium text-burnt-orange">
-                    {formatNaira(gift.priceCents)}
+                    {formatMoney(gift.priceCents, money)}
                   </span>
                 </div>
 
