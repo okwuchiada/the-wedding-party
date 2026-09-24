@@ -1,7 +1,10 @@
 import AdminHome from "@/components/admin/home";
+import { verifySession } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 
 export default async function AdminPage() {
+  await verifySession();
+
   const [
     registryItems,
     pendingContributions,

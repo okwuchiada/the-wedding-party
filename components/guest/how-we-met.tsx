@@ -19,7 +19,7 @@ async function HowWeMetContent() {
           const flip = i % 2 === 1;
           const tilt = TILTS[i % TILTS.length];
           const isLast = i === beats.length - 1;
-          const isSecondToLast = i = beats.length -2
+          const isSecondToLast = i === beats.length - 2
 
           return (
             <div
