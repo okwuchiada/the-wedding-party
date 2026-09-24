@@ -29,6 +29,7 @@ import MembersTab, { type MemberView } from "./members-tab";
 import DesignTab from "./design-tab";
 import WordingTab, { type CopyView } from "./wording-tab";
 import SettingsTab, { type SettingsView } from "./settings-tab";
+import BillingTab, { type BillingView } from "./billing-tab";
 import type { ResolvedTheme } from "@/lib/themes";
 import { AdminWeddingProvider } from "./wedding-context";
 import { formatMoney, type MoneyFormat } from "@/lib/money";
@@ -39,8 +40,9 @@ import { approveMedia, deleteMedia, hideMedia } from "@/lib/actions/media";
 import { setGalleryEnabled } from "@/lib/actions/story";
 
 
-const tabs = ["Registry", "Contributions", "Media", "Wishes", "RSVPs", "Our Story", "Design", "Wording", "People", "Settings"] as const;
+const tabs = ["Registry", "Contributions", "Media", "Wishes", "RSVPs", "Our Story", "Design", "Wording", "People", "Settings", "Billing"] as const;
 type Tab = (typeof tabs)[number];
+const OWNER_TABS: readonly Tab[] = ["Settings", "Billing"];
 
 export default function AdminHome({
   weddingId,
@@ -51,6 +53,7 @@ export default function AdminHome({
   design,
   copy,
   settings,
+  billing,
   registryItems,
   pendingContributions: initialPendingContributions,
   confirmedContributions: initialConfirmedContributions,
@@ -74,6 +77,7 @@ export default function AdminHome({
   design: { theme: ResolvedTheme; allowCustom: boolean; isDraft: boolean };
   copy: CopyView & { canRemoveBranding: boolean };
   settings: SettingsView;
+  billing: BillingView;
   registryItems: RegistryItemWithContributions[];
   pendingContributions: PendingContributionView[];
   confirmedContributions: ConfirmedContributionView[];
@@ -256,7 +260,7 @@ export default function AdminHome({
         </div>
 
         <div className="mt-10 mb-8 flex gap-1 overflow-x-auto border-b border-olive/20">
-          {tabs.filter((tab) => tab !== "Settings" || isOwner).map((tab) => {
+          {tabs.filter((tab) => isOwner || !OWNER_TABS.includes(tab)).map((tab) => {
             const isActive = tab === activeTab;
             return (
               <button
@@ -315,6 +319,7 @@ export default function AdminHome({
         {activeTab === "Wording" && <WordingTab copy={copy} canRemoveBranding={copy.canRemoveBranding} />}
         {activeTab === "People" && <MembersTab members={members} isOwner={isOwner} />}
         {activeTab === "Settings" && isOwner && <SettingsTab settings={settings} />}
+        {activeTab === "Billing" && isOwner && <BillingTab billing={billing} />}
       </div>
     </div>
     </AdminWeddingProvider>

@@ -8,3 +8,9 @@ export function hasFeature(plan: PlanLike, feature: PlanFeature): boolean {
   if (!features || typeof features !== "object") return false;
   return (features as Record<string, unknown>)[feature] === true;
 }
+
+export const FEATURE_LABELS: Record<PlanFeature, string> = {
+  gallery: "Guest photo & video gallery",
+  customTheme: "Custom colors and fonts",
+  removeBranding: "Your own footer credit",
+};

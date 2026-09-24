@@ -2,7 +2,9 @@ import AdminHome from "@/components/admin/home";
 import { canManageWedding, requireWeddingAccess } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { COPY_FIELDS } from "@/lib/copy";
-import { hasFeature } from "@/lib/plans";
+import { upgradeCharge } from "@/lib/billing";
+import { paystackConfigured } from "@/lib/paystack";
+import { hasFeature, type PlanFeature } from "@/lib/plans";
 import { getWeddingById, guestPath, moneyFormat } from "@/lib/tenant";
 import { resolveTheme } from "@/lib/themes";
 
@@ -33,6 +35,8 @@ export default async function WeddingDashboardPage({
     members,
     isOwner,
     settings,
+    plans,
+    payments,
   ] = await Promise.all([
     db.registryItem.findMany({
       where: scope,
@@ -85,7 +89,10 @@ export default async function WeddingDashboardPage({
     }),
     canManageWedding(wedding.id, "OWNER"),
     getWeddingById(wedding.id),
+    prisma.plan.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { priceKobo: "asc" }] }),
+    prisma.payment.findMany({ where: scope, include: { plan: true }, orderBy: { createdAt: "desc" } }),
   ]);
+  const paidKobo = payments.filter((p) => p.status === "SUCCESS").reduce((sum, p) => sum + p.amountKobo, 0);
   const copy = settings.copy;
 
   return (
@@ -110,6 +117,28 @@ export default async function WeddingDashboardPage({
         asoebiEnabled: copy?.asoebiEnabled ?? false,
         asoebiFabric: copy?.asoebiFabric ?? null,
         canRemoveBranding: hasFeature(wedding.plan, "removeBranding"),
+      }}
+      billing={{
+        currentPlan: wedding.plan ? { name: wedding.plan.name, comped: wedding.comped } : null,
+        paymentsEnabled: paystackConfigured(),
+        plans: plans.map((plan) => ({
+          key: plan.key,
+          name: plan.name,
+          priceKobo: plan.priceKobo,
+          maxGuests: plan.maxGuests,
+          features: (Object.keys(plan.features as object) as PlanFeature[]).filter((f) => hasFeature(plan, f)),
+          chargeKobo: upgradeCharge(plan, wedding.plan, paidKobo),
+          current: plan.id === wedding.planId,
+        })),
+        payments: payments
+          .filter((p) => p.status !== "PENDING")
+          .map((p) => ({
+            reference: p.reference,
+            planName: p.plan.name,
+            amountKobo: p.amountKobo,
+            status: p.status,
+            date: (p.paidAt ?? p.createdAt).toISOString().slice(0, 10),
+          })),
       }}
       settings={{
         slug: wedding.slug,
