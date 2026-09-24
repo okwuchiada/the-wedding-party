@@ -114,7 +114,7 @@ function PhotoForm({
           name="file"
           type="file"
           accept="image/*,.heic,.heif"
-          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none file:mr-3 file:border-0 file:bg-burnt-orange file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ivory"
+          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none file:mr-3 file:border-0 file:rounded-full file:bg-(--m-ink) file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ivory"
         />
         {initialValues?.url && (
           <span className="mt-1 flex items-center gap-2 text-[11px] text-foreground/50">
@@ -134,7 +134,7 @@ function PhotoForm({
         <input
           name="caption"
           defaultValue={initialValues?.caption}
-          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
       </label>
       <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
@@ -143,7 +143,7 @@ function PhotoForm({
           name="order"
           type="number"
           defaultValue={initialValues?.order ?? 0}
-          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
       </label>
 
@@ -152,7 +152,7 @@ function PhotoForm({
           name="showInHero"
           type="checkbox"
           defaultChecked={initialValues?.showInHero ?? false}
-          className="h-4 w-4 border border-olive/20"
+          className="h-4 w-4 border border-(--m-mist)"
         />
         Show in Hero section
       </label>
@@ -165,14 +165,14 @@ function PhotoForm({
         <button
           type="button"
           onClick={onCancel}
-          className="border border-olive/30 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-burnt-orange hover:text-burnt-orange"
+          className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={pending || uploading}
-          className="bg-burnt-orange px-4 py-2 text-xs font-medium text-ivory transition-colors hover:bg-burnt-orange-dark disabled:opacity-60"
+          className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
         >
           {uploading ? "Uploading…" : pending ? "Saving…" : submitLabel}
         </button>
@@ -240,7 +240,7 @@ function BulkUploadButton() {
         type="button"
         disabled={uploading}
         onClick={() => inputRef.current?.click()}
-        className="border border-olive/30 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-burnt-orange hover:text-burnt-orange disabled:opacity-60"
+        className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink) disabled:opacity-60"
       >
         {uploading ? `Uploading ${progress.done}/${progress.total}…` : "Bulk Upload"}
       </button>
@@ -286,7 +286,7 @@ function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
   return (
     <div className="mt-10">
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-(family-name:--serif) text-2xl text-foreground">
+        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">
           Story Photos
         </h2>
         <div className="flex gap-2">
@@ -295,7 +295,7 @@ function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="bg-burnt-orange px-4 py-2 text-xs font-medium text-ivory hover:bg-burnt-orange-dark"
+              className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
             >
               Add Photo
             </button>
@@ -319,10 +319,10 @@ function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
 
       {deleteError && <p className="mb-3 text-xs text-burnt-orange">{deleteError}</p>}
 
-      <div className="overflow-x-auto border border-olive/15">
+      <div className="overflow-x-auto rounded-[6px] border border-(--m-mist) bg-white">
         <table className="w-full min-w-150 text-left text-sm">
           <thead>
-            <tr className="border-b border-olive/15 text-[11px] tracking-widest text-foreground/50 uppercase">
+            <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
               <th className="px-4 py-3 font-medium">Order</th>
               <th className="px-4 py-3 font-medium">Photo URL</th>
               <th className="px-4 py-3 font-medium">Caption</th>
@@ -333,7 +333,7 @@ function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
           <tbody>
             {photos.map((photo) =>
               editingId === photo.id ? (
-                <tr key={photo.id} className="border-b border-olive/10 last:border-0">
+                <tr key={photo.id} className="border-b border-(--m-mist) last:border-0">
                   <td colSpan={5} className="p-0">
                     <PhotoForm
                       action={updateStoryPhoto.bind(null, weddingId)}
@@ -344,13 +344,13 @@ function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
                   </td>
                 </tr>
               ) : (
-                <tr key={photo.id} className="border-b border-olive/10 last:border-0">
+                <tr key={photo.id} className="border-b border-(--m-mist) last:border-0">
                   <td className="px-4 py-3 text-foreground/70">{photo.order}</td>
                   <td className="px-4 py-3 text-foreground/70">{photo.url}</td>
                   <td className="px-4 py-3 text-foreground">{photo.caption}</td>
                   <td className="px-4 py-3">
                     {photo.showInHero && (
-                      <span className="bg-olive/10 px-2 py-1 text-[10px] tracking-widest text-olive uppercase">
+                      <span className="bg-olive/10 px-2 py-1 text-xs text-olive">
                         Hero
                       </span>
                     )}
@@ -398,7 +398,7 @@ export default function StoryTab({
 
   return (
     <div>
-      <h2 className="mb-2 font-(family-name:--serif) text-2xl text-foreground">Our Story</h2>
+      <h2 className="mb-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Our Story</h2>
       <p className="mb-6 max-w-2xl text-sm text-foreground/60">
         This content isn&apos;t guest-generated, so there&apos;s no approval step —
         whatever you save here appears immediately on the public landing page.
@@ -411,7 +411,7 @@ export default function StoryTab({
             <input
               name="brideName"
               defaultValue={story.brideName}
-              className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
             />
           </label>
           <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
@@ -419,7 +419,7 @@ export default function StoryTab({
             <input
               name="groomName"
               defaultValue={story.groomName}
-              className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
             />
           </label>
         </div>
@@ -431,7 +431,7 @@ export default function StoryTab({
               type="date"
               name="weddingDate"
               defaultValue={story.weddingDate}
-              className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
             />
           </label>
           <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
@@ -440,7 +440,7 @@ export default function StoryTab({
               type="time"
               name="weddingTime"
               defaultValue={story.weddingTime}
-              className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
             />
           </label>
         </div>
@@ -451,7 +451,7 @@ export default function StoryTab({
             name="contactEmail"
             defaultValue={story.contactEmail ?? ""}
             placeholder="hello@example.com"
-            className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+            className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
           />
         </label>
 
@@ -463,7 +463,7 @@ export default function StoryTab({
               name="bridePhone"
               defaultValue={story.bridePhone ?? ""}
               placeholder="+234…"
-              className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
             />
           </label>
           <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
@@ -473,7 +473,7 @@ export default function StoryTab({
               name="groomPhone"
               defaultValue={story.groomPhone ?? ""}
               placeholder="+234…"
-              className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
             />
           </label>
         </div>
@@ -485,7 +485,7 @@ export default function StoryTab({
               name="tagline"
               defaultValue={story.tagline ?? ""}
               placeholder="A celebration of love"
-              className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
             />
           </label>
           <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
@@ -494,7 +494,7 @@ export default function StoryTab({
               name="location"
               defaultValue={story.location ?? ""}
               placeholder="The venue, city"
-              className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
             />
           </label>
         </div>
@@ -505,7 +505,7 @@ export default function StoryTab({
             name="venueAddress"
             defaultValue={story.venueAddress ?? ""}
             placeholder="123 Main Street, Victoria Island, Lagos"
-            className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+            className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
           />
           <span className="text-[11px] text-foreground/45">
             Shown only to guests who RSVP as attending — the site itself keeps showing just
@@ -520,7 +520,7 @@ export default function StoryTab({
             name="howWeMet"
             defaultValue={story.howWeMet ?? ""}
             placeholder="Tell your guests how your story began…"
-            className="resize-none border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+            className="resize-none border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
           />
         </label>
 
@@ -531,7 +531,7 @@ export default function StoryTab({
             name="whatWeLove"
             defaultValue={story.whatWeLove ?? ""}
             placeholder="Share what makes your partner special…"
-            className="resize-none border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+            className="resize-none border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
           />
         </label>
 
@@ -542,7 +542,7 @@ export default function StoryTab({
             name="groomNote"
             defaultValue={story.groomNote ?? ""}
             placeholder="A personal note from the groom…"
-            className="resize-none border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+            className="resize-none border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
           />
         </label>
 
@@ -553,7 +553,7 @@ export default function StoryTab({
             name="brideNote"
             defaultValue={story.brideNote ?? ""}
             placeholder="A personal note from the bride…"
-            className="resize-none border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+            className="resize-none border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
           />
         </label>
 
@@ -563,7 +563,7 @@ export default function StoryTab({
             name="heroPhotoUrl"
             defaultValue={story.heroPhotoUrl ?? ""}
             placeholder="https://…"
-            className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+            className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
           />
         </label>
 
@@ -572,7 +572,7 @@ export default function StoryTab({
         <button
           type="submit"
           disabled={pending}
-          className="self-start bg-burnt-orange px-6 py-2.5 text-xs font-medium text-ivory transition-colors hover:bg-burnt-orange-dark disabled:opacity-60"
+          className="self-start rounded-full bg-(--m-gold) px-6 py-2.5 text-sm font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
         >
           {pending ? "Saving…" : state?.success ? "Saved ✓" : "Save & Publish"}
         </button>

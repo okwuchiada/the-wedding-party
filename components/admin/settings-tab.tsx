@@ -18,7 +18,7 @@ export type SettingsView = {
   geoBypassToken: string | null;
 };
 
-const fieldClass = "border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-olive";
+const fieldClass = "border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-(--m-ink)/50";
 
 function PublishPanel({ settings }: { settings: SettingsView }) {
   const weddingId = useAdminWeddingId();
@@ -35,8 +35,8 @@ function PublishPanel({ settings }: { settings: SettingsView }) {
   };
 
   return (
-    <section className="flex flex-col gap-3 bg-white p-5">
-      <h2 className="font-(family-name:--serif) text-2xl text-foreground">
+    <section className="flex flex-col gap-3 rounded-[6px] bg-white p-5">
+      <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">
         {locked ? "Suspended" : live ? "Your site is live" : "Your site is a draft"}
       </h2>
       <p className="text-sm text-foreground/70">
@@ -55,8 +55,8 @@ function PublishPanel({ settings }: { settings: SettingsView }) {
           disabled={pending || (!live && !settings.canPublish)}
           className={`self-start px-5 py-2 text-xs font-medium disabled:opacity-50 ${
             live
-              ? "border border-olive/30 text-foreground hover:border-burnt-orange hover:text-burnt-orange"
-              : "bg-burnt-orange text-ivory hover:bg-burnt-orange-dark"
+              ? "border border-(--m-mist) text-foreground hover:border-burnt-orange hover:text-burnt-orange"
+              : "rounded-full bg-(--m-gold) text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
           }`}
         >
           {pending ? "Saving…" : live ? "Unpublish" : "Publish site"}
@@ -80,8 +80,8 @@ export default function SettingsTab({ settings }: { settings: SettingsView }) {
 
       <form action={formAction} className="flex flex-col gap-8">
         <section className="flex flex-col gap-3">
-          <h2 className="font-(family-name:--serif) text-2xl text-foreground">Web address</h2>
-          <div className="flex items-center border border-olive/20 bg-white focus-within:border-olive">
+          <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Web address</h2>
+          <div className="flex items-center border border-(--m-mist) rounded-[6px] bg-white focus-within:border-olive">
             <span className="pl-3 text-sm text-foreground/50">/w/</span>
             <input
               name="slug"
@@ -96,7 +96,7 @@ export default function SettingsTab({ settings }: { settings: SettingsView }) {
         </section>
 
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <h2 className="font-(family-name:--serif) text-2xl text-foreground sm:col-span-3">Money &amp; phone</h2>
+          <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground sm:col-span-3">Money &amp; phone</h2>
           <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
             Currency
             <select name="currency" value={currency} onChange={(e) => setCurrency(e.target.value)} className={fieldClass}>
@@ -124,7 +124,7 @@ export default function SettingsTab({ settings }: { settings: SettingsView }) {
         </section>
 
         <section className="flex flex-col gap-3">
-          <h2 className="font-(family-name:--serif) text-2xl text-foreground">Guests</h2>
+          <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Guests</h2>
           <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
             Maximum attending guests (your plan allows {settings.guestLimit.toLocaleString()})
             <input
@@ -139,7 +139,7 @@ export default function SettingsTab({ settings }: { settings: SettingsView }) {
         </section>
 
         <section className="flex flex-col gap-3">
-          <h2 className="font-(family-name:--serif) text-2xl text-foreground">Who can view the site</h2>
+          <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Who can view the site</h2>
           <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
             Only allow visitors from these countries (two-letter codes, e.g. NG, GH). Leave empty for everyone.
             <input name="allowedCountries" defaultValue={settings.allowedCountries.join(", ")} className={fieldClass} />
@@ -155,7 +155,7 @@ export default function SettingsTab({ settings }: { settings: SettingsView }) {
         <button
           type="submit"
           disabled={pending}
-          className="self-start bg-burnt-orange px-6 py-2.5 text-xs font-medium text-ivory hover:bg-burnt-orange-dark disabled:opacity-60"
+          className="self-start rounded-full bg-(--m-gold) px-6 py-2.5 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
         >
           {pending ? "Saving…" : "Save settings"}
         </button>

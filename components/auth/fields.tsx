@@ -1,23 +1,27 @@
-export function AuthHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
+// Form pieces for the auth pages, in the marketing palette (components/marketing/shell.tsx).
+
+export function AuthHeading({ title, intro }: { title: string; intro?: string }) {
   return (
-    <>
-      <p className="mb-2 text-xs uppercase tracking-[0.2em] text-olive">{eyebrow}</p>
-      <h1 className="mb-6 font-(family-name:--serif) text-2xl text-foreground">{title}</h1>
-    </>
+    <div className="mb-7">
+      <h1 className="font-(family-name:--m-display) text-3xl font-extrabold tracking-[-0.02em] sm:text-4xl">{title}</h1>
+      {intro && <p className="mt-2 leading-relaxed text-(--m-ink)/70">{intro}</p>}
+    </div>
   );
 }
 
+export const authInputClass =
+  "rounded-[6px] border border-(--m-mist) bg-white px-3.5 py-3 text-base text-(--m-ink) outline-none transition-shadow placeholder:text-(--m-ink)/35 focus:border-(--m-ink)/50 focus:ring-3 focus:ring-(--m-gold)/35";
+
 export function AuthField({
   label,
+  hint,
   ...input
-}: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+}: { label: string; hint?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+    <label className="flex flex-col gap-1.5 text-sm font-medium">
       {label}
-      <input
-        {...input}
-        className="border border-olive/20 bg-white px-3 py-2.5 text-sm text-foreground outline-none focus:border-olive"
-      />
+      <input {...input} className={authInputClass} />
+      {hint && <span className="text-xs font-normal text-(--m-ink)/55">{hint}</span>}
     </label>
   );
 }
@@ -27,7 +31,7 @@ export function AuthSubmit({ pending, label, pendingLabel }: { pending: boolean;
     <button
       type="submit"
       disabled={pending}
-      className="bg-burnt-orange px-6 py-2.5 text-xs font-medium text-ivory transition-colors hover:bg-burnt-orange-dark disabled:opacity-60"
+      className="mt-1 rounded-full bg-(--m-gold) px-6 py-3.5 text-sm font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--m-ink) disabled:opacity-60"
     >
       {pending ? pendingLabel : label}
     </button>
@@ -35,7 +39,21 @@ export function AuthSubmit({ pending, label, pendingLabel }: { pending: boolean;
 }
 
 export function AuthMessage({ error, message }: { error?: string; message?: string }) {
-  if (error) return <p className="text-xs text-burnt-orange">{error}</p>;
-  if (message) return <p className="text-xs text-olive">{message}</p>;
+  if (error) {
+    return (
+      <p role="alert" className="rounded-[6px] bg-(--m-coral)/10 px-3 py-2 text-sm text-(--m-coral-deep)">
+        {error}
+      </p>
+    );
+  }
+  if (message) {
+    return (
+      <p role="status" className="rounded-[6px] bg-(--m-emerald)/10 px-3 py-2 text-sm text-(--m-emerald)">
+        {message}
+      </p>
+    );
+  }
   return null;
 }
+
+export const authLinkClass = "font-medium underline decoration-(--m-ink)/25 underline-offset-4 hover:decoration-(--m-ink)";

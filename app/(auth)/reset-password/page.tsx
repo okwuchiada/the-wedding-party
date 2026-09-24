@@ -1,6 +1,6 @@
 import Link from "next/link";
 import ResetPasswordForm from "@/components/auth/reset-password-form";
-import { AuthHeading } from "@/components/auth/fields";
+import { AuthHeading, authLinkClass } from "@/components/auth/fields";
 import { MIN_PASSWORD_LENGTH } from "@/lib/password";
 import { findValidToken } from "@/lib/tokens";
 
@@ -15,12 +15,9 @@ export default async function ResetPasswordPage({
   if (!record || typeof token !== "string") {
     return (
       <>
-        <AuthHeading eyebrow="Account" title="Link expired" />
-        <p className="mb-6 text-sm text-foreground/70">
-          This link has expired or was already used.
-        </p>
-        <Link href="/forgot-password" className="text-xs text-burnt-orange hover:underline">
-          Request a new link
+        <AuthHeading title="This link has expired" intro="Reset links work once and expire after an hour. Invite links last 7 days." />
+        <Link href="/forgot-password" className={authLinkClass}>
+          Send me a new link
         </Link>
       </>
     );
@@ -30,8 +27,8 @@ export default async function ResetPasswordPage({
   return (
     <>
       <AuthHeading
-        eyebrow={isInvite ? "Welcome" : "Account"}
         title={isInvite ? "Set your password" : "Choose a new password"}
+        intro={isInvite ? "You've been invited to help manage a wedding site. Choose a password to get started." : undefined}
       />
       <ResetPasswordForm token={token} email={record.user.email} minPasswordLength={MIN_PASSWORD_LENGTH} />
     </>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { WovenBand } from "@/components/marketing/shell";
 import { requireWeddingAccess } from "@/lib/dal";
 import { formatMoney } from "@/lib/money";
 import { fulfillPayment } from "@/lib/payments";
@@ -47,22 +48,24 @@ export default async function BillingReturnPage({
 
   const message = MESSAGES[status];
   return (
-    <div className="flex min-h-screen items-center justify-center bg-ivory px-4">
-      <div className="w-full max-w-md bg-white p-8 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
-        <p className="mb-2 text-xs uppercase tracking-[0.2em] text-olive">Billing</p>
-        <h1 className="font-(family-name:--serif) text-3xl text-foreground">{message.title}</h1>
-        {payment && (
-          <p className="mt-2 text-sm text-foreground/60">
-            {payment.plan.name} · {formatMoney(payment.amountKobo, { currency: PAYSTACK_CURRENCY, locale: "en-NG" })}
-          </p>
-        )}
-        <p className="mt-4 text-sm text-foreground/80">{message.body}</p>
-        <Link
-          href={dashboardPath(wedding.id)}
-          className="mt-6 inline-block bg-burnt-orange px-5 py-2.5 text-xs font-medium text-ivory hover:bg-burnt-orange-dark"
-        >
-          Back to dashboard
-        </Link>
+    <div className="flex min-h-screen items-center justify-center px-5 py-12">
+      <div className="w-full max-w-md overflow-hidden rounded-[6px] border border-(--m-mist) bg-white shadow-[0_30px_60px_-40px_rgb(22_32_74/0.45)]">
+        <WovenBand className="h-2" />
+        <div className="p-8">
+          <h1 className="font-(family-name:--m-display) text-3xl font-extrabold tracking-[-0.02em]">{message.title}</h1>
+          {payment && (
+            <p className="mt-2 text-sm text-(--m-ink)/60">
+              {payment.plan.name}, {formatMoney(payment.amountKobo, { currency: PAYSTACK_CURRENCY, locale: "en-NG" })}
+            </p>
+          )}
+          <p className="mt-4 leading-relaxed text-(--m-ink)/80">{message.body}</p>
+          <Link
+            href={dashboardPath(wedding.id)}
+            className="mt-7 inline-block rounded-full bg-(--m-gold) px-6 py-3 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
+          >
+            Back to dashboard
+          </Link>
+        </div>
       </div>
     </div>
   );

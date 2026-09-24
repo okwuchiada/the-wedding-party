@@ -32,7 +32,7 @@ export default async function SuperPlansPage() {
           }}
         />
       ))}
-      <h2 className="mt-4 font-(family-name:--serif) text-2xl">New plan</h2>
+      <h2 className="mt-4 font-(family-name:--m-display) font-bold tracking-tight text-2xl">New plan</h2>
       <PlanForm />
     </div>
   );

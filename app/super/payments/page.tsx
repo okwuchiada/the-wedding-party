@@ -34,7 +34,7 @@ export default async function SuperPaymentsPage({
   return (
     <div className="flex flex-col gap-5">
       <SearchForm q={term} placeholder="Reference or wedding slug">
-        <select name="status" defaultValue={status ?? ""} className="border border-olive/20 bg-white px-3 py-2 text-sm">
+        <select name="status" defaultValue={status ?? ""} className="border border-(--m-mist) bg-white px-3 py-2 text-sm">
           <option value="">All statuses</option>
           {STATUSES.map((s) => (
             <option key={s} value={s}>

@@ -16,13 +16,13 @@ export type PlanView = {
   weddingCount: number;
 };
 
-const field = "border border-olive/20 bg-white px-2 py-1.5 text-sm text-foreground outline-none focus:border-olive";
+const field = "border border-(--m-mist) bg-white px-2 py-1.5 text-sm text-foreground outline-none focus:border-(--m-ink)/50";
 
 export default function PlanForm({ plan }: { plan?: PlanView }) {
   const [state, formAction, pending] = useActionState(savePlan, undefined);
 
   return (
-    <form action={formAction} className="grid grid-cols-2 gap-3 bg-white p-4 sm:grid-cols-6">
+    <form action={formAction} className="grid grid-cols-2 gap-3 rounded-[6px] bg-white p-4 sm:grid-cols-6">
       {plan && <input type="hidden" name="id" value={plan.id} />}
       <label className="flex flex-col gap-1 text-xs text-foreground/60">
         Key
@@ -60,7 +60,7 @@ export default function PlanForm({ plan }: { plan?: PlanView }) {
         <button
           type="submit"
           disabled={pending}
-          className="bg-burnt-orange px-4 py-1.5 text-xs font-medium text-ivory hover:bg-burnt-orange-dark disabled:opacity-60"
+          className="rounded-full bg-(--m-gold) px-4 py-1.5 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
         >
           {pending ? "Saving…" : plan ? "Save" : "Create plan"}
         </button>

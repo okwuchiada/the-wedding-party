@@ -14,15 +14,16 @@ const LINKS = [
 export default function SuperNav() {
   const pathname = usePathname();
   return (
-    <nav className="flex gap-1 overflow-x-auto border-b border-olive/20">
+    <nav className="flex gap-1.5 overflow-x-auto pb-1">
       {LINKS.map((link) => {
         const active = link.href === "/super" ? pathname === "/super" : pathname.startsWith(link.href);
         return (
           <Link
             key={link.href}
             href={link.href}
-            className={`-mb-px border-b-2 px-4 py-3 text-xs font-semibold tracking-[.12em] whitespace-nowrap uppercase ${
-              active ? "border-burnt-orange text-foreground" : "border-transparent text-foreground/45 hover:text-foreground"
+            aria-current={active ? "page" : undefined}
+            className={`rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+              active ? "bg-(--m-ink) text-(--m-paper)" : "text-(--m-ink)/70 hover:bg-(--m-mist) hover:text-(--m-ink)"
             }`}
           >
             {link.label}

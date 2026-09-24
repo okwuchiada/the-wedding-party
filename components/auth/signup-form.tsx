@@ -3,17 +3,18 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { signup } from "@/lib/actions/auth";
-import { AuthField, AuthMessage, AuthSubmit } from "./fields";
+import { AuthField, AuthMessage, AuthSubmit, authLinkClass } from "./fields";
 
 export default function SignupForm({ minPasswordLength }: { minPasswordLength: number }) {
   const [state, action, pending] = useActionState(signup, undefined);
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form action={action} className="flex flex-col gap-5">
       <AuthField label="Your name" name="name" autoComplete="name" autoFocus required />
       <AuthField label="Email" type="email" name="email" autoComplete="email" required />
       <AuthField
-        label={`Password (at least ${minPasswordLength} characters)`}
+        label="Password"
+        hint={`At least ${minPasswordLength} characters`}
         type="password"
         name="password"
         autoComplete="new-password"
@@ -22,9 +23,9 @@ export default function SignupForm({ minPasswordLength }: { minPasswordLength: n
       />
       <AuthMessage error={state?.error} />
       <AuthSubmit pending={pending} label="Create account" pendingLabel="Creating account…" />
-      <p className="text-xs text-foreground/60">
+      <p className="text-sm text-(--m-ink)/70">
         Already have an account?{" "}
-        <Link href="/login" className="hover:text-burnt-orange">
+        <Link href="/login" className={authLinkClass}>
           Sign in
         </Link>
       </p>

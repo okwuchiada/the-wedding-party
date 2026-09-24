@@ -1,17 +1,46 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { createWedding } from "@/lib/actions/weddings";
+import { useActionState, useEffect, useState } from "react";
+import { AuthMessage, AuthSubmit, authInputClass } from "@/components/auth/fields";
+import SitePreview from "@/components/marketing/site-preview";
+import { checkSlugAvailable, createWedding } from "@/lib/actions/weddings";
 import { suggestWeddingSlug } from "@/lib/slug";
+import { getPreset, THEME_PRESETS } from "@/lib/themes";
 
-const inputClass =
-  "border border-olive/20 bg-white px-3 py-2.5 text-sm text-foreground outline-none focus:border-olive";
+type SlugCheck = { slug: string; available: boolean; reason?: string };
+
+const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? "";
+
+function formatDateLabel(date: string) {
+  if (!date) return "Your wedding date";
+  const parsed = new Date(`${date}T12:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return "Your wedding date";
+  return parsed.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+}
+
+function Step({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
+  return (
+    <fieldset className="grid grid-cols-[2.5rem_1fr] gap-x-4 border-t border-(--m-mist) pt-8 sm:grid-cols-[3.5rem_1fr]">
+      <span aria-hidden className="font-(family-name:--m-display) text-4xl leading-none font-extrabold text-(--m-gold) sm:text-5xl">
+        {number}
+      </span>
+      <div>
+        <legend className="mb-5 font-(family-name:--m-display) text-2xl font-bold tracking-tight">{title}</legend>
+        {children}
+      </div>
+    </fieldset>
+  );
+}
 
 export default function CreateWeddingForm() {
   const [state, action, pending] = useActionState(createWedding, undefined);
   const [names, setNames] = useState({ bride: "", groom: "" });
+  const [date, setDate] = useState("");
   const [slug, setSlug] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
+  const [check, setCheck] = useState<SlugCheck | null>(null);
+  const [presetKey, setPresetKey] = useState("adire-indigo");
+  const preset = getPreset(presetKey);
 
   const updateName = (key: "bride" | "groom", value: string) => {
     const next = { ...names, [key]: value };
@@ -19,58 +48,123 @@ export default function CreateWeddingForm() {
     if (!slugEdited) setSlug(suggestWeddingSlug(next.bride, next.groom));
   };
 
+  // Check the web address shortly after typing stops.
+  useEffect(() => {
+    if (!slug) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const result = await checkSlugAvailable(slug);
+      if (!cancelled) setCheck({ slug, ...result });
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [slug]);
+  const status = slug && check?.slug === slug ? check : null;
+
   return (
-    <form action={action} className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-          Partner one
-          <input
-            name="brideName"
-            required
-            value={names.bride}
-            onChange={(e) => updateName("bride", e.target.value)}
-            className={inputClass}
-          />
-        </label>
-        <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-          Partner two
-          <input
-            name="groomName"
-            required
-            value={names.groom}
-            onChange={(e) => updateName("groom", e.target.value)}
-            className={inputClass}
-          />
-        </label>
+    // On phones the preview sits between the steps and the button; on wide screens it's a sticky side column.
+    <form
+      action={action}
+      className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:grid-rows-[auto_1fr] lg:gap-x-16"
+    >
+      <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">
+        <Step number={1} title="Who's getting married?">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="flex flex-col gap-1.5 text-sm font-medium">
+              Your name
+              <input
+                name="brideName"
+                required
+                autoComplete="name"
+                value={names.bride}
+                onChange={(e) => updateName("bride", e.target.value)}
+                className={authInputClass}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm font-medium">
+              Your partner&apos;s name
+              <input name="groomName" required value={names.groom} onChange={(e) => updateName("groom", e.target.value)} className={authInputClass} />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm font-medium sm:col-span-2 sm:max-w-xs">
+              Wedding date
+              <input type="date" name="weddingDate" required value={date} onChange={(e) => setDate(e.target.value)} className={authInputClass} />
+            </label>
+          </div>
+        </Step>
+
+        <Step number={2} title="Your web address">
+          <p className="mb-3 text-(--m-ink)/70">This is the link you&apos;ll share with guests. You can change it later.</p>
+          <div className="flex items-center rounded-[6px] border border-(--m-mist) bg-white focus-within:border-(--m-ink)/50 focus-within:ring-3 focus-within:ring-(--m-gold)/35">
+            <span className="pl-3.5 text-base text-(--m-ink)/50">/w/</span>
+            <input
+              name="slug"
+              required
+              aria-label="Web address"
+              aria-describedby="slug-status"
+              value={slug}
+              onChange={(e) => {
+                setSlugEdited(true);
+                setSlug(e.target.value.toLowerCase());
+              }}
+              className="w-full rounded-[6px] px-1 py-3 text-base outline-none"
+            />
+          </div>
+          <p
+            id="slug-status"
+            aria-live="polite"
+            className={`mt-2 min-h-5 text-sm ${status?.available === false ? "text-(--m-coral-deep)" : "text-(--m-emerald)"}`}
+          >
+            {status ? (status.available ? "That address is free" : status.reason) : ""}
+          </p>
+        </Step>
+
+        <Step number={3} title="Pick a look">
+          <p className="mb-4 text-(--m-ink)/70">Colours and fonts for your site. You can fine-tune everything later.</p>
+          <input type="hidden" name="presetKey" value={presetKey} />
+          <div role="radiogroup" aria-label="Theme" className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
+            {THEME_PRESETS.map((p) => {
+              const selected = p.key === presetKey;
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setPresetKey(p.key)}
+                  className={`flex flex-col gap-2 rounded-[6px] bg-white p-2 text-left text-xs font-medium outline-offset-2 focus-visible:outline-2 focus-visible:outline-(--m-ink) ${
+                    selected ? "ring-2 ring-(--m-ink)" : "ring-1 ring-(--m-mist) hover:ring-(--m-ink)/40"
+                  }`}
+                >
+                  <span className="flex h-9 overflow-hidden rounded-[3px]">
+                    {(["primary", "cream", "accent", "background", "primaryDark"] as const).map((k, i) => (
+                      <span key={k} style={{ background: p.colors[k], flexGrow: i % 2 ? 1 : 2 }} />
+                    ))}
+                  </span>
+                  {p.name}
+                </button>
+              );
+            })}
+          </div>
+        </Step>
+
       </div>
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-        Wedding date
-        <input type="date" name="weddingDate" required className={inputClass} />
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-        Web address
-        <div className="flex items-center border border-olive/20 bg-white focus-within:border-olive">
-          <span className="pl-3 text-sm text-foreground/50">/w/</span>
-          <input
-            name="slug"
-            required
-            value={slug}
-            onChange={(e) => {
-              setSlugEdited(true);
-              setSlug(e.target.value.toLowerCase());
-            }}
-            className="w-full px-1 py-2.5 text-sm text-foreground outline-none"
-          />
-        </div>
-      </label>
-      {state?.error && <p className="text-xs text-burnt-orange">{state.error}</p>}
-      <button
-        type="submit"
-        disabled={pending}
-        className="bg-burnt-orange px-6 py-2.5 text-xs font-medium text-ivory transition-colors hover:bg-burnt-orange-dark disabled:opacity-60"
-      >
-        {pending ? "Creating…" : "Create wedding"}
-      </button>
+
+      <div className="flex flex-col gap-4 border-t border-(--m-mist) pt-8 sm:max-w-sm lg:col-start-1 lg:row-start-2 lg:self-start">
+        <AuthMessage error={state?.error} />
+        <AuthSubmit pending={pending} label="Create my site" pendingLabel="Creating your site…" />
+      </div>
+
+      <div className="row-start-2 lg:sticky lg:top-8 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
+        <SitePreview
+          preset={preset}
+          names={[firstName(names.bride) || "Your name", firstName(names.groom) || "Your partner"]}
+          dateLabel={formatDateLabel(date)}
+          place=""
+        />
+        <p className="mt-3 text-sm text-(--m-ink)/60">How guests will see your site.</p>
+      </div>
     </form>
   );
 }

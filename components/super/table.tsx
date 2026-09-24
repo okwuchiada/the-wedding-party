@@ -1,8 +1,8 @@
 export function Table({ head, children }: { head: string[]; children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto bg-white">
+    <div className="overflow-x-auto rounded-[6px] bg-white">
       <table className="w-full text-left text-sm">
-        <thead className="text-[11px] tracking-[.1em] text-foreground/55 uppercase">
+        <thead className="text-xs text-foreground/55">
           <tr>
             {head.map((h) => (
               <th key={h} className="px-3 py-3 font-medium whitespace-nowrap">
@@ -11,7 +11,7 @@ export function Table({ head, children }: { head: string[]; children: React.Reac
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-olive/10 align-top">{children}</tbody>
+        <tbody className="divide-y divide-(--m-mist) align-top">{children}</tbody>
       </table>
     </div>
   );
@@ -24,10 +24,10 @@ export function SearchForm({ q, placeholder, children }: { q?: string; placehold
         name="q"
         defaultValue={q}
         placeholder={placeholder}
-        className="min-w-60 flex-1 border border-olive/20 bg-white px-3 py-2 text-sm outline-none focus:border-olive"
+        className="min-w-60 flex-1 border border-(--m-mist) bg-white px-3 py-2 text-sm outline-none focus:border-(--m-ink)/50"
       />
       {children}
-      <button type="submit" className="border border-olive/30 px-4 py-2 text-xs font-medium hover:border-burnt-orange">
+      <button type="submit" className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium hover:border-(--m-ink)">
         Search
       </button>
     </form>

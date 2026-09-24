@@ -9,7 +9,7 @@ export default async function SignupPage() {
 
   return (
     <>
-      <AuthHeading eyebrow="Get started" title="Create your account" />
+      <AuthHeading title="Create your site" intro="Free to build and preview. You only pay when you publish." />
       <SignupForm minPasswordLength={MIN_PASSWORD_LENGTH} />
     </>
   );

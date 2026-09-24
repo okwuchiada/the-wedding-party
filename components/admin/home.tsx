@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import LiveRefresh from "@/components/live-refresh";
 import { useSyncedState } from "./use-synced-state";
@@ -24,7 +23,6 @@ import WishesTab from "./wishes-tab";
 import RsvpTab from "./rsvp-tab";
 import StoryTab, { type StoryContentView, type StoryPhotoView } from "./story-tab";
 import type { StoryBeatView } from "./story-beats-section";
-import SignOutButton from "./sign-out-button";
 import MembersTab, { type MemberView } from "./members-tab";
 import DesignTab from "./design-tab";
 import WordingTab, { type CopyView } from "./wording-tab";
@@ -33,7 +31,6 @@ import BillingTab, { type BillingView } from "./billing-tab";
 import type { ResolvedTheme } from "@/lib/themes";
 import { AdminWeddingProvider } from "./wedding-context";
 import { formatMoney, type MoneyFormat } from "@/lib/money";
-import { logout } from "@/lib/actions/auth";
 import { confirmContribution } from "@/lib/actions/contributions";
 import { approveWish, hideWish } from "@/lib/actions/wishes";
 import { approveMedia, deleteMedia, hideMedia } from "@/lib/actions/media";
@@ -216,61 +213,52 @@ export default function AdminHome({
   }).length;
 
   const stats = [
-    { label: "Total Raised", value: formatMoney(totalRaisedCents, money) },
-    { label: "Items Fully Funded", value: `${itemsFullyFunded} / ${registryItems.length}` },
-    { label: "Guest Uploads", value: approvedMedia.length },
+    { label: "Total raised", value: formatMoney(totalRaisedCents, money) },
+    { label: "Items fully funded", value: `${itemsFullyFunded} / ${registryItems.length}` },
+    { label: "Guest uploads", value: approvedMedia.length },
     { label: "Wishes", value: approvedWishes.length },
   ];
 
   return (
     <AdminWeddingProvider weddingId={weddingId} money={money}>
-    <div className="min-h-screen bg-ivory px-4 py-12 sm:px-8">
+    <div className="mx-auto max-w-6xl px-5 pt-4 pb-16 sm:px-8">
       <LiveRefresh />
-      <div className="mx-auto max-w-5xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="mb-2 text-xs uppercase tracking-[0.2em] text-olive">Admin</p>
-            <h1 className="font-(family-name:--serif) text-3xl text-foreground sm:text-4xl">
-              {story.brideName} &amp; {story.groomName}&apos;s Dashboard
-            </h1>
-            <Link href="/dashboard" className="mt-2 mr-4 inline-block text-sm text-olive underline hover:text-burnt-orange">
-              All weddings
-            </Link>
-            <a
-              href={guestUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-block text-sm text-olive underline hover:text-burnt-orange"
-            >
-              View guest site
-            </a>
-          </div>
-          <form action={logout}>
-            <SignOutButton />
-          </form>
+      <div>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h1 className="font-(family-name:--m-display) text-4xl leading-none font-extrabold tracking-[-0.03em] sm:text-5xl">
+            {story.brideName} &amp; {story.groomName}
+          </h1>
+          <a
+            href={guestUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full bg-(--m-ink) px-5 py-2.5 text-sm font-semibold text-(--m-paper) hover:bg-(--m-emerald)"
+          >
+            View guest site
+          </a>
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {stats.map((stat) => (
-            <div key={stat.label} className="bg-white p-4 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
-              <p className="text-[10.5px] tracking-[.16em] text-foreground/55 uppercase">{stat.label}</p>
-              <p className="mt-2 font-(family-name:--serif) text-2xl text-foreground">{stat.value}</p>
+            <div key={stat.label} className="rounded-[6px] border border-(--m-mist) bg-white p-4">
+              <p className="text-sm text-(--m-ink)/60">{stat.label}</p>
+              <p className="mt-1 font-(family-name:--m-display) text-3xl font-extrabold tracking-tight">{stat.value}</p>
             </div>
           ))}
         </div>
 
-        <div className="mt-10 mb-8 flex gap-1 overflow-x-auto border-b border-olive/20">
+        <div role="tablist" aria-label="Dashboard sections" className="mt-10 mb-8 flex gap-1.5 overflow-x-auto pb-1">
           {tabs.filter((tab) => isOwner || !OWNER_TABS.includes(tab)).map((tab) => {
             const isActive = tab === activeTab;
             return (
               <button
                 key={tab}
                 type="button"
+                role="tab"
+                aria-selected={isActive}
                 onClick={() => setActiveTab(tab)}
-                className={`-mb-px px-4.5 py-3 font-semibold text-xs tracking-[.12em] whitespace-nowrap uppercase transition-colors ${
-                  isActive
-                    ? "border-b-2 border-burnt-orange text-foreground"
-                    : "border-b-2 border-transparent text-foreground/45"
+                className={`rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                  isActive ? "bg-(--m-ink) text-(--m-paper)" : "text-(--m-ink)/70 hover:bg-(--m-mist) hover:text-(--m-ink)"
                 }`}
               >
                 {tab}

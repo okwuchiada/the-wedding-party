@@ -98,7 +98,7 @@ function RegistryItemForm({
         <input
           name="name"
           defaultValue={initialValues?.name}
-          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
       </label>
 
@@ -107,7 +107,7 @@ function RegistryItemForm({
         <input
           name="category"
           defaultValue={initialValues?.category}
-          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
       </label>
 
@@ -119,7 +119,7 @@ function RegistryItemForm({
           min={1}
           step="0.01"
           defaultValue={initialValues?.price}
-          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
       </label>
 
@@ -128,7 +128,7 @@ function RegistryItemForm({
         <input
           name="image"
           defaultValue={initialValues?.image}
-          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
       </label>
 
@@ -138,7 +138,7 @@ function RegistryItemForm({
           name="file"
           type="file"
           accept="image/*,.heic,.heif"
-          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none file:mr-3 file:border-0 file:bg-burnt-orange file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ivory"
+          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none file:mr-3 file:border-0 file:rounded-full file:bg-(--m-ink) file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ivory"
         />
         {initialValues?.image && (
           <span className="mt-1 text-[11px] text-foreground/50">
@@ -152,7 +152,7 @@ function RegistryItemForm({
         <input
           name="externalUrl"
           defaultValue={initialValues?.externalUrl ?? ""}
-          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
       </label>
 
@@ -164,14 +164,14 @@ function RegistryItemForm({
         <button
           type="button"
           onClick={onCancel}
-          className="border border-olive/30 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-burnt-orange hover:text-burnt-orange"
+          className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={pending || uploading}
-          className="bg-burnt-orange px-4 py-2 text-xs font-medium text-ivory transition-colors hover:bg-burnt-orange-dark disabled:opacity-60"
+          className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
         >
           {uploading ? "Uploading…" : pending ? "Saving…" : submitLabel}
         </button>
@@ -202,7 +202,7 @@ function BankDetailsForm({
         <input
           name="name"
           defaultValue={bankDetails.name}
-          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
       </label>
       <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
@@ -210,7 +210,7 @@ function BankDetailsForm({
         <input
           name="bank"
           defaultValue={bankDetails.bank}
-          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
       </label>
       <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
@@ -218,7 +218,7 @@ function BankDetailsForm({
         <input
           name="account"
           defaultValue={bankDetails.account}
-          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
       </label>
       <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
@@ -226,7 +226,7 @@ function BankDetailsForm({
         <input
           name="routing"
           defaultValue={bankDetails.routing}
-          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
       </label>
       <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
@@ -234,7 +234,7 @@ function BankDetailsForm({
         <input
           name="swift"
           defaultValue={bankDetails.swift ?? ""}
-          className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
       </label>
 
@@ -244,14 +244,14 @@ function BankDetailsForm({
         <button
           type="button"
           onClick={onCancel}
-          className="border border-olive/30 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-burnt-orange hover:text-burnt-orange"
+          className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={pending}
-          className="bg-burnt-orange px-4 py-2 text-xs font-medium text-ivory transition-colors hover:bg-burnt-orange-dark disabled:opacity-60"
+          className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
         >
           {pending ? "Saving…" : "Save"}
         </button>
@@ -292,7 +292,7 @@ export default function RegistryTab({
   return (
     <div>
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-(family-name:--serif) text-2xl text-foreground">Bank Details</h2>
+        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Bank Details</h2>
         {!editingBank && (
           <button
             type="button"
@@ -309,37 +309,37 @@ export default function RegistryTab({
           <BankDetailsForm bankDetails={bankDetails} onCancel={() => setEditingBank(false)} />
         </div>
       ) : (
-        <div className="mb-10 grid grid-cols-2 gap-4 border border-olive/15 p-4 text-sm sm:grid-cols-4">
+        <div className="mb-10 grid grid-cols-2 gap-4 rounded-[6px] border border-(--m-mist) bg-white p-4 text-sm sm:grid-cols-4">
           <div>
-            <p className="text-[10.5px] tracking-widest text-foreground/50 uppercase">Account name</p>
+            <p className="text-xs text-foreground/50">Account name</p>
             <p className="mt-1 text-foreground">{bankDetails.name}</p>
           </div>
           <div>
-            <p className="text-[10.5px] tracking-widest text-foreground/50 uppercase">Bank</p>
+            <p className="text-xs text-foreground/50">Bank</p>
             <p className="mt-1 text-foreground">{bankDetails.bank}</p>
           </div>
           <div>
-            <p className="text-[10.5px] tracking-widest text-foreground/50 uppercase">Account no.</p>
+            <p className="text-xs text-foreground/50">Account no.</p>
             <p className="mt-1 text-foreground">{bankDetails.account}</p>
           </div>
           <div>
-            <p className="text-[10.5px] tracking-widest text-foreground/50 uppercase">Routing</p>
+            <p className="text-xs text-foreground/50">Routing</p>
             <p className="mt-1 text-foreground">{bankDetails.routing}</p>
           </div>
           <div>
-            <p className="text-[10.5px] tracking-widest text-foreground/50 uppercase">SWIFT / BIC</p>
+            <p className="text-xs text-foreground/50">SWIFT / BIC</p>
             <p className="mt-1 text-foreground">{bankDetails.swift ?? "—"}</p>
           </div>
         </div>
       )}
 
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-(family-name:--serif) text-2xl text-foreground">Registry Items</h2>
+        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Registry Items</h2>
         {!adding && (
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="bg-burnt-orange px-4 py-2 text-xs font-medium text-ivory hover:bg-burnt-orange-dark"
+            className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
           >
             Add Item
           </button>
@@ -354,10 +354,10 @@ export default function RegistryTab({
 
       {deleteError && <p className="mb-3 text-xs text-burnt-orange">{deleteError}</p>}
 
-      <div className="overflow-x-auto border border-olive/15">
+      <div className="overflow-x-auto rounded-[6px] border border-(--m-mist) bg-white">
         <table className="w-full min-w-150 text-left text-sm">
           <thead>
-            <tr className="border-b border-olive/15 text-[11px] tracking-widest text-foreground/50 uppercase">
+            <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
               <th className="px-4 py-3 font-medium">Item</th>
               <th className="px-4 py-3 font-medium">Category</th>
               <th className="px-4 py-3 font-medium">Goal</th>
@@ -369,7 +369,7 @@ export default function RegistryTab({
           <tbody>
             {items.map((item) =>
               editingId === item.id ? (
-                <tr key={item.id} className="border-b border-olive/10 last:border-0">
+                <tr key={item.id} className="border-b border-(--m-mist) last:border-0">
                   <td colSpan={6} className="p-0">
                     <RegistryItemForm
                       action={updateRegistryItem.bind(null, weddingId)}
@@ -387,7 +387,7 @@ export default function RegistryTab({
                   </td>
                 </tr>
               ) : (
-                <tr key={item.id} className="border-b border-olive/10 last:border-0">
+                <tr key={item.id} className="border-b border-(--m-mist) last:border-0">
                   <td className="px-4 py-3 text-foreground">{item.name}</td>
                   <td className="px-4 py-3 text-foreground/70">{item.category}</td>
                   <td className="px-4 py-3 text-foreground/70">{formatMoney(item.priceCents, money)}</td>

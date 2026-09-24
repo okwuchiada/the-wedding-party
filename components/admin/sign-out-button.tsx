@@ -9,7 +9,7 @@ export default function SignOutButton() {
     <button
       type="submit"
       disabled={pending}
-      className="border border-olive/30 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-burnt-orange hover:text-burnt-orange disabled:opacity-60"
+      className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink) disabled:opacity-60"
     >
       {pending ? "Signing out…" : "Sign out"}
     </button>

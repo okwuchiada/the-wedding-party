@@ -74,7 +74,7 @@ export async function signup(_prevState: AuthFormState, formData: FormData): Pro
   });
 
   await createSession(user);
-  redirect("/dashboard");
+  redirect("/dashboard/new");
 }
 
 export async function logout() {

@@ -45,9 +45,9 @@ export default function ConfirmModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm bg-white p-6 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]"
+        className="w-full max-w-sm rounded-[6px] bg-white p-6 border border-(--m-mist)"
       >
-        <h2 id="confirm-modal-title" className="font-(family-name:--serif) text-xl text-foreground">
+        <h2 id="confirm-modal-title" className="font-(family-name:--m-display) font-bold tracking-tight text-xl text-foreground">
           {title}
         </h2>
         {description && <p className="mt-2 text-sm text-foreground/70">{description}</p>}
@@ -55,7 +55,7 @@ export default function ConfirmModal({
           <button
             type="button"
             onClick={onCancel}
-            className="border border-olive/30 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-burnt-orange hover:text-burnt-orange"
+            className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
           >
             {cancelLabel}
           </button>

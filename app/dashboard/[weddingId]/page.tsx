@@ -1,4 +1,5 @@
 import AdminHome from "@/components/admin/home";
+import DashboardBar from "@/components/admin/dashboard-bar";
 import { canManageWedding, requireWeddingAccess } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { COPY_FIELDS } from "@/lib/copy";
@@ -96,6 +97,8 @@ export default async function WeddingDashboardPage({
   const copy = settings.copy;
 
   return (
+    <>
+    <DashboardBar isSuperAdmin={user.role === "SUPER_ADMIN" && !user.impersonatorId} />
     <AdminHome
       weddingId={wedding.id}
       money={moneyFormat(wedding)}
@@ -249,5 +252,6 @@ export default async function WeddingDashboardPage({
         bankDetails ?? { name: "", bank: "", account: "", routing: "", swift: null }
       }
     />
+    </>
   );
 }

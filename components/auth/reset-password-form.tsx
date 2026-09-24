@@ -16,13 +16,14 @@ export default function ResetPasswordForm({
   const [state, action, pending] = useActionState(resetPassword, undefined);
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form action={action} className="flex flex-col gap-5">
       <input type="hidden" name="token" value={token} />
       {/* Lets password managers save the new password against the right account. */}
       <input type="email" name="username" value={email} autoComplete="username" readOnly hidden />
-      <p className="text-xs text-foreground/60">{email}</p>
+      <p className="rounded-[6px] bg-(--m-paper) px-3 py-2 text-sm text-(--m-ink)/75">{email}</p>
       <AuthField
-        label={`New password (at least ${minPasswordLength} characters)`}
+        label="New password"
+        hint={`At least ${minPasswordLength} characters`}
         type="password"
         name="password"
         autoComplete="new-password"

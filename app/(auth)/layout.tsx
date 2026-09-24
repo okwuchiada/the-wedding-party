@@ -1,17 +1,14 @@
-import Link from "next/link";
+import MarketingShell, { WovenBand } from "@/components/marketing/shell";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-ivory px-4 py-12">
-      <Link
-        href="/"
-        className="mb-8 font-(family-name:--serif) text-2xl text-foreground hover:text-burnt-orange"
-      >
-        The Wedding Party
-      </Link>
-      <div className="w-full max-w-sm bg-white p-8 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
-        {children}
+    <MarketingShell>
+      <div className="flex justify-center px-5 pt-6 pb-20 sm:pt-12">
+        <div className="w-full max-w-md overflow-hidden rounded-[6px] border border-(--m-mist) bg-white shadow-[0_30px_60px_-40px_rgb(22_32_74/0.45)]">
+          <WovenBand className="h-2" />
+          <div className="p-7 sm:p-9">{children}</div>
+        </div>
       </div>
-    </div>
+    </MarketingShell>
   );
 }

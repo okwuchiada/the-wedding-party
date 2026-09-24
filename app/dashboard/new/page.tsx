@@ -1,28 +1,33 @@
 import Link from "next/link";
 import CreateWeddingForm from "@/components/admin/create-wedding-form";
+import MarketingShell from "@/components/marketing/shell";
+import { authLinkClass } from "@/components/auth/fields";
 import { verifySession } from "@/lib/dal";
+import { prisma } from "@/lib/prisma";
 
 export default async function NewWeddingPage() {
-  await verifySession();
+  const user = await verifySession();
+  const hasWeddings = (await prisma.weddingMember.count({ where: { userId: user.id } })) > 0;
 
   return (
-    <div className="min-h-screen bg-ivory px-4 py-12 sm:px-8">
-      <div className="mx-auto max-w-lg">
-        <Link href="/dashboard" className="text-xs text-foreground/60 hover:text-burnt-orange">
-          ← Your weddings
-        </Link>
-        <p className="mt-6 mb-2 text-xs uppercase tracking-[0.2em] text-olive">New wedding</p>
-        <h1 className="font-(family-name:--serif) text-3xl text-foreground sm:text-4xl">
+    <MarketingShell>
+      <div className="mx-auto max-w-6xl px-5 pt-6 pb-24 sm:px-8 sm:pt-10">
+        {hasWeddings && (
+          <Link href="/dashboard" className={`text-sm ${authLinkClass}`}>
+            Back to your weddings
+          </Link>
+        )}
+        <h1 className="mt-4 max-w-2xl font-(family-name:--m-display) text-4xl leading-[0.95] font-extrabold tracking-[-0.03em] sm:text-6xl">
           Let&apos;s set up your site
         </h1>
-        <p className="mt-3 text-sm text-foreground/70">
-          Your site starts as a private draft. You can preview it and fill in the details before
-          publishing.
+        <p className="mt-5 max-w-xl text-lg leading-relaxed text-(--m-ink)/75">
+          It starts as a private draft only you can see. Add your story, registry and bank details next, then publish when
+          you&apos;re ready for guests.
         </p>
-        <div className="mt-8 bg-white p-6 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
+        <div className="mt-12">
           <CreateWeddingForm />
         </div>
       </div>
-    </div>
+    </MarketingShell>
   );
 }

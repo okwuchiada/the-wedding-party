@@ -77,7 +77,7 @@ export default function DesignTab({
         <input type="hidden" name="presetKey" value={presetKey} />
 
         <section>
-          <h2 className="font-(family-name:--serif) text-2xl text-foreground">Theme</h2>
+          <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Theme</h2>
           <p className="mt-1 mb-4 text-sm text-foreground/60">Start from a palette, then fine-tune it below.</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {THEME_PRESETS.map((preset) => (
@@ -86,7 +86,7 @@ export default function DesignTab({
                 type="button"
                 onClick={() => choosePreset(preset.key)}
                 aria-pressed={preset.key === presetKey}
-                className={`flex flex-col gap-2 bg-white p-3 text-left text-xs text-foreground transition-shadow ${
+                className={`flex flex-col gap-2 rounded-[6px] bg-white p-3 text-left text-xs text-foreground transition-shadow ${
                   preset.key === presetKey ? "ring-2 ring-burnt-orange" : "ring-1 ring-olive/15 hover:ring-olive/40"
                 }`}
               >
@@ -98,7 +98,7 @@ export default function DesignTab({
         </section>
 
         <section>
-          <h2 className="font-(family-name:--serif) text-2xl text-foreground">Colors &amp; fonts</h2>
+          <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Colors &amp; fonts</h2>
           {!allowCustom && (
             <p className="mt-2 bg-cream px-3 py-2 text-xs text-foreground/70">
               {isDraft
@@ -112,7 +112,7 @@ export default function DesignTab({
               {COLOR_FIELDS.map(({ key, label }) => (
                 <label key={key} className="flex flex-col gap-1.5 text-xs text-foreground/60">
                   {label}
-                  <span className="flex items-center gap-2 border border-olive/20 bg-white px-2 py-1.5">
+                  <span className="flex items-center gap-2 border border-(--m-mist) bg-white px-2 py-1.5">
                     <input
                       type="color"
                       name={`color_${key}`}
@@ -144,7 +144,7 @@ export default function DesignTab({
                     name={`font_${role}`}
                     value={fonts[role]}
                     onChange={(e) => setFonts((prev) => ({ ...prev, [role]: e.target.value }))}
-                    className="border border-olive/20 bg-white px-3 py-2 text-sm text-foreground"
+                    className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground"
                   >
                     {FONT_OPTIONS[role].map((option) => (
                       <option key={option.key} value={option.key}>
@@ -169,7 +169,7 @@ export default function DesignTab({
         <button
           type="submit"
           disabled={pending}
-          className="self-start bg-burnt-orange px-6 py-2.5 text-xs font-medium text-ivory hover:bg-burnt-orange-dark disabled:opacity-60"
+          className="self-start rounded-full bg-(--m-gold) px-6 py-2.5 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
         >
           {pending ? "Saving…" : "Save design"}
         </button>
@@ -177,7 +177,7 @@ export default function DesignTab({
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <h2 className="font-(family-name:--serif) text-2xl text-foreground">Preview</h2>
+          <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Preview</h2>
           <a href={guestUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-olive underline hover:text-burnt-orange">
             Open in new tab
           </a>
@@ -186,7 +186,7 @@ export default function DesignTab({
           key={previewKey}
           src={guestUrl}
           title="Guest site preview"
-          className="h-[640px] w-full border border-olive/20 bg-white"
+          className="h-[640px] w-full border border-(--m-mist) rounded-[6px] bg-white"
         />
       </section>
     </div>

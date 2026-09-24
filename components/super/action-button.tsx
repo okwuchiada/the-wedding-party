@@ -27,10 +27,10 @@ export default function ActionButton({
           if (confirmText && !window.confirm(confirmText)) return;
           startTransition(async () => setResult((await action()) ?? null));
         }}
-        className={`border px-2.5 py-1 text-[11px] font-medium disabled:opacity-50 ${
+        className={`rounded-full border px-3 py-1 text-xs font-medium disabled:opacity-50 ${
           tone === "danger"
             ? "border-burnt-orange/40 text-burnt-orange hover:bg-burnt-orange hover:text-ivory"
-            : "border-olive/30 text-foreground hover:border-burnt-orange hover:text-burnt-orange"
+            : "border-(--m-ink)/25 text-foreground hover:border-(--m-ink)"
         }`}
       >
         {pending ? "…" : label}

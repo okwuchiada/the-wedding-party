@@ -9,7 +9,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <AuthHeading eyebrow="Welcome back" title="Sign in" />
+      <AuthHeading title="Welcome back" intro="Sign in to manage your wedding site." />
       <LoginForm next={typeof next === "string" ? next : undefined} />
     </>
   );

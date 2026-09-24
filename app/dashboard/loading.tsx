@@ -1,5 +1,5 @@
-import PageLoader from "@/components/page-loader";
+import BrandLoader from "@/components/marketing/brand-loader";
 
 export default function Loading() {
-  return <PageLoader />;
+  return <BrandLoader />;
 }

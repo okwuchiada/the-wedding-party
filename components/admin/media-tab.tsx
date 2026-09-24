@@ -41,9 +41,9 @@ export default function MediaTab({
   };
   return (
     <div>
-      <div className="mb-10 flex items-center justify-between gap-4 bg-white p-4 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
+      <div className="mb-10 flex items-center justify-between gap-4 rounded-[6px] bg-white p-4 border border-(--m-mist)">
         <div>
-          <h2 className="font-(family-name:--serif) text-xl text-foreground">Gallery Wall</h2>
+          <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-xl text-foreground">Gallery Wall</h2>
           <p className="mt-1 text-xs text-foreground/60">
             {galleryEnabled
               ? "Live — guests can view and upload photos."
@@ -56,8 +56,8 @@ export default function MediaTab({
           onClick={() => run("gallery", "toggle", onToggleGallery)}
           className={`shrink-0 px-4 py-2 text-xs font-medium transition-colors disabled:opacity-60 ${
             galleryEnabled
-              ? "border border-olive/30 text-foreground hover:border-burnt-orange hover:text-burnt-orange"
-              : "bg-burnt-orange text-ivory hover:bg-burnt-orange-dark"
+              ? "border border-(--m-mist) text-foreground hover:border-burnt-orange hover:text-burnt-orange"
+              : "rounded-full bg-(--m-gold) text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
           }`}
         >
           {isPending("gallery", "toggle")
@@ -68,14 +68,14 @@ export default function MediaTab({
         </button>
       </div>
 
-      <h2 className="mb-5 font-(family-name:--serif) text-2xl text-foreground">Pending Uploads</h2>
+      <h2 className="mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Pending Uploads</h2>
 
       {pending.length === 0 ? (
         <p className="text-sm text-foreground/60">No pending uploads right now.</p>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {pending.map((media) => (
-            <div key={media.id} className="bg-white shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
+            <div key={media.id} className="rounded-[6px] bg-white border border-(--m-mist)">
               <div className="relative aspect-square w-full overflow-hidden bg-olive/10">
                 {media.type === "VIDEO" ? (
                   <video src={media.url} muted playsInline controls className="h-full w-full object-cover" />
@@ -92,7 +92,7 @@ export default function MediaTab({
                     type="button"
                     disabled={isPending(media.id)}
                     onClick={() => run(media.id, "approve", () => onApprove(media))}
-                    className="flex-1 bg-burnt-orange px-3 py-1.5 text-xs font-medium text-ivory hover:bg-burnt-orange-dark disabled:opacity-60"
+                    className="flex-1 rounded-full bg-(--m-gold) px-3 py-1.5 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
                   >
                     {isPending(media.id, "approve") ? "Approving…" : "Approve"}
                   </button>
@@ -100,7 +100,7 @@ export default function MediaTab({
                     type="button"
                     disabled={isPending(media.id)}
                     onClick={() => run(media.id, "hide", () => onHide(media))}
-                    className="flex-1 border border-olive/30 px-3 py-1.5 text-xs font-medium text-foreground hover:border-burnt-orange hover:text-burnt-orange disabled:opacity-60"
+                    className="flex-1 border rounded-full border-(--m-ink)/25 px-3 py-1.5 text-xs font-medium text-foreground hover:border-(--m-ink) disabled:opacity-60"
                   >
                     {isPending(media.id, "hide") ? "Hiding…" : "Hide"}
                   </button>
@@ -111,14 +111,14 @@ export default function MediaTab({
         </div>
       )}
 
-      <h2 className="mt-10 mb-5 font-(family-name:--serif) text-2xl text-foreground">Approved Media</h2>
+      <h2 className="mt-10 mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Approved Media</h2>
 
       {approved.length === 0 ? (
         <p className="text-sm text-foreground/60">Nothing approved yet.</p>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {approved.map((media) => (
-            <div key={media.id} className="bg-white shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
+            <div key={media.id} className="rounded-[6px] bg-white border border-(--m-mist)">
               <div className="relative aspect-square w-full overflow-hidden bg-olive/10">
                 {media.type === "VIDEO" ? (
                   <video src={media.url} muted playsInline controls className="h-full w-full object-cover" />
@@ -135,7 +135,7 @@ export default function MediaTab({
                     type="button"
                     disabled={isPending(media.id)}
                     onClick={() => run(media.id, "hide", () => onHideApproved(media))}
-                    className="flex-1 border border-olive/30 px-3 py-1.5 text-xs font-medium text-foreground hover:border-burnt-orange hover:text-burnt-orange disabled:opacity-60"
+                    className="flex-1 border rounded-full border-(--m-ink)/25 px-3 py-1.5 text-xs font-medium text-foreground hover:border-(--m-ink) disabled:opacity-60"
                   >
                     {isPending(media.id, "hide") ? "Hiding…" : "Hide"}
                   </button>
@@ -143,7 +143,7 @@ export default function MediaTab({
                     type="button"
                     disabled={isPending(media.id)}
                     onClick={() => handleDeleteApproved(media)}
-                    className="flex-1 border border-olive/30 px-3 py-1.5 text-xs font-medium text-foreground hover:border-burnt-orange hover:text-burnt-orange disabled:opacity-60"
+                    className="flex-1 border rounded-full border-(--m-ink)/25 px-3 py-1.5 text-xs font-medium text-foreground hover:border-(--m-ink) disabled:opacity-60"
                   >
                     {isPending(media.id, "delete") ? "Deleting…" : "Delete"}
                   </button>
@@ -154,7 +154,7 @@ export default function MediaTab({
         </div>
       )}
 
-      <h2 className="mt-10 mb-5 font-(family-name:--serif) text-2xl text-foreground">Hidden Media</h2>
+      <h2 className="mt-10 mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Hidden Media</h2>
       <p className="mb-5 max-w-2xl text-sm text-foreground/60">
         Hidden uploads aren&apos;t deleted — they&apos;re kept here so you can
         bring any of them back if you change your mind.
@@ -165,7 +165,7 @@ export default function MediaTab({
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {hidden.map((media) => (
-            <div key={media.id} className="bg-white opacity-70 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
+            <div key={media.id} className="rounded-[6px] bg-white opacity-70 border border-(--m-mist)">
               <div className="relative aspect-square w-full overflow-hidden bg-olive/10">
                 {media.type === "VIDEO" ? (
                   <video src={media.url} muted playsInline controls className="h-full w-full object-cover" />
@@ -181,7 +181,7 @@ export default function MediaTab({
                   type="button"
                   disabled={isPending(media.id)}
                   onClick={() => run(media.id, "restore", () => onRestore(media))}
-                  className="mt-2 w-full border border-olive/30 px-3 py-1.5 text-xs font-medium text-foreground hover:border-burnt-orange hover:text-burnt-orange disabled:opacity-60"
+                  className="mt-2 w-full border rounded-full border-(--m-ink)/25 px-3 py-1.5 text-xs font-medium text-foreground hover:border-(--m-ink) disabled:opacity-60"
                 >
                   {isPending(media.id, "restore") ? "Restoring…" : "Restore"}
                 </button>

@@ -17,7 +17,7 @@ import { useConfirm } from "./use-confirm";
 import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
 
-const inputClass = "border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none";
+const inputClass = "border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none";
 
 function RsvpForm({
   action,
@@ -84,14 +84,14 @@ function RsvpForm({
         <button
           type="button"
           onClick={onCancel}
-          className="border border-olive/30 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-burnt-orange hover:text-burnt-orange"
+          className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={pending}
-          className="bg-burnt-orange px-4 py-2 text-xs font-medium text-ivory transition-colors hover:bg-burnt-orange-dark disabled:opacity-60"
+          className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
         >
           {pending ? "Saving…" : submitLabel}
         </button>
@@ -152,7 +152,7 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
         type="file"
         accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         onChange={handleFile}
-        className={`${inputClass} file:mr-3 file:border-0 file:bg-burnt-orange file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ivory`}
+        className={`${inputClass} file:mr-3 file:border-0 file:rounded-full file:bg-(--m-ink) file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ivory`}
       />
 
       {fileError && <p className="text-xs text-burnt-orange">{fileError}</p>}
@@ -162,10 +162,10 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
           <p className="mb-2 text-xs text-foreground/70">
             {rows.length} {rows.length === 1 ? "guest" : "guests"} found. Preview:
           </p>
-          <div className="max-h-60 overflow-auto border border-olive/15 bg-white">
+          <div className="max-h-60 overflow-auto border border-(--m-mist) rounded-[6px] bg-white">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-olive/15 text-[10.5px] tracking-widest text-foreground/50 uppercase">
+                <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
                   <th className="px-3 py-2 font-medium">Row</th>
                   <th className="px-3 py-2 font-medium">Name</th>
                   <th className="px-3 py-2 font-medium">Email</th>
@@ -174,7 +174,7 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
               </thead>
               <tbody>
                 {rows.map((r, i) => (
-                  <tr key={i} className="border-b border-olive/10 last:border-0">
+                  <tr key={i} className="border-b border-(--m-mist) last:border-0">
                     <td className="px-3 py-1.5 text-foreground/50">{i + 2}</td>
                     <td className="px-3 py-1.5 text-foreground">{String(r.guestName)}</td>
                     <td className="px-3 py-1.5 text-foreground/70">{String(r.email) || "—"}</td>
@@ -214,7 +214,7 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           onClick={onClose}
-          className="border border-olive/30 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-burnt-orange hover:text-burnt-orange"
+          className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
         >
           {result && !result.error ? "Done" : "Cancel"}
         </button>
@@ -222,7 +222,7 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
           type="button"
           disabled={!rows || importing}
           onClick={handleImport}
-          className="bg-burnt-orange px-4 py-2 text-xs font-medium text-ivory transition-colors hover:bg-burnt-orange-dark disabled:opacity-60"
+          className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
         >
           {importing ? "Importing…" : "Import"}
         </button>
@@ -303,33 +303,33 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
   return (
     <div>
       <div className="mb-8 grid grid-cols-2 gap-4 sm:max-w-md">
-        <div className="bg-white p-4 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
-          <p className="text-[10.5px] tracking-[.16em] text-foreground/55 uppercase">Attending</p>
-          <p className="mt-2 font-(family-name:--serif) text-2xl text-foreground">
+        <div className="rounded-[6px] bg-white p-4 border border-(--m-mist)">
+          <p className="text-xs text-foreground/55">Attending</p>
+          <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">
             {attendingGuests} <span className="text-base text-foreground/40">/ 100</span>
           </p>
         </div>
-        <div className="bg-white p-4 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
-          <p className="text-[10.5px] tracking-[.16em] text-foreground/55 uppercase">Declined</p>
-          <p className="mt-2 font-(family-name:--serif) text-2xl text-foreground">{declinedCount}</p>
+        <div className="rounded-[6px] bg-white p-4 border border-(--m-mist)">
+          <p className="text-xs text-foreground/55">Declined</p>
+          <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">{declinedCount}</p>
         </div>
       </div>
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-(family-name:--serif) text-2xl text-foreground">RSVPs</h2>
+        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">RSVPs</h2>
         {!panel && (
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setPanel("import")}
-              className="border border-olive/30 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-burnt-orange hover:text-burnt-orange"
+              className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
             >
               Import CSV / Excel
             </button>
             <button
               type="button"
               onClick={() => setPanel("add")}
-              className="bg-burnt-orange px-4 py-2 text-xs font-medium text-ivory hover:bg-burnt-orange-dark"
+              className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
             >
               Add RSVP
             </button>
@@ -354,10 +354,10 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
       {rsvps.length === 0 ? (
         <p className="text-sm text-foreground/60">No responses yet.</p>
       ) : (
-        <div className="overflow-x-auto border border-olive/15">
+        <div className="overflow-x-auto rounded-[6px] border border-(--m-mist) bg-white">
           <table className="w-full min-w-150 text-left text-sm">
             <thead>
-              <tr className="border-b border-olive/15 text-[11px] tracking-widest text-foreground/50 uppercase">
+              <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
                 <th className="px-4 py-3 font-medium">Guest</th>
                 <th className="px-4 py-3 font-medium">Attending</th>
                 <th className="px-4 py-3 font-medium">Guests</th>
@@ -370,7 +370,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
             <tbody>
               {rsvps.map((r) =>
                 editingId === r.id ? (
-                  <tr key={r.id} className="border-b border-olive/10 last:border-0">
+                  <tr key={r.id} className="border-b border-(--m-mist) last:border-0">
                     <td colSpan={7} className="p-0">
                       <RsvpForm
                         action={updateRsvpAdmin.bind(null, weddingId)}
@@ -381,7 +381,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
                     </td>
                   </tr>
                 ) : (
-                  <tr key={r.id} className="border-b border-olive/10 last:border-0">
+                  <tr key={r.id} className="border-b border-(--m-mist) last:border-0">
                     <td className="px-4 py-3 text-foreground">
                       {r.guestName}
                       {r.email && <span className="block text-xs text-foreground/50">{r.email}</span>}
@@ -406,7 +406,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
                           type="button"
                           disabled={isPending(r.id)}
                           onClick={() => handleSend(r.id)}
-                          className="bg-burnt-orange px-3 py-1.5 text-xs font-medium text-ivory hover:bg-burnt-orange-dark disabled:opacity-60"
+                          className="rounded-full bg-(--m-gold) px-3 py-1.5 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
                         >
                           {isPending(r.id, "send") ? "Sending…" : "Send confirmation"}
                         </button>
@@ -443,7 +443,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
           <button
             type="button"
             onClick={() => exportGuestList(rsvps)}
-            className="border border-olive/30 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-burnt-orange hover:text-burnt-orange"
+            className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
           >
             Export guest list (CSV)
           </button>

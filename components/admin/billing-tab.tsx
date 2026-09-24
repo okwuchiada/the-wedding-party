@@ -31,7 +31,7 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
   return (
     <div className="flex flex-col gap-8">
       <section>
-        <h2 className="font-(family-name:--serif) text-2xl text-foreground">Your plan</h2>
+        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Your plan</h2>
         <p className="mt-1 text-sm text-foreground/70">
           {billing.currentPlan
             ? `${billing.currentPlan.name}${billing.currentPlan.comped ? " (complimentary)" : ""} — a one-time payment for this wedding.`
@@ -49,10 +49,10 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
           <form
             key={plan.key}
             action={formAction}
-            className={`flex flex-col gap-3 bg-white p-5 ${plan.current ? "ring-2 ring-burnt-orange" : "ring-1 ring-olive/15"}`}
+            className={`flex flex-col gap-3 rounded-[6px] bg-white p-5 ${plan.current ? "ring-2 ring-burnt-orange" : "ring-1 ring-olive/15"}`}
           >
             <input type="hidden" name="planKey" value={plan.key} />
-            <h3 className="font-(family-name:--serif) text-2xl text-foreground">{plan.name}</h3>
+            <h3 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">{plan.name}</h3>
             <p className="text-xl text-foreground">{formatMoney(plan.priceKobo, NAIRA)}</p>
             <ul className="flex flex-col gap-1 text-sm text-foreground/75">
               <li>Up to {plan.maxGuests.toLocaleString()} guests</li>
@@ -70,7 +70,7 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
                 <button
                   type="submit"
                   disabled={pending || !billing.paymentsEnabled}
-                  className="w-full bg-burnt-orange px-4 py-2.5 text-xs font-medium text-ivory hover:bg-burnt-orange-dark disabled:opacity-50"
+                  className="w-full rounded-full bg-(--m-gold) px-4 py-2.5 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-50"
                 >
                   {pending
                     ? "Redirecting…"
@@ -86,9 +86,9 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
 
       {billing.payments.length > 0 && (
         <section>
-          <h2 className="mb-3 font-(family-name:--serif) text-2xl text-foreground">Payments</h2>
-          <table className="w-full bg-white text-left text-sm">
-            <thead className="text-xs text-foreground/55 uppercase">
+          <h2 className="mb-3 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Payments</h2>
+          <table className="w-full rounded-[6px] bg-white text-left text-sm">
+            <thead className="text-xs text-foreground/55">
               <tr>
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Plan</th>
@@ -98,7 +98,7 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
             </thead>
             <tbody>
               {billing.payments.map((p) => (
-                <tr key={p.reference} className="border-t border-olive/10">
+                <tr key={p.reference} className="border-t border-(--m-mist)">
                   <td className="px-4 py-3 text-foreground/70">{p.date}</td>
                   <td className="px-4 py-3">{p.planName}</td>
                   <td className="px-4 py-3">{formatMoney(p.amountKobo, NAIRA)}</td>

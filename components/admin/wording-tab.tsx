@@ -12,7 +12,7 @@ export type CopyView = Record<CopyKey, string | null> & {
   asoebiFabric: string | null;
 };
 
-const fieldClass = "border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-olive";
+const fieldClass = "border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-(--m-ink)/50";
 
 export default function WordingTab({ copy, canRemoveBranding }: { copy: CopyView; canRemoveBranding: boolean }) {
   const weddingId = useAdminWeddingId();
@@ -22,7 +22,7 @@ export default function WordingTab({ copy, canRemoveBranding }: { copy: CopyView
     <form action={formAction} className="flex max-w-2xl flex-col gap-8">
       <section className="flex flex-col gap-4">
         <div>
-          <h2 className="font-(family-name:--serif) text-2xl text-foreground">Site text</h2>
+          <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Site text</h2>
           <p className="mt-1 text-sm text-foreground/60">Leave a box empty to use the default wording shown in grey.</p>
         </div>
         {COPY_FIELDS.map((field) => (
@@ -42,7 +42,7 @@ export default function WordingTab({ copy, canRemoveBranding }: { copy: CopyView
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="font-(family-name:--serif) text-2xl text-foreground">RSVP email</h2>
+        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">RSVP email</h2>
         <label className="flex items-center gap-2 text-sm text-foreground">
           <input type="checkbox" name="asoebiEnabled" defaultChecked={copy.asoebiEnabled} />
           Include an asoebi section with a WhatsApp order button
@@ -60,7 +60,7 @@ export default function WordingTab({ copy, canRemoveBranding }: { copy: CopyView
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="font-(family-name:--serif) text-2xl text-foreground">Footer credit</h2>
+        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Footer credit</h2>
         {!canRemoveBranding && (
           <p className="bg-cream px-3 py-2 text-xs text-foreground/70">
             Your plan shows &ldquo;Made with love by The Wedding Party&rdquo;. Upgrade to credit someone else, or no one.
@@ -90,7 +90,7 @@ export default function WordingTab({ copy, canRemoveBranding }: { copy: CopyView
       <button
         type="submit"
         disabled={pending}
-        className="self-start bg-burnt-orange px-6 py-2.5 text-xs font-medium text-ivory hover:bg-burnt-orange-dark disabled:opacity-60"
+        className="self-start rounded-full bg-(--m-gold) px-6 py-2.5 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
       >
         {pending ? "Saving…" : "Save wording"}
       </button>

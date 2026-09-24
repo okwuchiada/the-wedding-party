@@ -23,7 +23,7 @@ export default function CompForm({
         <select
           value={planKey}
           onChange={(e) => setPlanKey(e.target.value)}
-          className="border border-olive/30 bg-white px-1.5 py-1 text-[11px]"
+          className="border border-(--m-mist) bg-white px-1.5 py-1 text-[11px]"
         >
           {plans.map((p) => (
             <option key={p.key} value={p.key}>
@@ -35,7 +35,7 @@ export default function CompForm({
           type="button"
           disabled={pending || !planKey}
           onClick={() => run(planKey)}
-          className="border border-olive/30 px-2.5 py-1 text-[11px] font-medium hover:border-burnt-orange hover:text-burnt-orange disabled:opacity-50"
+          className="border rounded-full border-(--m-ink)/25 px-2.5 py-1 text-[11px] font-medium hover:border-(--m-ink) disabled:opacity-50"
         >
           Comp
         </button>
@@ -44,7 +44,7 @@ export default function CompForm({
             type="button"
             disabled={pending}
             onClick={() => run(null)}
-            className="border border-olive/30 px-2.5 py-1 text-[11px] font-medium hover:border-burnt-orange hover:text-burnt-orange disabled:opacity-50"
+            className="border rounded-full border-(--m-ink)/25 px-2.5 py-1 text-[11px] font-medium hover:border-(--m-ink) disabled:opacity-50"
           >
             Uncomp
           </button>
