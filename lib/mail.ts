@@ -208,3 +208,46 @@ export function contributionNotificationEmail({
 
   return { subject, html };
 }
+
+function accountActionBody(message: string, cta: string, url: string, footnote: string) {
+  return `<p style="margin:0 0 24px;font-size:15.5px;line-height:1.7;color:#252a1a;">${message}</p>
+      <p style="margin:0 0 24px;"><a href="${url}" style="display:inline-block;background:#c1440e;color:#fdf6ec;padding:12px 22px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;text-decoration:none;">${cta}</a></p>
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#6b7a44;">${footnote}</p>`;
+}
+
+export function passwordResetEmail({ token }: { token: string }) {
+  const url = `${SITE_URL}/reset-password?token=${encodeURIComponent(token)}`;
+  return {
+    subject: "Reset your password",
+    html: editorialBand({
+      eyebrow: "Account",
+      headline: "Reset your password",
+      subline: "",
+      bodyHtml: accountActionBody(
+        "Someone (hopefully you) asked to reset the password for your wedding dashboard.",
+        "Choose a new password",
+        url,
+        "This link works once and expires in an hour. If you didn't ask for it, you can ignore this email."
+      ),
+    }),
+  };
+}
+
+export function inviteEmail({ token, weddingName }: { token: string; weddingName: string | null }) {
+  const url = `${SITE_URL}/reset-password?token=${encodeURIComponent(token)}`;
+  const safeName = weddingName ? escapeHtml(weddingName) : null;
+  return {
+    subject: safeName ? `You're invited to manage ${weddingName}'s wedding site` : "Your wedding dashboard is ready",
+    html: editorialBand({
+      eyebrow: "Invitation",
+      headline: "Welcome aboard",
+      subline: safeName ? `to ${safeName}'s wedding dashboard` : "",
+      bodyHtml: accountActionBody(
+        "Set a password to start managing RSVPs, the registry and your wedding site.",
+        "Set your password",
+        url,
+        "This link works once and expires in 7 days."
+      ),
+    }),
+  };
+}

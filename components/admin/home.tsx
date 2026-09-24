@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import LiveRefresh from "@/components/live-refresh";
 import { useSyncedState } from "./use-synced-state";
@@ -24,6 +25,7 @@ import RsvpTab from "./rsvp-tab";
 import StoryTab, { type StoryContentView, type StoryPhotoView } from "./story-tab";
 import type { StoryBeatView } from "./story-beats-section";
 import SignOutButton from "./sign-out-button";
+import MembersTab, { type MemberView } from "./members-tab";
 import { AdminWeddingProvider } from "./wedding-context";
 import { logout } from "@/lib/actions/auth";
 import { confirmContribution } from "@/lib/actions/contributions";
@@ -35,12 +37,14 @@ function formatNaira(cents: number) {
   return `₦${(cents / 100).toLocaleString("en-NG")}`;
 }
 
-const tabs = ["Registry", "Contributions", "Media", "Wishes", "RSVPs", "Our Story"] as const;
+const tabs = ["Registry", "Contributions", "Media", "Wishes", "RSVPs", "Our Story", "People"] as const;
 type Tab = (typeof tabs)[number];
 
 export default function AdminHome({
   weddingId,
   guestUrl,
+  members,
+  isOwner,
   registryItems,
   pendingContributions: initialPendingContributions,
   confirmedContributions: initialConfirmedContributions,
@@ -58,6 +62,8 @@ export default function AdminHome({
 }: {
   weddingId: string;
   guestUrl: string;
+  members: MemberView[];
+  isOwner: boolean;
   registryItems: RegistryItemWithContributions[];
   pendingContributions: PendingContributionView[];
   confirmedContributions: ConfirmedContributionView[];
@@ -213,6 +219,9 @@ export default function AdminHome({
             <h1 className="font-(family-name:--serif) text-3xl text-foreground sm:text-4xl">
               {story.brideName} &amp; {story.groomName}&apos;s Dashboard
             </h1>
+            <Link href="/dashboard" className="mt-2 mr-4 inline-block text-sm text-olive underline hover:text-burnt-orange">
+              All weddings
+            </Link>
             <a
               href={guestUrl}
               target="_blank"
@@ -292,6 +301,7 @@ export default function AdminHome({
         {activeTab === "Our Story" && (
           <StoryTab story={story} photos={storyPhotos} storyBeats={storyBeats} />
         )}
+        {activeTab === "People" && <MembersTab members={members} isOwner={isOwner} />}
       </div>
     </div>
     </AdminWeddingProvider>

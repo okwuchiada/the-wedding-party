@@ -5,6 +5,7 @@ import type { ScopedPrisma } from "@/lib/db-scoped";
 import { requireWeddingAccess } from "@/lib/dal";
 import { resolveGuestAction, revalidateDashboard } from "@/lib/tenant";
 import { sendMail, rsvpConfirmationEmail } from "@/lib/mail";
+import { getClientIp } from "@/lib/request";
 
 export type SubmitRsvpState =
   | { error?: string; success?: boolean; guestName?: string; attending?: boolean }
@@ -23,13 +24,6 @@ function findRsvpByEmail(db: ScopedPrisma, email: string, excludeId?: string) {
     },
     select: { id: true, guestName: true },
   });
-}
-
-async function getClientIp(): Promise<string | null> {
-  const h = await headers();
-  const forwardedFor = h.get("x-forwarded-for");
-  if (forwardedFor) return forwardedFor.split(",")[0]?.trim() || null;
-  return h.get("x-real-ip");
 }
 
 export async function submitRsvp(

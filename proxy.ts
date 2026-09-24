@@ -6,13 +6,16 @@ import { SESSION_COOKIE } from "@/lib/session-cookie";
 const GEO_BYPASS_PARAM = "access";
 const GEO_BYPASS_MAX_AGE = 60 * 60 * 24 * 90; // 90 days
 const WEDDING_PATH = /^\/w\/([a-z0-9-]+)(?:\/|$)/;
+const PROTECTED_PATH = /^\/(dashboard|super)(?:\/|$)/;
 
 export function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
   // Optimistic check only; pages and actions verify the session themselves.
-  if (pathname.startsWith("/dashboard") && !request.cookies.has(SESSION_COOKIE)) {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+  if (PROTECTED_PATH.test(pathname) && !request.cookies.has(SESSION_COOKIE)) {
+    const login = new URL("/login", request.url);
+    login.searchParams.set("next", pathname);
+    return NextResponse.redirect(login);
   }
 
   // A guest abroad unlocking a geo-restricted wedding with ?access=CODE: remember
@@ -38,5 +41,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/w/:path*"],
+  matcher: ["/dashboard/:path*", "/super/:path*", "/w/:path*"],
 };

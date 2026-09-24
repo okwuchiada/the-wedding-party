@@ -14,10 +14,10 @@ const STATUS_LABELS = {
 } as const;
 
 export default async function DashboardIndexPage() {
-  await verifySession();
+  const user = await verifySession();
 
-  // The single admin sees every wedding until per-couple accounts land.
   const weddings = await prisma.wedding.findMany({
+    where: { members: { some: { userId: user.id } } },
     include: { story: { select: { brideName: true, groomName: true, weddingDate: true } } },
     orderBy: { createdAt: "asc" },
   });
@@ -33,16 +33,26 @@ export default async function DashboardIndexPage() {
             <h1 className="font-(family-name:--serif) text-3xl text-foreground sm:text-4xl">
               Your weddings
             </h1>
+            <p className="mt-2 text-xs text-foreground/60">Signed in as {user.email}</p>
           </div>
           <form action={logout}>
             <SignOutButton />
           </form>
         </div>
 
+        <Link
+          href="/dashboard/new"
+          className="mt-8 inline-block bg-burnt-orange px-5 py-2.5 text-xs font-medium text-ivory hover:bg-burnt-orange-dark"
+        >
+          Create a wedding
+        </Link>
+
         {weddings.length === 0 ? (
-          <p className="mt-10 text-foreground/70">No weddings yet.</p>
+          <p className="mt-10 text-foreground/70">
+            No weddings yet. Create one to get your site and dashboard.
+          </p>
         ) : (
-          <ul className="mt-10 flex flex-col gap-3">
+          <ul className="mt-8 flex flex-col gap-3">
             {weddings.map((wedding) => (
               <li
                 key={wedding.id}

@@ -1,5 +1,6 @@
 import AdminHome from "@/components/admin/home";
-import { requireWeddingAccess } from "@/lib/dal";
+import { canManageWedding, requireWeddingAccess } from "@/lib/dal";
+import { prisma } from "@/lib/prisma";
 import { guestPath } from "@/lib/tenant";
 
 export default async function WeddingDashboardPage({
@@ -8,7 +9,7 @@ export default async function WeddingDashboardPage({
   params: Promise<{ weddingId: string }>;
 }) {
   const { weddingId } = await params;
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { user, wedding, db } = await requireWeddingAccess(weddingId);
   const scope = { weddingId: wedding.id };
 
   const [
@@ -26,6 +27,8 @@ export default async function WeddingDashboardPage({
     hiddenMedia,
     rsvps,
     bankDetails,
+    members,
+    isOwner,
   ] = await Promise.all([
     db.registryItem.findMany({
       where: scope,
@@ -71,12 +74,27 @@ export default async function WeddingDashboardPage({
     }),
     db.rsvp.findMany({ where: scope, orderBy: { createdAt: "desc" } }),
     db.bankDetails.findUnique({ where: scope }),
+    prisma.weddingMember.findMany({
+      where: scope,
+      include: { user: { select: { email: true, name: true, passwordHash: true } } },
+      orderBy: { createdAt: "asc" },
+    }),
+    canManageWedding(wedding.id, "OWNER"),
   ]);
 
   return (
     <AdminHome
       weddingId={wedding.id}
       guestUrl={guestPath(wedding.slug)}
+      isOwner={isOwner}
+      members={members.map((m) => ({
+        id: m.id,
+        email: m.user.email,
+        name: m.user.name,
+        role: m.role,
+        pendingInvite: !m.user.passwordHash,
+        isYou: m.userId === user.id,
+      }))}
       registryItems={registryItems}
       pendingContributions={pendingContributions.map((c) => ({
         id: c.id,

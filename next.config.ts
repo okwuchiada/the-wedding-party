@@ -6,7 +6,10 @@ const legacySlug = process.env.LEGACY_WEDDING_SLUG;
 
 const nextConfig: NextConfig = {
   async redirects() {
-    const redirects = [{ source: "/admin", destination: "/dashboard", permanent: false }];
+    const redirects = [
+      { source: "/admin", destination: "/dashboard", permanent: false },
+      { source: "/admin/login", destination: "/login", permanent: false },
+    ];
     if (legacySlug) {
       redirects.push(
         { source: "/", destination: `/w/${legacySlug}`, permanent: false },

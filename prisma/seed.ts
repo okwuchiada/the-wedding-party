@@ -293,10 +293,42 @@ async function seedSecondWedding() {
   });
 }
 
+/**
+ * Local accounts: a super admin from SUPER_ADMIN_EMAIL/SUPER_ADMIN_PASSWORD, and
+ * an owner for each demo wedding (owner@<slug>.test) when SEED_DEMO_PASSWORD is set.
+ */
+async function seedUsers() {
+  const { hash } = await import("@node-rs/argon2");
+  const upsertUser = async (email: string, password: string, role: "USER" | "SUPER_ADMIN") =>
+    prisma.user.upsert({
+      where: { email },
+      update: {},
+      create: { email, role, passwordHash: await hash(password) },
+    });
+
+  const { SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD, SEED_DEMO_PASSWORD } = process.env;
+  if (SUPER_ADMIN_EMAIL && SUPER_ADMIN_PASSWORD) {
+    await upsertUser(SUPER_ADMIN_EMAIL.toLowerCase(), SUPER_ADMIN_PASSWORD, "SUPER_ADMIN");
+  }
+  if (!SEED_DEMO_PASSWORD) return;
+
+  for (const slug of ["amara-and-david", "kemi-and-tolu"]) {
+    const wedding = await prisma.wedding.findUnique({ where: { slug } });
+    if (!wedding) continue;
+    const user = await upsertUser(`owner@${slug}.test`, SEED_DEMO_PASSWORD, "USER");
+    await prisma.weddingMember.upsert({
+      where: { weddingId_userId: { weddingId: wedding.id, userId: user.id } },
+      update: {},
+      create: { weddingId: wedding.id, userId: user.id, role: "OWNER" },
+    });
+  }
+}
+
 async function main() {
   await seedPlans();
   await seedDemoWedding();
   await seedSecondWedding();
+  await seedUsers();
   console.log("Seed complete.");
 }
 

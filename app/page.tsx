@@ -12,7 +12,7 @@ export default function LandingPage() {
         A personal wedding website with RSVPs, a gift registry and a guest gallery.
       </p>
       <Link
-        href="/dashboard"
+        href="/login"
         className="mt-8 bg-olive px-6 py-3 text-sm font-medium text-ivory transition-colors hover:bg-burnt-orange"
       >
         Couple sign in

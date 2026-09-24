@@ -8,7 +8,14 @@ const encodedKey = new TextEncoder().encode(secretKey);
 
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
-type SessionPayload = { role: "admin"; expiresAt: string };
+export type SessionPayload = {
+  userId: string;
+  /** User.sessionVersion at sign-in; a password change invalidates older sessions. */
+  sv: number;
+  /** Set while a super admin is impersonating userId. */
+  impersonatorId?: string;
+  expiresAt: string;
+};
 
 export async function encrypt(payload: SessionPayload) {
   return new SignJWT(payload)
@@ -18,20 +25,26 @@ export async function encrypt(payload: SessionPayload) {
     .sign(encodedKey);
 }
 
-export async function decrypt(session: string | undefined = "") {
+export async function decrypt(session: string | undefined = ""): Promise<SessionPayload | null> {
   try {
     const { payload } = await jwtVerify(session, encodedKey, {
       algorithms: ["HS256"],
     });
-    return payload as SessionPayload;
+    if (typeof payload.userId !== "string" || typeof payload.sv !== "number") return null;
+    return payload as unknown as SessionPayload;
   } catch {
     return null;
   }
 }
 
-export async function createSession() {
+export async function createSession(user: { id: string; sessionVersion: number }, impersonatorId?: string) {
   const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
-  const session = await encrypt({ role: "admin", expiresAt: expiresAt.toISOString() });
+  const session = await encrypt({
+    userId: user.id,
+    sv: user.sessionVersion,
+    ...(impersonatorId ? { impersonatorId } : {}),
+    expiresAt: expiresAt.toISOString(),
+  });
   const cookieStore = await cookies();
 
   cookieStore.set(SESSION_COOKIE, session, {
