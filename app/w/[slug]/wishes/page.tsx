@@ -8,7 +8,7 @@ import Footer from "@/components/guest/footer";
 import FooterSkeleton from "@/components/guest/footer-skeleton";
 import { prisma } from "@/lib/prisma";
 import { copyText } from "@/lib/copy";
-import { getGuestWedding } from "@/lib/tenant";
+import { getGuestAccess } from "@/lib/guest-access";
 
 async function WishesList({ weddingId }: { weddingId: string }) {
   const wishes = await prisma.wish.findMany({
@@ -32,7 +32,8 @@ async function WishesList({ weddingId }: { weddingId: string }) {
 
 export default async function WishesPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { wedding } = await getGuestWedding(slug);
+  const { wedding, block } = await getGuestAccess(slug);
+  if (block) return null; // the layout explains why
 
   return (
     <div>

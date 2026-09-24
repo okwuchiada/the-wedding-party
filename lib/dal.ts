@@ -22,6 +22,15 @@ export const getCurrentUser = cache(async () => {
   });
   if (!user || user.sessionVersion !== session.sv) return null;
 
+  // An impersonation session is only valid while the impersonator is still a super admin.
+  if (session.impersonatorId) {
+    const impersonator = await prisma.user.findUnique({
+      where: { id: session.impersonatorId },
+      select: { role: true },
+    });
+    if (impersonator?.role !== "SUPER_ADMIN") return null;
+  }
+
   return { ...user, impersonatorId: session.impersonatorId ?? null };
 });
 

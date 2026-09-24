@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { scopedPrisma } from "@/lib/db-scoped";
 import { canManageWedding } from "@/lib/dal";
+import { checkGeoAccess } from "@/lib/geo";
 import { hasFeature } from "@/lib/plans";
 import { resolveTheme } from "@/lib/themes";
 
@@ -51,20 +52,30 @@ async function resolveViewableWedding(slug: unknown) {
   return null;
 }
 
-/** For guest pages: 404s unless the viewer may see the wedding. */
+/**
+ * For guest pages: 404s unless the viewer may see the wedding. Suspended and
+ * archived weddings resolve with `unavailable` so the layout can say so.
+ */
 export const getGuestWedding = cache(async (slug: string) => {
   const result = await resolveViewableWedding(slug);
-  if (!result) notFound();
-  return result;
+  if (result) return { ...result, unavailable: false };
+
+  const wedding = await getWeddingBySlug(slug);
+  if (wedding && (wedding.status === "SUSPENDED" || wedding.status === "ARCHIVED")) {
+    return { wedding, preview: false, unavailable: true };
+  }
+  notFound();
 });
 
 /**
  * For public server actions. The slug comes from the client, so the wedding is
- * re-resolved with the same visibility rules as the page itself.
+ * re-resolved with the same visibility rules as the page itself, including the
+ * country restriction.
  */
 export async function resolveGuestAction(slug: unknown) {
   const result = await resolveViewableWedding(slug);
   if (!result) return null;
+  if ((await checkGeoAccess(result.wedding)).blocked) return null;
   return { wedding: result.wedding, db: scopedPrisma(result.wedding.id) };
 }
 

@@ -7,6 +7,7 @@ const secretKey = process.env.SESSION_SECRET;
 const encodedKey = new TextEncoder().encode(secretKey);
 
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+const IMPERSONATION_DURATION_MS = 60 * 60 * 1000;
 
 export type SessionPayload = {
   userId: string;
@@ -21,7 +22,7 @@ export async function encrypt(payload: SessionPayload) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime(new Date(payload.expiresAt))
     .sign(encodedKey);
 }
 
@@ -38,7 +39,8 @@ export async function decrypt(session: string | undefined = ""): Promise<Session
 }
 
 export async function createSession(user: { id: string; sessionVersion: number }, impersonatorId?: string) {
-  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
+  // Impersonation is short-lived; the admin signs back in as themselves afterwards.
+  const expiresAt = new Date(Date.now() + (impersonatorId ? IMPERSONATION_DURATION_MS : SESSION_DURATION_MS));
   const session = await encrypt({
     userId: user.id,
     sv: user.sessionVersion,

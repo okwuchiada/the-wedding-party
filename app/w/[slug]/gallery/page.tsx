@@ -10,7 +10,8 @@ import FooterSkeleton from "@/components/guest/footer-skeleton";
 import { prisma } from "@/lib/prisma";
 import { copyText } from "@/lib/copy";
 import { hasFeature } from "@/lib/plans";
-import { getGuestWedding, getStory } from "@/lib/tenant";
+import { getGuestAccess } from "@/lib/guest-access";
+import { getStory } from "@/lib/tenant";
 
 async function GalleryGrid({ weddingId }: { weddingId: string }) {
   const media = await prisma.media.findMany({
@@ -44,7 +45,8 @@ async function GalleryGrid({ weddingId }: { weddingId: string }) {
 
 export default async function GalleryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { wedding } = await getGuestWedding(slug);
+  const { wedding, block } = await getGuestAccess(slug);
+  if (block) return null; // the layout explains why
   const story = await getStory(wedding.id);
   const galleryEnabled = (story?.galleryEnabled ?? false) && hasFeature(wedding.plan, "gallery");
 

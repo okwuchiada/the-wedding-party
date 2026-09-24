@@ -33,7 +33,17 @@ export default async function DashboardIndexPage() {
             <h1 className="font-(family-name:--serif) text-3xl text-foreground sm:text-4xl">
               Your weddings
             </h1>
-            <p className="mt-2 text-xs text-foreground/60">Signed in as {user.email}</p>
+            <p className="mt-2 text-xs text-foreground/60">
+              Signed in as {user.email}
+              {user.role === "SUPER_ADMIN" && !user.impersonatorId && (
+                <>
+                  {" · "}
+                  <Link href="/super" className="underline hover:text-burnt-orange">
+                    Super admin
+                  </Link>
+                </>
+              )}
+            </p>
           </div>
           <form action={logout}>
             <SignOutButton />
