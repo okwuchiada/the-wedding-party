@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/prisma";
+import { getStory } from "@/lib/tenant";
 
-export default async function Footer() {
-  const story = await prisma.storyContent.findUnique({ where: { id: "main" } });
+export default async function Footer({ weddingId }: { weddingId: string }) {
+  const story = await getStory(weddingId);
 
   const brideName = story?.brideName ?? "";
   const groomName = story?.groomName ?? "";

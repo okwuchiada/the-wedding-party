@@ -6,6 +6,7 @@ import type { BankDetailsView } from "@/lib/types";
 import type { RegistryItemWithContributions } from "@/lib/types";
 import { submitContribution } from "@/lib/actions/contributions";
 import CopyRow from "./copy-row";
+import { useGuestSlug } from "./wedding-context";
 
 function formatNaira(cents: number) {
   return `₦${(cents / 100).toLocaleString("en-NG")}`;
@@ -62,6 +63,7 @@ export default function GiftCard({
   const alreadyContributing = raised > 0 && !funded;
   const minChipInCents = Math.min(MIN_CHIPIN_CENTS, remaining);
 
+  const slug = useGuestSlug();
   const [action, setAction] = useState<Action | null>(null);
   const [guestName, setGuestName] = useState("");
   const [amountCents, setAmountCents] = useState(
@@ -86,7 +88,7 @@ export default function GiftCard({
     formData.set("guestName", guestName);
     formData.set("amountCents", String(amount));
 
-    const result = await submitContribution(undefined, formData);
+    const result = await submitContribution(slug, undefined, formData);
     setPending(false);
 
     if (result?.error) {

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getStory, guestPath } from "@/lib/tenant";
 import GuestNavClient from "./nav-client";
 
 function formatNavDate(weddingDateISO: string) {
@@ -7,8 +7,8 @@ function formatNavDate(weddingDateISO: string) {
   return `${month} · ${day} · ${year.slice(2)}`;
 }
 
-export default async function GuestNav() {
-  const story = await prisma.storyContent.findUnique({ where: { id: "main" } });
+export default async function GuestNav({ weddingId, slug }: { weddingId: string; slug: string }) {
+  const story = await getStory(weddingId);
   const weddingDateISO = (story?.weddingDate ?? new Date()).toISOString();
 
   const brideInitial = story?.brideName?.trim().charAt(0).toUpperCase() || "";
@@ -16,6 +16,7 @@ export default async function GuestNav() {
 
   return (
     <GuestNavClient
+      basePath={guestPath(slug)}
       dateLabel={formatNavDate(weddingDateISO)}
       brideInitial={brideInitial}
       groomInitial={groomInitial}

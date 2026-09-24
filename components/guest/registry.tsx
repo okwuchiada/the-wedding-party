@@ -3,13 +3,14 @@ import { prisma } from "@/lib/prisma";
 import RegistryGrid from "./registry-grid";
 import RegistrySkeleton from "./registry-skeleton";
 
-async function RegistryContent() {
+async function RegistryContent({ weddingId }: { weddingId: string }) {
   const [registryItems, bankDetails] = await Promise.all([
     prisma.registryItem.findMany({
+      where: { weddingId },
       include: { contributions: { where: { status: "CONFIRMED" } } },
       orderBy: { createdAt: "asc" },
     }),
-    prisma.bankDetails.findUnique({ where: { id: "main" } }),
+    prisma.bankDetails.findUnique({ where: { weddingId } }),
   ]);
 
   return (
@@ -22,7 +23,7 @@ async function RegistryContent() {
   );
 }
 
-export default function Registry() {
+export default function Registry({ weddingId }: { weddingId: string }) {
   return (
     <section id="registry" className="bg-ivory px-4 py-20 sm:px-6 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
@@ -43,7 +44,7 @@ export default function Registry() {
 
       <div className="mx-auto mt-14 max-w-5xl">
         <Suspense fallback={<RegistrySkeleton />}>
-          <RegistryContent />
+          <RegistryContent weddingId={weddingId} />
         </Suspense>
       </div>
     </section>

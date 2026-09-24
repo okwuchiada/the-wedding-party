@@ -29,7 +29,7 @@ export async function login(_prevState: LoginState, formData: FormData): Promise
   }
 
   await createSession();
-  redirect("/admin");
+  redirect("/dashboard");
 }
 
 export async function logout() {

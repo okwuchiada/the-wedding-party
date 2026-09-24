@@ -3,24 +3,29 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const links = [
-  { label: "RSVP", href: "/#rsvp" },
-  { label: "Registry", href: "/#registry" },
-  { label: "Gallery Wall", href: "/gallery" },
-  { label: "Wall of Wishes", href: "/wishes" },
-];
+function navLinks(basePath: string) {
+  return [
+    { label: "RSVP", href: `${basePath}#rsvp` },
+    { label: "Registry", href: `${basePath}#registry` },
+    { label: "Gallery Wall", href: `${basePath}/gallery` },
+    { label: "Wall of Wishes", href: `${basePath}/wishes` },
+  ];
+}
 
 export default function GuestNavClient({
+  basePath,
   dateLabel,
   brideInitial,
   groomInitial,
 }: {
+  basePath: string;
   dateLabel: string;
   brideInitial: string;
   groomInitial: string;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const links = navLinks(basePath);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -38,7 +43,7 @@ export default function GuestNavClient({
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
         <div className="font-semibold tracking-tight text-foreground  flex items-baseline gap-10">
           <Link
-            href="/"
+            href={basePath}
             className="transition-opacity hover:opacity-80"
             style={{
               fontFamily: "var(--serif)",

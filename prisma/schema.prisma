@@ -12,6 +12,8 @@ datasource db {
 
 model RegistryItem {
   id            String         @id @default(cuid())
+  wedding       Wedding        @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId     String
   name          String
   category      String
   priceCents    Int
@@ -21,6 +23,8 @@ model RegistryItem {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   contributions Contribution[]
+
+  @@index([weddingId])
 }
 
 enum ContributionStatus {
@@ -30,6 +34,8 @@ enum ContributionStatus {
 
 model Contribution {
   id             String             @id @default(cuid())
+  wedding        Wedding            @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId      String
   registryItem   RegistryItem       @relation(fields: [registryItemId], references: [id])
   registryItemId String
   guestName      String
@@ -38,6 +44,8 @@ model Contribution {
   status         ContributionStatus @default(AWAITING_CONFIRMATION)
   createdAt      DateTime           @default(now())
   confirmedAt    DateTime?
+
+  @@index([weddingId])
 }
 
 enum MediaType {
@@ -53,11 +61,15 @@ enum MediaStatus {
 
 model Media {
   id        String      @id @default(cuid())
+  wedding   Wedding     @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId String
   guestName String
   url       String
   type      MediaType
   status    MediaStatus @default(PENDING)
   createdAt DateTime    @default(now())
+
+  @@index([weddingId])
 }
 
 enum WishStatus {
@@ -68,14 +80,20 @@ enum WishStatus {
 
 model Wish {
   id        String     @id @default(cuid())
+  wedding   Wedding    @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId String
   guestName String
   message   String
   status    WishStatus @default(PENDING)
   createdAt DateTime   @default(now())
+
+  @@index([weddingId])
 }
 
 model StoryContent {
-  id             String   @id @default("main")
+  id             String   @id @default(cuid())
+  wedding        Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId      String   @unique
   brideName      String
   groomName      String
   weddingDate    DateTime
@@ -95,43 +113,236 @@ model StoryContent {
 }
 
 model Rsvp {
-  id         String   @id @default(cuid())
-  guestName  String
-  email      String
-  attending  Boolean
-  guestCount Int      @default(1)
-  message    String?
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
+  id                 String    @id @default(cuid())
+  wedding            Wedding   @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId          String
+  guestName          String
+  email              String
+  attending          Boolean
+  guestCount         Int       @default(1)
+  message            String?
+  ipAddress          String?
+  userAgent          String?
+  createdAt          DateTime  @default(now())
   confirmationSentAt DateTime?
 
-  @@index([ipAddress, createdAt])
+  @@index([weddingId, createdAt])
+  @@index([weddingId, ipAddress, createdAt])
 }
 
 model StoryPhoto {
   id         String  @id @default(cuid())
+  wedding    Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId  String
   url        String
   caption    String
   order      Int     @default(0)
   showInHero Boolean @default(false)
+
+  @@index([weddingId])
 }
 
 model StoryBeat {
-  id       String  @id @default(cuid())
-  year     String
-  title    String
-  text     String
-  photoUrl String?
-  order    Int     @default(0)
+  id        String  @id @default(cuid())
+  wedding   Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId String
+  year      String
+  title     String
+  text      String
+  photoUrl  String?
+  order     Int     @default(0)
+
+  @@index([weddingId])
 }
 
 model BankDetails {
-  id        String   @id @default("main")
+  id        String   @id @default(cuid())
+  wedding   Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId String   @unique
   name      String
   bank      String
   account   String
   routing   String
   swift     String?
   updatedAt DateTime @updatedAt
+}
+
+// ─── Tenancy, accounts and billing ──────────────────────────────────────────
+
+enum UserRole {
+  USER
+  SUPER_ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  // Null until the user sets a password (invited partners, migrated couples).
+  passwordHash String?
+  role         UserRole @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships WeddingMember[]
+  resetTokens PasswordResetToken[]
+  auditLogs   AuditLog[]
+}
+
+enum WeddingStatus {
+  DRAFT
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+model Wedding {
+  id               String        @id @default(cuid())
+  slug             String        @unique
+  status           WeddingStatus @default(DRAFT)
+  plan             Plan?         @relation(fields: [planId], references: [id])
+  planId           String?
+  paidAt           DateTime?
+  // Granted a plan by a super admin without paying.
+  comped           Boolean       @default(false)
+  currency         String        @default("NGN")
+  locale           String        @default("en-NG")
+  timezone         String        @default("Africa/Lagos")
+  phoneCountryCode String        @default("234")
+  maxGuests        Int           @default(100)
+  // ISO country codes allowed to view the guest site; empty means everyone.
+  allowedCountries String[]      @default([])
+  geoBypassToken   String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  members       WeddingMember[]
+  theme         WeddingTheme?
+  copy          WeddingCopy?
+  story         StoryContent?
+  bankDetails   BankDetails?
+  registryItems RegistryItem[]
+  contributions Contribution[]
+  media         Media[]
+  wishes        Wish[]
+  rsvps         Rsvp[]
+  storyPhotos   StoryPhoto[]
+  storyBeats    StoryBeat[]
+  payments      Payment[]
+  auditLogs     AuditLog[]
+}
+
+enum WeddingRole {
+  OWNER
+  EDITOR
+}
+
+model WeddingMember {
+  id        String      @id @default(cuid())
+  wedding   Wedding     @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  role      WeddingRole @default(EDITOR)
+  createdAt DateTime    @default(now())
+
+  @@unique([weddingId, userId])
+  @@index([userId])
+}
+
+model WeddingTheme {
+  id           String  @id @default(cuid())
+  wedding      Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId    String  @unique
+  presetKey    String  @default("terracotta-olive")
+  // Overrides on top of the preset: { background, foreground, primary, ... }
+  colors       Json    @default("{}")
+  serifFont    String?
+  scriptFont   String?
+  sansFont     String?
+  heroImageUrl String?
+}
+
+// Section copy overrides; null fields fall back to the component defaults.
+model WeddingCopy {
+  id             String  @id @default(cuid())
+  wedding        Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId      String  @unique
+  heroEyebrow    String?
+  heroIntro      String?
+  rsvpIntro      String?
+  registryIntro  String?
+  giftIntro      String?
+  loveNotesIntro String?
+  galleryIntro   String?
+  wishesIntro    String?
+  footerCredit   String?
+  asoebiEnabled  Boolean @default(false)
+  asoebiFabric   String?
+}
+
+model Plan {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  priceKobo Int
+  maxGuests Int
+  // { gallery: boolean, customTheme: boolean, removeBranding: boolean }
+  features  Json     @default("{}")
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  weddings Wedding[]
+  payments Payment[]
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  wedding         Wedding       @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId       String
+  plan            Plan          @relation(fields: [planId], references: [id])
+  planId          String
+  reference       String        @unique
+  amountKobo      Int
+  status          PaymentStatus @default(PENDING)
+  paystackPayload Json?
+  createdAt       DateTime      @default(now())
+  paidAt          DateTime?
+
+  @@index([weddingId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  // SHA-256 of the token; the raw token only ever lives in the emailed link.
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorId   String?
+  wedding   Wedding? @relation(fields: [weddingId], references: [id], onDelete: SetNull)
+  weddingId String?
+  action    String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([weddingId, createdAt])
+  @@index([createdAt])
 }

@@ -3,8 +3,8 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import CoupleGallerySkeleton from "./couple-gallery-skeleton";
 
-async function CoupleGalleryGrid() {
-  const photos = await prisma.storyPhoto.findMany({ orderBy: { order: "asc" } });
+async function CoupleGalleryGrid({ weddingId }: { weddingId: string }) {
+  const photos = await prisma.storyPhoto.findMany({ where: { weddingId }, orderBy: { order: "asc" } });
 
   if (photos.length === 0) return null;
 
@@ -32,7 +32,7 @@ async function CoupleGalleryGrid() {
   );
 }
 
-export default function CoupleGallery() {
+export default function CoupleGallery({ weddingId }: { weddingId: string }) {
   return (
     <section id="couple-gallery" className="bg-ivory px-4 py-20 sm:px-6 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
@@ -46,7 +46,7 @@ export default function CoupleGallery() {
 
       <div className="mx-auto mt-14 max-w-5xl">
         <Suspense fallback={<CoupleGallerySkeleton />}>
-          <CoupleGalleryGrid />
+          <CoupleGalleryGrid weddingId={weddingId} />
         </Suspense>
       </div>
     </section>

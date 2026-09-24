@@ -1,33 +1,36 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { requireWeddingAccess } from "@/lib/dal";
 import { createPresignedUploadUrl } from "@/lib/s3";
-import { verifySession } from "@/lib/dal";
+import { revalidateWedding } from "@/lib/tenant";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL, weddingUploadFolder } from "@/lib/uploads";
 
 export type StoryPhotoFormState = { error?: string; success?: boolean } | undefined;
-
-const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
 export type CreateStoryPhotoUploadUrlState =
   | { error?: string; uploadUrl?: string; publicUrl?: string }
   | undefined;
 
 export async function createStoryPhotoUploadUrl(
+  weddingId: string,
   fileName: string,
   fileType: string,
   fileSize: number
 ): Promise<CreateStoryPhotoUploadUrlState> {
-  await verifySession();
+  const { wedding } = await requireWeddingAccess(weddingId);
 
   if (!fileType.startsWith("image/")) {
     return { error: "Only image files are allowed" };
   }
-  if (fileSize > MAX_FILE_SIZE) {
-    return { error: "Image is over the 25MB limit" };
+  if (fileSize > MAX_UPLOAD_BYTES) {
+    return { error: `Image is over the ${MAX_UPLOAD_LABEL} limit` };
   }
 
-  const { uploadUrl, publicUrl } = await createPresignedUploadUrl("story-photos", fileName, fileType);
+  const { uploadUrl, publicUrl } = await createPresignedUploadUrl(
+    weddingUploadFolder(wedding.id, "story-photos"),
+    fileName,
+    fileType
+  );
   return { uploadUrl, publicUrl };
 }
 
@@ -61,10 +64,11 @@ function resolvePhotoUrl(formData: FormData, existingUrl?: string) {
 }
 
 export async function addStoryPhoto(
+  weddingId: string,
   _prevState: StoryPhotoFormState,
   formData: FormData
 ): Promise<StoryPhotoFormState> {
-  await verifySession();
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
   const meta = parseStoryPhotoMeta(formData);
   if ("error" in meta) return { error: meta.error };
@@ -72,19 +76,21 @@ export async function addStoryPhoto(
   const resolved = resolvePhotoUrl(formData);
   if ("error" in resolved) return { error: resolved.error };
 
-  await prisma.storyPhoto.create({ data: { ...meta.data, url: resolved.url } });
+  await db.storyPhoto.create({
+    data: { ...meta.data, url: resolved.url, weddingId: wedding.id },
+  });
 
-  revalidatePath("/admin");
-  revalidatePath("/");
+  revalidateWedding(wedding);
 
   return { success: true };
 }
 
 export async function updateStoryPhoto(
+  weddingId: string,
   _prevState: StoryPhotoFormState,
   formData: FormData
 ): Promise<StoryPhotoFormState> {
-  await verifySession();
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing photo id" };
@@ -99,35 +105,43 @@ export async function updateStoryPhoto(
   );
   if ("error" in resolved) return { error: resolved.error };
 
-  await prisma.storyPhoto.update({ where: { id }, data: { ...meta.data, url: resolved.url } });
+  await db.storyPhoto.update({
+    where: { id, weddingId: wedding.id },
+    data: { ...meta.data, url: resolved.url },
+  });
 
-  revalidatePath("/admin");
-  revalidatePath("/");
+  revalidateWedding(wedding);
 
   return { success: true };
 }
 
-export async function deleteStoryPhoto(id: string) {
-  await verifySession();
+export async function deleteStoryPhoto(weddingId: string, id: string) {
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
-  await prisma.storyPhoto.delete({ where: { id } });
+  await db.storyPhoto.delete({ where: { id, weddingId: wedding.id } });
 
-  revalidatePath("/admin");
-  revalidatePath("/");
+  revalidateWedding(wedding);
 }
 
 export type BulkAddStoryPhotosState = { error?: string; success?: boolean } | undefined;
 
-export async function bulkAddStoryPhotos(urls: string[]): Promise<BulkAddStoryPhotosState> {
-  await verifySession();
+export async function bulkAddStoryPhotos(
+  weddingId: string,
+  urls: string[]
+): Promise<BulkAddStoryPhotosState> {
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
-  if (urls.length === 0) return { error: "No photos to add" };
+  if (!Array.isArray(urls) || urls.length === 0) return { error: "No photos to add" };
 
-  const last = await prisma.storyPhoto.findFirst({ orderBy: { order: "desc" } });
+  const last = await db.storyPhoto.findFirst({
+    where: { weddingId: wedding.id },
+    orderBy: { order: "desc" },
+  });
   const startOrder = (last?.order ?? -1) + 1;
 
-  await prisma.storyPhoto.createMany({
+  await db.storyPhoto.createMany({
     data: urls.map((url, i) => ({
+      weddingId: wedding.id,
       url,
       caption: "",
       order: startOrder + i,
@@ -135,8 +149,7 @@ export async function bulkAddStoryPhotos(urls: string[]): Promise<BulkAddStoryPh
     })),
   });
 
-  revalidatePath("/admin");
-  revalidatePath("/");
+  revalidateWedding(wedding);
 
   return { success: true };
 }

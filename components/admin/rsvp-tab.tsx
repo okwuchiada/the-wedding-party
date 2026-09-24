@@ -14,6 +14,7 @@ import {
 } from "@/lib/actions/rsvp";
 import { readRsvpFile, RSVP_TEMPLATE_CSV } from "@/lib/rsvp-import";
 import { useConfirm } from "./use-confirm";
+import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
 
 const inputClass = "border border-olive/20 bg-white px-3 py-2 text-sm text-foreground outline-none";
@@ -100,6 +101,7 @@ function RsvpForm({
 }
 
 function RsvpImport({ onClose }: { onClose: () => void }) {
+  const weddingId = useAdminWeddingId();
   const fileRef = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<ImportRsvpRow[] | null>(null);
   const [fileError, setFileError] = useState("");
@@ -121,7 +123,7 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
     if (!rows) return;
     setImporting(true);
     try {
-      const res = await importRsvps(rows);
+      const res = await importRsvps(weddingId, rows);
       setResult(res);
       if (!res.error) {
         setRows(null);
@@ -269,6 +271,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
     .filter((r) => r.attending)
     .reduce((sum, r) => sum + r.guestCount, 0);
   const declinedCount = rsvps.filter((r) => !r.attending).length;
+  const weddingId = useAdminWeddingId();
   const [panel, setPanel] = useState<"add" | "import" | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
@@ -284,7 +287,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
     if (!ok) return;
     setDeleteError("");
     await run(id, "delete", async () => {
-      const result = await deleteRsvp(id);
+      const result = await deleteRsvp(weddingId, id);
       if (result.error) setDeleteError(result.error);
     });
   };
@@ -292,7 +295,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
   const handleSend = async (id: string) => {
     setSendError("");
     await run(id, "send", async () => {
-      const result = await sendRsvpConfirmation(id);
+      const result = await sendRsvpConfirmation(weddingId, id);
       if (result.error) setSendError(result.error);
     });
   };
@@ -336,7 +339,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
 
       {panel === "add" && (
         <div className="mb-5">
-          <RsvpForm action={createRsvpAdmin} onCancel={() => setPanel(null)} submitLabel="Add RSVP" />
+          <RsvpForm action={createRsvpAdmin.bind(null, weddingId)} onCancel={() => setPanel(null)} submitLabel="Add RSVP" />
         </div>
       )}
       {panel === "import" && (
@@ -370,7 +373,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
                   <tr key={r.id} className="border-b border-olive/10 last:border-0">
                     <td colSpan={7} className="p-0">
                       <RsvpForm
-                        action={updateRsvpAdmin}
+                        action={updateRsvpAdmin.bind(null, weddingId)}
                         initialValues={r}
                         onCancel={() => setEditingId(null)}
                         submitLabel="Save Changes"

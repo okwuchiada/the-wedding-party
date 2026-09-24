@@ -1,13 +1,14 @@
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import { getStory } from "@/lib/tenant";
 import CountdownBar from "./countdown-bar";
 import Polaroid from "./polaroid";
 
-export default async function Hero() {
+export default async function Hero({ weddingId }: { weddingId: string }) {
   const [story, photos] = await Promise.all([
-    prisma.storyContent.findUnique({ where: { id: "main" } }),
+    getStory(weddingId),
     prisma.storyPhoto.findMany({
-      where: { showInHero: true },
+      where: { weddingId, showInHero: true },
       orderBy: { order: "asc" },
       take: 3,
     }),

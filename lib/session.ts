@@ -1,11 +1,11 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { SESSION_COOKIE } from "@/lib/session-cookie";
 
 const secretKey = process.env.SESSION_SECRET;
 const encodedKey = new TextEncoder().encode(secretKey);
 
-const SESSION_COOKIE = "admin_session";
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 type SessionPayload = { role: "admin"; expiresAt: string };
@@ -52,5 +52,3 @@ export async function getSessionCookie() {
   const cookieStore = await cookies();
   return cookieStore.get(SESSION_COOKIE)?.value;
 }
-
-export { SESSION_COOKIE };

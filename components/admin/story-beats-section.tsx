@@ -12,6 +12,7 @@ import {
 import { convertHeicToJpeg } from "@/lib/heic";
 import { compressImage } from "@/lib/image-compress";
 import { useConfirm } from "./use-confirm";
+import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
 
 export type StoryBeatView = {
@@ -34,6 +35,7 @@ function BeatForm({
   onCancel: () => void;
   submitLabel: string;
 }) {
+  const weddingId = useAdminWeddingId();
   const [state, formAction, pending] = useActionState(action, undefined);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -53,7 +55,7 @@ function BeatForm({
     if (rawFile instanceof File && rawFile.size > 0) {
       setUploading(true);
       const file = await compressImage(await convertHeicToJpeg(rawFile));
-      const urlResult = await createStoryBeatUploadUrl(file.name, file.type, file.size);
+      const urlResult = await createStoryBeatUploadUrl(weddingId, file.name, file.type, file.size);
       if (!urlResult || urlResult.error || !urlResult.uploadUrl || !urlResult.publicUrl) {
         setUploading(false);
         setUploadError(urlResult?.error ?? "Upload failed. Please try again.");
@@ -170,6 +172,7 @@ function BeatForm({
 }
 
 export default function StoryBeatsSection({ beats }: { beats: StoryBeatView[] }) {
+  const weddingId = useAdminWeddingId();
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
@@ -185,7 +188,7 @@ export default function StoryBeatsSection({ beats }: { beats: StoryBeatView[] })
     setDeleteError("");
     await run(id, "delete", async () => {
       try {
-        await deleteStoryBeat(id);
+        await deleteStoryBeat(weddingId, id);
       } catch {
         setDeleteError("Couldn't delete that beat.");
       }
@@ -216,7 +219,7 @@ export default function StoryBeatsSection({ beats }: { beats: StoryBeatView[] })
 
       {adding && (
         <div className="mb-5">
-          <BeatForm action={addStoryBeat} onCancel={() => setAdding(false)} submitLabel="Add Beat" />
+          <BeatForm action={addStoryBeat.bind(null, weddingId)} onCancel={() => setAdding(false)} submitLabel="Add Beat" />
         </div>
       )}
 
@@ -239,7 +242,7 @@ export default function StoryBeatsSection({ beats }: { beats: StoryBeatView[] })
                 <tr key={beat.id} className="border-b border-olive/10 last:border-0">
                   <td colSpan={5} className="p-0">
                     <BeatForm
-                      action={updateStoryBeat}
+                      action={updateStoryBeat.bind(null, weddingId)}
                       initialValues={beat}
                       onCancel={() => setEditingId(null)}
                       submitLabel="Save Changes"

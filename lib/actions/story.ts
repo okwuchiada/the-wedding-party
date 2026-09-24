@@ -1,16 +1,16 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
-import { verifySession } from "@/lib/dal";
+import { requireWeddingAccess } from "@/lib/dal";
+import { revalidateWedding } from "@/lib/tenant";
 
 export type SaveStoryState = { error?: string; success?: boolean } | undefined;
 
 export async function saveStory(
+  weddingId: string,
   _prevState: SaveStoryState,
   formData: FormData
 ): Promise<SaveStoryState> {
-  await verifySession();
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
   const brideName = formData.get("brideName");
   const groomName = formData.get("groomName");
@@ -68,33 +68,31 @@ export async function saveStory(
     groomPhone: typeof groomPhone === "string" && groomPhone.trim() ? groomPhone.trim() : null,
   };
 
-  await prisma.storyContent.upsert({
-    where: { id: "main" },
+  await db.storyContent.upsert({
+    where: { weddingId: wedding.id },
     update: data,
-    create: { id: "main", ...data },
+    create: { ...data, weddingId: wedding.id },
   });
 
-  revalidatePath("/admin");
-  revalidatePath("/");
+  revalidateWedding(wedding);
 
   return { success: true };
 }
 
-export async function setGalleryEnabled(enabled: boolean) {
-  await verifySession();
+export async function setGalleryEnabled(weddingId: string, enabled: boolean) {
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
-  await prisma.storyContent.upsert({
-    where: { id: "main" },
-    update: { galleryEnabled: enabled },
+  await db.storyContent.upsert({
+    where: { weddingId: wedding.id },
+    update: { galleryEnabled: enabled === true },
     create: {
-      id: "main",
+      weddingId: wedding.id,
       brideName: "",
       groomName: "",
       weddingDate: new Date(),
-      galleryEnabled: enabled,
+      galleryEnabled: enabled === true,
     },
   });
 
-  revalidatePath("/admin");
-  revalidatePath("/gallery");
+  revalidateWedding(wedding);
 }

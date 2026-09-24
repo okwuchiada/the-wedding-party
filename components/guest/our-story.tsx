@@ -1,13 +1,14 @@
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
+import { getStory } from "@/lib/tenant";
 import LoveNote from "./love-note";
 import StoryCarousel from "./story-carousel";
 import OurStorySkeleton from "./our-story-skeleton";
 
-async function OurStoryContent() {
+async function OurStoryContent({ weddingId }: { weddingId: string }) {
   const [photos, story] = await Promise.all([
-    prisma.storyPhoto.findMany({ orderBy: { order: "asc" } }),
-    prisma.storyContent.findUnique({ where: { id: "main" } }),
+    prisma.storyPhoto.findMany({ where: { weddingId }, orderBy: { order: "asc" } }),
+    getStory(weddingId),
   ]);
 
   const notes = [
@@ -25,7 +26,7 @@ async function OurStoryContent() {
   );
 }
 
-export default function OurStory() {
+export default function OurStory({ weddingId }: { weddingId: string }) {
   return (
     <section id="our-story" className="bg-cream px-4 py-20 sm:px-6 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
@@ -38,7 +39,7 @@ export default function OurStory() {
       </div>
 
       <Suspense fallback={<OurStorySkeleton />}>
-        <OurStoryContent />
+        <OurStoryContent weddingId={weddingId} />
       </Suspense>
     </section>
   );

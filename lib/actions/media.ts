@@ -1,80 +1,109 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
-import { createPresignedUploadUrl } from "@/lib/s3";
-import { verifySession } from "@/lib/dal";
+import { requireWeddingAccess } from "@/lib/dal";
+import { hasFeature } from "@/lib/plans";
+import { createPresignedUploadUrl, publicUrlForKey } from "@/lib/s3";
+import { resolveGuestAction, revalidateDashboard, revalidateWedding } from "@/lib/tenant";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL, weddingUploadFolder } from "@/lib/uploads";
 
 const ALLOWED_TYPES = ["image/", "video/"];
-const MAX_FILE_SIZE = 25 * 1024 * 1024;
+const GUEST_UPLOAD_FOLDER = "uploads";
 
 export type CreateUploadUrlState =
   | { error?: string; uploadUrl?: string; publicUrl?: string }
   | undefined;
 
+/** Guests can upload only while the couple has the gallery open. */
+async function resolveGalleryWedding(slug: string) {
+  const guest = await resolveGuestAction(slug);
+  if (!guest || !hasFeature(guest.wedding.plan, "gallery")) return null;
+  const story = await guest.db.storyContent.findUnique({
+    where: { weddingId: guest.wedding.id },
+    select: { galleryEnabled: true },
+  });
+  return story?.galleryEnabled ? guest : null;
+}
+
 export async function createMediaUploadUrl(
+  slug: string,
   fileName: string,
   fileType: string,
   fileSize: number
 ): Promise<CreateUploadUrlState> {
+  const guest = await resolveGalleryWedding(slug);
+  if (!guest) return { error: "The gallery isn't open yet" };
+
   if (!ALLOWED_TYPES.some((prefix) => fileType.startsWith(prefix))) {
     return { error: "Only photos and videos are allowed" };
   }
-  if (fileSize > MAX_FILE_SIZE) {
-    return { error: "File is over the 25MB limit" };
+  if (fileSize > MAX_UPLOAD_BYTES) {
+    return { error: `File is over the ${MAX_UPLOAD_LABEL} limit` };
   }
 
-  const { uploadUrl, publicUrl } = await createPresignedUploadUrl("uploads", fileName, fileType);
+  const { uploadUrl, publicUrl } = await createPresignedUploadUrl(
+    weddingUploadFolder(guest.wedding.id, GUEST_UPLOAD_FOLDER),
+    fileName,
+    fileType
+  );
   return { uploadUrl, publicUrl };
 }
 
 export type CreateMediaState = { error?: string; success?: boolean; id?: string } | undefined;
 
 export async function createMediaRecord(
+  slug: string,
   guestName: string,
   url: string,
   type: "PHOTO" | "VIDEO"
 ): Promise<CreateMediaState> {
-  if (!guestName.trim()) return { error: "Please enter your name" };
-  if (!url) return { error: "Missing upload URL" };
+  const guest = await resolveGalleryWedding(slug);
+  if (!guest) return { error: "The gallery isn't open yet" };
+  const { wedding, db } = guest;
 
-  const media = await prisma.media.create({
-    data: { guestName: guestName.trim(), url, type, status: "PENDING" },
+  if (!guestName.trim()) return { error: "Please enter your name" };
+  if (type !== "PHOTO" && type !== "VIDEO") return { error: "Unsupported file type" };
+  // Only accept files uploaded through createMediaUploadUrl for this wedding.
+  const allowedPrefix = publicUrlForKey(`${weddingUploadFolder(wedding.id, GUEST_UPLOAD_FOLDER)}/`);
+  if (typeof url !== "string" || !url.startsWith(allowedPrefix)) {
+    return { error: "Missing upload URL" };
+  }
+
+  const media = await db.media.create({
+    data: { weddingId: wedding.id, guestName: guestName.trim(), url, type, status: "PENDING" },
   });
 
-  revalidatePath("/admin");
+  revalidateDashboard(wedding);
 
   return { success: true, id: media.id };
 }
 
-export async function getMediaStatuses(ids: string[]) {
-  if (ids.length === 0) return {};
+export async function getMediaStatuses(slug: string, ids: string[]) {
+  if (!Array.isArray(ids) || ids.length === 0) return {};
+  const guest = await resolveGuestAction(slug);
+  if (!guest) return {};
 
-  const rows = await prisma.media.findMany({
-    where: { id: { in: ids } },
+  const rows = await guest.db.media.findMany({
+    where: { weddingId: guest.wedding.id, id: { in: ids.slice(0, 100) } },
     select: { id: true, status: true },
   });
 
   return Object.fromEntries(rows.map((row) => [row.id, row.status]));
 }
 
-export async function approveMedia(id: string) {
-  await verifySession();
-  await prisma.media.update({ where: { id }, data: { status: "APPROVED" } });
-  revalidatePath("/admin");
-  revalidatePath("/gallery");
+export async function approveMedia(weddingId: string, id: string) {
+  const { wedding, db } = await requireWeddingAccess(weddingId);
+  await db.media.update({ where: { id, weddingId: wedding.id }, data: { status: "APPROVED" } });
+  revalidateWedding(wedding);
 }
 
-export async function hideMedia(id: string) {
-  await verifySession();
-  await prisma.media.update({ where: { id }, data: { status: "HIDDEN" } });
-  revalidatePath("/admin");
-  revalidatePath("/gallery");
+export async function hideMedia(weddingId: string, id: string) {
+  const { wedding, db } = await requireWeddingAccess(weddingId);
+  await db.media.update({ where: { id, weddingId: wedding.id }, data: { status: "HIDDEN" } });
+  revalidateWedding(wedding);
 }
 
-export async function deleteMedia(id: string) {
-  await verifySession();
-  await prisma.media.delete({ where: { id } });
-  revalidatePath("/admin");
-  revalidatePath("/gallery");
+export async function deleteMedia(weddingId: string, id: string) {
+  const { wedding, db } = await requireWeddingAccess(weddingId);
+  await db.media.delete({ where: { id, weddingId: wedding.id } });
+  revalidateWedding(wedding);
 }

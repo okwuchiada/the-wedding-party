@@ -1,33 +1,36 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { requireWeddingAccess } from "@/lib/dal";
 import { createPresignedUploadUrl } from "@/lib/s3";
-import { verifySession } from "@/lib/dal";
+import { revalidateWedding } from "@/lib/tenant";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL, weddingUploadFolder } from "@/lib/uploads";
 
 export type StoryBeatFormState = { error?: string; success?: boolean } | undefined;
-
-const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
 export type CreateStoryBeatUploadUrlState =
   | { error?: string; uploadUrl?: string; publicUrl?: string }
   | undefined;
 
 export async function createStoryBeatUploadUrl(
+  weddingId: string,
   fileName: string,
   fileType: string,
   fileSize: number
 ): Promise<CreateStoryBeatUploadUrlState> {
-  await verifySession();
+  const { wedding } = await requireWeddingAccess(weddingId);
 
   if (!fileType.startsWith("image/")) {
     return { error: "Only image files are allowed" };
   }
-  if (fileSize > MAX_FILE_SIZE) {
-    return { error: "Image is over the 25MB limit" };
+  if (fileSize > MAX_UPLOAD_BYTES) {
+    return { error: `Image is over the ${MAX_UPLOAD_LABEL} limit` };
   }
 
-  const { uploadUrl, publicUrl } = await createPresignedUploadUrl("story-beats", fileName, fileType);
+  const { uploadUrl, publicUrl } = await createPresignedUploadUrl(
+    weddingUploadFolder(wedding.id, "story-beats"),
+    fileName,
+    fileType
+  );
   return { uploadUrl, publicUrl };
 }
 
@@ -66,29 +69,30 @@ function resolvePhotoUrl(formData: FormData, existingUrl?: string | null) {
 }
 
 export async function addStoryBeat(
+  weddingId: string,
   _prevState: StoryBeatFormState,
   formData: FormData
 ): Promise<StoryBeatFormState> {
-  await verifySession();
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
   const meta = parseStoryBeatMeta(formData);
   if ("error" in meta) return { error: meta.error };
 
   const photoUrl = resolvePhotoUrl(formData);
 
-  await prisma.storyBeat.create({ data: { ...meta.data, photoUrl } });
+  await db.storyBeat.create({ data: { ...meta.data, photoUrl, weddingId: wedding.id } });
 
-  revalidatePath("/admin");
-  revalidatePath("/");
+  revalidateWedding(wedding);
 
   return { success: true };
 }
 
 export async function updateStoryBeat(
+  weddingId: string,
   _prevState: StoryBeatFormState,
   formData: FormData
 ): Promise<StoryBeatFormState> {
-  await verifySession();
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing beat id" };
@@ -102,19 +106,20 @@ export async function updateStoryBeat(
     typeof existingPhotoUrl === "string" ? existingPhotoUrl : null
   );
 
-  await prisma.storyBeat.update({ where: { id }, data: { ...meta.data, photoUrl } });
+  await db.storyBeat.update({
+    where: { id, weddingId: wedding.id },
+    data: { ...meta.data, photoUrl },
+  });
 
-  revalidatePath("/admin");
-  revalidatePath("/");
+  revalidateWedding(wedding);
 
   return { success: true };
 }
 
-export async function deleteStoryBeat(id: string) {
-  await verifySession();
+export async function deleteStoryBeat(weddingId: string, id: string) {
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
-  await prisma.storyBeat.delete({ where: { id } });
+  await db.storyBeat.delete({ where: { id, weddingId: wedding.id } });
 
-  revalidatePath("/admin");
-  revalidatePath("/");
+  revalidateWedding(wedding);
 }

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { createMediaUploadUrl, createMediaRecord, getMediaStatuses } from "@/lib/actions/media";
 import { convertHeicToJpeg, isImageFile } from "@/lib/heic";
 import { compressImage } from "@/lib/image-compress";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/uploads";
+import { useGuestSlug } from "./wedding-context";
 
 type UploadStatus = "uploading" | "done" | "error";
 
@@ -18,9 +20,9 @@ type PendingUpload = {
 
 const STATUS_POLL_INTERVAL_MS = 5_000;
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
 export default function GalleryUpload() {
+  const slug = useGuestSlug();
   const [guestName, setGuestName] = useState("");
   const [error, setError] = useState("");
   const [uploads, setUploads] = useState<PendingUpload[]>([]);
@@ -31,7 +33,7 @@ export default function GalleryUpload() {
       setError(message);
     };
 
-    const urlResult = await createMediaUploadUrl(file.name, file.type, file.size);
+    const urlResult = await createMediaUploadUrl(slug, file.name, file.type, file.size);
     if (!urlResult || urlResult.error || !urlResult.uploadUrl || !urlResult.publicUrl) {
       markError(urlResult?.error ?? "Upload failed. Please try again.");
       return;
@@ -48,7 +50,7 @@ export default function GalleryUpload() {
     }
 
     const type = file.type.startsWith("video/") ? "VIDEO" : "PHOTO";
-    const result = await createMediaRecord(guestName, urlResult.publicUrl, type);
+    const result = await createMediaRecord(slug, guestName, urlResult.publicUrl, type);
     if (result?.error) {
       markError(result.error);
       return;
@@ -67,14 +69,14 @@ export default function GalleryUpload() {
     if (trackedIds.length === 0) return;
 
     const interval = setInterval(async () => {
-      const statuses = await getMediaStatuses(trackedIds);
+      const statuses = await getMediaStatuses(slug, trackedIds);
       setUploads((prev) =>
         prev.filter((u) => !u.mediaId || statuses[u.mediaId] === "PENDING")
       );
     }, STATUS_POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [uploads]);
+  }, [slug, uploads]);
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -90,8 +92,8 @@ export default function GalleryUpload() {
         setError(`${rawFile.name} isn't a photo or video`);
         continue;
       }
-      if (rawFile.size > MAX_FILE_SIZE) {
-        setError(`${rawFile.name} is over the 25MB limit`);
+      if (rawFile.size > MAX_UPLOAD_BYTES) {
+        setError(`${rawFile.name} is over the ${MAX_UPLOAD_LABEL} limit`);
         continue;
       }
 
@@ -120,7 +122,7 @@ export default function GalleryUpload() {
           <span className="text-sm font-medium text-foreground">
             Tap to share a photo or video
           </span>
-          <span className="text-xs text-foreground/60">JPG, PNG, MP4 up to 25MB</span>
+          <span className="text-xs text-foreground/60">JPG, PNG, MP4 up to {MAX_UPLOAD_LABEL}</span>
           <input
             type="file"
             accept="image/*,video/*,.heic,.heif"

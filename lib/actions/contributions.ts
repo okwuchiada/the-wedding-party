@@ -1,16 +1,20 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
-import { verifySession } from "@/lib/dal";
+import { requireWeddingAccess } from "@/lib/dal";
+import { resolveGuestAction, revalidateDashboard, revalidateWedding } from "@/lib/tenant";
 import { sendMail, contributionNotificationEmail } from "@/lib/mail";
 
 export type SubmitContributionState = { error?: string; success?: boolean } | undefined;
 
 export async function submitContribution(
+  slug: string,
   _prevState: SubmitContributionState,
   formData: FormData
 ): Promise<SubmitContributionState> {
+  const guest = await resolveGuestAction(slug);
+  if (!guest) return { error: "This registry isn't available." };
+  const { wedding, db } = guest;
+
   const registryItemId = formData.get("registryItemId");
   const guestName = formData.get("guestName");
   const amountCents = formData.get("amountCents");
@@ -27,9 +31,16 @@ export async function submitContribution(
     return { error: "Enter a valid amount" };
   }
 
-  const contribution = await prisma.contribution.create({
+  const item = await db.registryItem.findUnique({
+    where: { id: registryItemId, weddingId: wedding.id },
+    select: { id: true },
+  });
+  if (!item) return { error: "That item is no longer on the registry" };
+
+  const contribution = await db.contribution.create({
     data: {
-      registryItemId,
+      weddingId: wedding.id,
+      registryItemId: item.id,
       guestName: guestName.trim(),
       amountCents: Math.round(amount),
       note: typeof note === "string" && note.trim() ? note.trim() : null,
@@ -38,13 +49,14 @@ export async function submitContribution(
     include: { registryItem: true },
   });
 
-  revalidatePath("/admin");
+  revalidateDashboard(wedding);
 
-  const story = await prisma.storyContent.findUnique({ where: { id: "main" } });
+  const story = await db.storyContent.findUnique({ where: { weddingId: wedding.id } });
   if (story?.contactEmail) {
     await sendMail({
       to: story.contactEmail,
       ...contributionNotificationEmail({
+        weddingId: wedding.id,
         guestName: contribution.guestName,
         itemName: contribution.registryItem.name,
         amountCents: contribution.amountCents,
@@ -58,14 +70,13 @@ export async function submitContribution(
   return { success: true };
 }
 
-export async function confirmContribution(contributionId: string) {
-  await verifySession();
+export async function confirmContribution(weddingId: string, contributionId: string) {
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
-  await prisma.contribution.update({
-    where: { id: contributionId },
+  await db.contribution.update({
+    where: { id: contributionId, weddingId: wedding.id },
     data: { status: "CONFIRMED", confirmedAt: new Date() },
   });
 
-  revalidatePath("/admin");
-  revalidatePath("/");
+  revalidateWedding(wedding);
 }

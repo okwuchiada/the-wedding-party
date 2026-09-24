@@ -1,9 +1,15 @@
 import AdminHome from "@/components/admin/home";
-import { verifySession } from "@/lib/dal";
-import { prisma } from "@/lib/prisma";
+import { requireWeddingAccess } from "@/lib/dal";
+import { guestPath } from "@/lib/tenant";
 
-export default async function AdminPage() {
-  await verifySession();
+export default async function WeddingDashboardPage({
+  params,
+}: {
+  params: Promise<{ weddingId: string }>;
+}) {
+  const { weddingId } = await params;
+  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const scope = { weddingId: wedding.id };
 
   const [
     registryItems,
@@ -21,53 +27,56 @@ export default async function AdminPage() {
     rsvps,
     bankDetails,
   ] = await Promise.all([
-    prisma.registryItem.findMany({
-      include: { contributions: { where: { status: "CONFIRMED" } } },
+    db.registryItem.findMany({
+      where: scope,
+      include: { contributions: { where: { ...scope, status: "CONFIRMED" } } },
       orderBy: { createdAt: "asc" },
     }),
-    prisma.contribution.findMany({
-      where: { status: "AWAITING_CONFIRMATION" },
+    db.contribution.findMany({
+      where: { ...scope, status: "AWAITING_CONFIRMATION" },
       include: { registryItem: true },
       orderBy: { createdAt: "asc" },
     }),
-    prisma.contribution.findMany({
-      where: { status: "CONFIRMED" },
+    db.contribution.findMany({
+      where: { ...scope, status: "CONFIRMED" },
       include: { registryItem: true },
       orderBy: { confirmedAt: "desc" },
     }),
-    prisma.wish.findMany({
-      where: { status: "PENDING" },
+    db.wish.findMany({
+      where: { ...scope, status: "PENDING" },
       orderBy: { createdAt: "asc" },
     }),
-    prisma.wish.findMany({
-      where: { status: "APPROVED" },
+    db.wish.findMany({
+      where: { ...scope, status: "APPROVED" },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.wish.findMany({
-      where: { status: "HIDDEN" },
+    db.wish.findMany({
+      where: { ...scope, status: "HIDDEN" },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.storyContent.findUnique({ where: { id: "main" } }),
-    prisma.storyPhoto.findMany({ orderBy: { order: "asc" } }),
-    prisma.storyBeat.findMany({ orderBy: { order: "asc" } }),
-    prisma.media.findMany({
-      where: { status: "PENDING" },
+    db.storyContent.findUnique({ where: scope }),
+    db.storyPhoto.findMany({ where: scope, orderBy: { order: "asc" } }),
+    db.storyBeat.findMany({ where: scope, orderBy: { order: "asc" } }),
+    db.media.findMany({
+      where: { ...scope, status: "PENDING" },
       orderBy: { createdAt: "asc" },
     }),
-    prisma.media.findMany({
-      where: { status: "APPROVED" },
+    db.media.findMany({
+      where: { ...scope, status: "APPROVED" },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.media.findMany({
-      where: { status: "HIDDEN" },
+    db.media.findMany({
+      where: { ...scope, status: "HIDDEN" },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.rsvp.findMany({ orderBy: { createdAt: "desc" } }),
-    prisma.bankDetails.findUnique({ where: { id: "main" } }),
+    db.rsvp.findMany({ where: scope, orderBy: { createdAt: "desc" } }),
+    db.bankDetails.findUnique({ where: scope }),
   ]);
 
   return (
     <AdminHome
+      weddingId={wedding.id}
+      guestUrl={guestPath(wedding.slug)}
       registryItems={registryItems}
       pendingContributions={pendingContributions.map((c) => ({
         id: c.id,

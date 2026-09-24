@@ -14,6 +14,7 @@ import {
 import { convertHeicToJpeg, isImageFile } from "@/lib/heic";
 import { compressImage } from "@/lib/image-compress";
 import { useConfirm } from "./use-confirm";
+import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
 import StoryBeatsSection, { type StoryBeatView } from "./story-beats-section";
 
@@ -55,6 +56,7 @@ function PhotoForm({
   onCancel: () => void;
   submitLabel: string;
 }) {
+  const weddingId = useAdminWeddingId();
   const [state, formAction, pending] = useActionState(action, undefined);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -74,7 +76,7 @@ function PhotoForm({
     if (rawFile instanceof File && rawFile.size > 0) {
       setUploading(true);
       const file = await compressImage(await convertHeicToJpeg(rawFile));
-      const urlResult = await createStoryPhotoUploadUrl(file.name, file.type, file.size);
+      const urlResult = await createStoryPhotoUploadUrl(weddingId, file.name, file.type, file.size);
       if (!urlResult || urlResult.error || !urlResult.uploadUrl || !urlResult.publicUrl) {
         setUploading(false);
         setUploadError(urlResult?.error ?? "Upload failed. Please try again.");
@@ -180,6 +182,7 @@ function PhotoForm({
 }
 
 function BulkUploadButton() {
+  const weddingId = useAdminWeddingId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
@@ -202,7 +205,7 @@ function BulkUploadButton() {
       }
 
       const file = await compressImage(await convertHeicToJpeg(rawFile));
-      const urlResult = await createStoryPhotoUploadUrl(file.name, file.type, file.size);
+      const urlResult = await createStoryPhotoUploadUrl(weddingId, file.name, file.type, file.size);
       if (!urlResult || urlResult.error || !urlResult.uploadUrl || !urlResult.publicUrl) {
         setError(urlResult?.error ?? `Couldn't upload ${file.name}`);
         continue;
@@ -223,7 +226,7 @@ function BulkUploadButton() {
     }
 
     if (urls.length > 0) {
-      const result = await bulkAddStoryPhotos(urls);
+      const result = await bulkAddStoryPhotos(weddingId, urls);
       if (result?.error) setError(result.error);
     }
 
@@ -257,6 +260,7 @@ function BulkUploadButton() {
 }
 
 function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
+  const weddingId = useAdminWeddingId();
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState("");
@@ -272,7 +276,7 @@ function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
     setDeleteError("");
     await run(id, "delete", async () => {
       try {
-        await deleteStoryPhoto(id);
+        await deleteStoryPhoto(weddingId, id);
       } catch {
         setDeleteError("Couldn't delete that photo.");
       }
@@ -309,7 +313,7 @@ function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
 
       {adding && (
         <div className="mb-5">
-          <PhotoForm action={addStoryPhoto} onCancel={() => setAdding(false)} submitLabel="Add Photo" />
+          <PhotoForm action={addStoryPhoto.bind(null, weddingId)} onCancel={() => setAdding(false)} submitLabel="Add Photo" />
         </div>
       )}
 
@@ -332,7 +336,7 @@ function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
                 <tr key={photo.id} className="border-b border-olive/10 last:border-0">
                   <td colSpan={5} className="p-0">
                     <PhotoForm
-                      action={updateStoryPhoto}
+                      action={updateStoryPhoto.bind(null, weddingId)}
                       initialValues={photo}
                       onCancel={() => setEditingId(null)}
                       submitLabel="Save Changes"
@@ -389,7 +393,8 @@ export default function StoryTab({
   photos: StoryPhotoView[];
   storyBeats: StoryBeatView[];
 }) {
-  const [state, formAction, pending] = useActionState(saveStory, undefined);
+  const weddingId = useAdminWeddingId();
+  const [state, formAction, pending] = useActionState(saveStory.bind(null, weddingId), undefined);
 
   return (
     <div>

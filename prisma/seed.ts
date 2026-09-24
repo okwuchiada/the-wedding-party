@@ -128,36 +128,74 @@ const groomNote =
 const brideNote =
   "You are the calm in every storm and the reason I believe in soft, steady love. I love how you show up for the people you care about, how you make me laugh even on my hardest days, and how being with you always feels like home. Marrying you isn't the end of our story — it's just the beginning of the best chapter yet. I can't wait to call you my husband.";
 
-async function main() {
+// Placeholder prices; real pricing is managed by the super admin.
+const plans = [
+  {
+    key: "basic",
+    name: "Basic",
+    priceKobo: 25_000_00,
+    maxGuests: 150,
+    features: { gallery: false, customTheme: false, removeBranding: false },
+    sortOrder: 0,
+  },
+  {
+    key: "premium",
+    name: "Premium",
+    priceKobo: 60_000_00,
+    maxGuests: 500,
+    features: { gallery: true, customTheme: true, removeBranding: true },
+    sortOrder: 1,
+  },
+];
+
+async function seedPlans() {
+  for (const plan of plans) {
+    await prisma.plan.upsert({ where: { key: plan.key }, update: {}, create: plan });
+  }
+}
+
+/** A fully populated demo wedding. */
+async function seedDemoWedding() {
+  const slug = "amara-and-david";
+  if (await prisma.wedding.findUnique({ where: { slug } })) return;
+
+  const premium = await prisma.plan.findUniqueOrThrow({ where: { key: "premium" } });
+  const { id: weddingId } = await prisma.wedding.create({
+    data: { slug, status: "ACTIVE", planId: premium.id, paidAt: new Date(), comped: true },
+  });
+
   for (const item of registryItems) {
-    await prisma.registryItem.upsert({
-      where: { id: item.id },
-      update: {},
-      create: {
-        id: item.id,
+    const created = await prisma.registryItem.create({
+      data: {
+        weddingId,
         name: item.name,
         category: item.category,
         priceCents: item.priceCents,
         image: item.image,
         externalUrl: item.externalUrl,
         claimedBy: item.claimedBy,
-        contributions: {
-          create: item.contributions.map((c) => ({
-            guestName: c.guestName,
-            amountCents: c.amountCents,
-            status: "CONFIRMED",
-            confirmedAt: new Date("2026-05-20"),
-          })),
-        },
       },
     });
+    for (const c of item.contributions) {
+      await prisma.contribution.create({
+        data: {
+          weddingId,
+          registryItemId: created.id,
+          guestName: c.guestName,
+          amountCents: c.amountCents,
+          status: "CONFIRMED",
+          confirmedAt: new Date("2026-05-20"),
+        },
+      });
+    }
   }
 
   for (const pc of pendingContributions) {
-    const item = registryItems.find((i) => i.name === pc.itemName);
+    const item = await prisma.registryItem.findFirst({ where: { weddingId, name: pc.itemName } });
     if (!item) continue;
     await prisma.contribution.create({
       data: {
+        weddingId,
         registryItemId: item.id,
         guestName: pc.guestName,
         amountCents: pc.amountCents,
@@ -167,81 +205,98 @@ async function main() {
     });
   }
 
-  for (const image of galleryImages) {
-    await prisma.media.create({
-      data: {
+  await prisma.media.createMany({
+    data: [
+      ...galleryImages.map((image) => ({
+        weddingId,
         guestName: "The Couple",
         url: image.src,
-        type: "PHOTO",
-        status: "APPROVED",
-      },
-    });
-  }
-
-  for (const media of pendingMedia) {
-    await prisma.media.create({
-      data: {
+        type: "PHOTO" as const,
+        status: "APPROVED" as const,
+      })),
+      ...pendingMedia.map((media) => ({
+        weddingId,
         guestName: media.guestName,
         url: media.src,
-        type: "PHOTO",
-        status: "PENDING",
+        type: "PHOTO" as const,
+        status: "PENDING" as const,
         createdAt: new Date(media.dateUploaded),
-      },
-    });
-  }
+      })),
+    ],
+  });
 
-  for (const wish of wishes) {
-    await prisma.wish.create({
-      data: {
+  await prisma.wish.createMany({
+    data: [
+      ...wishes.map((wish) => ({ weddingId, ...wish, status: "APPROVED" as const })),
+      ...pendingWishes.map((wish) => ({
+        weddingId,
         guestName: wish.guestName,
         message: wish.message,
-        status: "APPROVED",
-      },
-    });
-  }
-
-  for (const wish of pendingWishes) {
-    await prisma.wish.create({
-      data: {
-        guestName: wish.guestName,
-        message: wish.message,
-        status: "PENDING",
+        status: "PENDING" as const,
         createdAt: new Date(wish.dateSubmitted),
-      },
-    });
-  }
+      })),
+    ],
+  });
 
-  await prisma.storyContent.upsert({
-    where: { id: "main" },
-    update: {},
-    create: {
-      id: "main",
+  await prisma.storyContent.create({
+    data: {
+      weddingId,
       brideName: bride,
       groomName: groom,
       weddingDate: new Date(weddingDateISO),
       tagline: "A celebration of love",
       location: "The Grand Venue, 123 Main Street, Cityville",
-      howWeMet: null,
-      whatWeLove: null,
       groomNote,
       brideNote,
-      heroPhotoUrl: null,
+      galleryEnabled: true,
     },
   });
 
-  const existingPhotoCount = await prisma.storyPhoto.count();
-  if (existingPhotoCount === 0) {
-    for (const photo of storyPhotos) {
-      await prisma.storyPhoto.create({ data: photo });
-    }
-  }
+  await prisma.storyPhoto.createMany({ data: storyPhotos.map((photo) => ({ weddingId, ...photo })) });
+  await prisma.bankDetails.create({ data: { weddingId, ...bankDetails } });
+}
 
-  await prisma.bankDetails.upsert({
-    where: { id: "main" },
-    update: {},
-    create: { id: "main", ...bankDetails },
+/** A second, sparse wedding for checking that weddings never see each other's data. */
+async function seedSecondWedding() {
+  const slug = "kemi-and-tolu";
+  if (await prisma.wedding.findUnique({ where: { slug } })) return;
+
+  const basic = await prisma.plan.findUniqueOrThrow({ where: { key: "basic" } });
+  const { id: weddingId } = await prisma.wedding.create({
+    data: { slug, status: "ACTIVE", planId: basic.id, paidAt: new Date(), comped: true },
   });
 
+  await prisma.storyContent.create({
+    data: {
+      weddingId,
+      brideName: "Kemi",
+      groomName: "Tolu",
+      weddingDate: new Date("2027-04-10T11:00:00Z"),
+      tagline: "Two families, one love",
+      location: "Lagos, Nigeria",
+    },
+  });
+  await prisma.bankDetails.create({
+    data: { weddingId, name: "Kemi & Tolu", bank: "Bank Name", account: "1111 2222 3333", routing: "-" },
+  });
+  await prisma.registryItem.create({
+    data: {
+      weddingId,
+      name: "Blender",
+      category: "Kitchen",
+      priceCents: 60_000_00,
+      image: registryItems[2].image,
+    },
+  });
+  await prisma.rsvp.create({
+    data: { weddingId, guestName: "Only Kemi Guest", email: "guest@kemi.test", attending: true },
+  });
+}
+
+async function main() {
+  await seedPlans();
+  await seedDemoWedding();
+  await seedSecondWedding();
   console.log("Seed complete.");
 }
 

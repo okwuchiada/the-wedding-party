@@ -5,8 +5,8 @@ import HowWeMetSkeleton from "./how-we-met-skeleton";
 
 const TILTS = [-2, 1.5, -1, 2, -1.5, 1];
 
-async function HowWeMetContent() {
-  const beats = await prisma.storyBeat.findMany({ orderBy: { order: "asc" } });
+async function HowWeMetContent({ weddingId }: { weddingId: string }) {
+  const beats = await prisma.storyBeat.findMany({ where: { weddingId }, orderBy: { order: "asc" } });
 
   if (beats.length === 0) return null;
 
@@ -79,7 +79,7 @@ async function HowWeMetContent() {
   );
 }
 
-export default function HowWeMet() {
+export default function HowWeMet({ weddingId }: { weddingId: string }) {
   return (
     <section id="how-we-met" className="bg-ivory px-4 py-20 sm:px-6 sm:py-28">
       <div className="mx-auto max-w-5xl">
@@ -93,7 +93,7 @@ export default function HowWeMet() {
         </div>
 
         <Suspense fallback={<HowWeMetSkeleton />}>
-          <HowWeMetContent />
+          <HowWeMetContent weddingId={weddingId} />
         </Suspense>
       </div>
     </section>

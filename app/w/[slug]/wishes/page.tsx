@@ -7,10 +7,11 @@ import WishesListSkeleton from "@/components/guest/wishes-list-skeleton";
 import Footer from "@/components/guest/footer";
 import FooterSkeleton from "@/components/guest/footer-skeleton";
 import { prisma } from "@/lib/prisma";
+import { getGuestWedding } from "@/lib/tenant";
 
-async function WishesList() {
+async function WishesList({ weddingId }: { weddingId: string }) {
   const wishes = await prisma.wish.findMany({
-    where: { status: "APPROVED" },
+    where: { weddingId, status: "APPROVED" },
     orderBy: { createdAt: "desc" },
   });
 
@@ -28,12 +29,15 @@ async function WishesList() {
   );
 }
 
-export default function WishesPage() {
+export default async function WishesPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const { wedding } = await getGuestWedding(slug);
+
   return (
     <div>
       <LiveRefresh />
       <Suspense fallback={<NavSkeleton />}>
-        <GuestNav />
+        <GuestNav weddingId={wedding.id} slug={wedding.slug} />
       </Suspense>
       <main className="bg-ivory px-4 pt-32 pb-24 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
@@ -59,12 +63,12 @@ export default function WishesPage() {
             Wishes from loved ones
           </p>
           <Suspense fallback={<WishesListSkeleton />}>
-            <WishesList />
+            <WishesList weddingId={wedding.id} />
           </Suspense>
         </div>
       </main>
       <Suspense fallback={<FooterSkeleton />}>
-        <Footer />
+        <Footer weddingId={wedding.id} />
       </Suspense>
     </div>
   );

@@ -13,6 +13,7 @@ import { saveBankDetails } from "@/lib/actions/bank-details";
 import { convertHeicToJpeg } from "@/lib/heic";
 import { compressImage } from "@/lib/image-compress";
 import { useConfirm } from "./use-confirm";
+import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
 
 function formatNaira(cents: number) {
@@ -43,6 +44,7 @@ function RegistryItemForm({
   onCancel: () => void;
   submitLabel: string;
 }) {
+  const weddingId = useAdminWeddingId();
   const [state, formAction, pending] = useActionState(action, undefined);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -62,7 +64,7 @@ function RegistryItemForm({
     if (rawFile instanceof File && rawFile.size > 0) {
       setUploading(true);
       const file = await compressImage(await convertHeicToJpeg(rawFile));
-      const urlResult = await createRegistryItemUploadUrl(file.name, file.type, file.size);
+      const urlResult = await createRegistryItemUploadUrl(weddingId, file.name, file.type, file.size);
       if (!urlResult || urlResult.error || !urlResult.uploadUrl || !urlResult.publicUrl) {
         setUploading(false);
         setUploadError(urlResult?.error ?? "Upload failed. Please try again.");
@@ -186,7 +188,8 @@ function BankDetailsForm({
   bankDetails: BankDetailsView;
   onCancel: () => void;
 }) {
-  const [state, formAction, pending] = useActionState(saveBankDetails, undefined);
+  const weddingId = useAdminWeddingId();
+  const [state, formAction, pending] = useActionState(saveBankDetails.bind(null, weddingId), undefined);
 
   useEffect(() => {
     if (state?.success) onCancel();
@@ -265,6 +268,7 @@ export default function RegistryTab({
   items: RegistryItemWithContributions[];
   bankDetails: BankDetailsView;
 }) {
+  const weddingId = useAdminWeddingId();
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBank, setEditingBank] = useState(false);
@@ -280,7 +284,7 @@ export default function RegistryTab({
     if (!ok) return;
     setDeleteError("");
     await run(id, "delete", async () => {
-      const result = await deleteRegistryItem(id);
+      const result = await deleteRegistryItem(weddingId, id);
       if (result.error) setDeleteError(result.error);
     });
   };
@@ -344,7 +348,7 @@ export default function RegistryTab({
 
       {adding && (
         <div className="mb-5">
-          <RegistryItemForm action={createRegistryItem} onCancel={() => setAdding(false)} submitLabel="Add Item" />
+          <RegistryItemForm action={createRegistryItem.bind(null, weddingId)} onCancel={() => setAdding(false)} submitLabel="Add Item" />
         </div>
       )}
 
@@ -368,7 +372,7 @@ export default function RegistryTab({
                 <tr key={item.id} className="border-b border-olive/10 last:border-0">
                   <td colSpan={6} className="p-0">
                     <RegistryItemForm
-                      action={updateRegistryItem}
+                      action={updateRegistryItem.bind(null, weddingId)}
                       initialValues={{
                         id: item.id,
                         name: item.name,

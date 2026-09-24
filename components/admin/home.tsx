@@ -24,6 +24,7 @@ import RsvpTab from "./rsvp-tab";
 import StoryTab, { type StoryContentView, type StoryPhotoView } from "./story-tab";
 import type { StoryBeatView } from "./story-beats-section";
 import SignOutButton from "./sign-out-button";
+import { AdminWeddingProvider } from "./wedding-context";
 import { logout } from "@/lib/actions/auth";
 import { confirmContribution } from "@/lib/actions/contributions";
 import { approveWish, hideWish } from "@/lib/actions/wishes";
@@ -38,6 +39,8 @@ const tabs = ["Registry", "Contributions", "Media", "Wishes", "RSVPs", "Our Stor
 type Tab = (typeof tabs)[number];
 
 export default function AdminHome({
+  weddingId,
+  guestUrl,
   registryItems,
   pendingContributions: initialPendingContributions,
   confirmedContributions: initialConfirmedContributions,
@@ -53,6 +56,8 @@ export default function AdminHome({
   rsvps,
   bankDetails,
 }: {
+  weddingId: string;
+  guestUrl: string;
   registryItems: RegistryItemWithContributions[];
   pendingContributions: PendingContributionView[];
   confirmedContributions: ConfirmedContributionView[];
@@ -85,12 +90,12 @@ export default function AdminHome({
 
   const handleToggleGallery = async () => {
     const next = !galleryEnabled;
-    await setGalleryEnabled(next);
+    await setGalleryEnabled(weddingId, next);
     setGalleryEnabledState(next);
   };
 
   const handleConfirmContribution = async (contribution: PendingContributionView) => {
-    await confirmContribution(contribution.id);
+    await confirmContribution(weddingId, contribution.id);
     setPendingContributions((prev) => prev.filter((c) => c.id !== contribution.id));
     setConfirmedContributions((prev) => [
       {
@@ -105,7 +110,7 @@ export default function AdminHome({
   };
 
   const handleApproveMedia = async (media: PendingMediaView) => {
-    await approveMedia(media.id);
+    await approveMedia(weddingId, media.id);
     setPendingMedia((prev) => prev.filter((m) => m.id !== media.id));
     setApprovedMedia((prev) => [
       {
@@ -120,7 +125,7 @@ export default function AdminHome({
   };
 
   const handleHideMedia = async (media: PendingMediaView) => {
-    await hideMedia(media.id);
+    await hideMedia(weddingId, media.id);
     setPendingMedia((prev) => prev.filter((m) => m.id !== media.id));
     setHiddenMedia((prev) => [
       { id: media.id, guestName: media.guestName, url: media.url, type: media.type, dateUploaded: media.dateUploaded },
@@ -129,7 +134,7 @@ export default function AdminHome({
   };
 
   const handleRestoreMedia = async (media: HiddenMediaView) => {
-    await approveMedia(media.id);
+    await approveMedia(weddingId, media.id);
     setHiddenMedia((prev) => prev.filter((m) => m.id !== media.id));
     setApprovedMedia((prev) => [
       {
@@ -144,7 +149,7 @@ export default function AdminHome({
   };
 
   const handleHideApprovedMedia = async (media: ApprovedMediaView) => {
-    await hideMedia(media.id);
+    await hideMedia(weddingId, media.id);
     setApprovedMedia((prev) => prev.filter((m) => m.id !== media.id));
     setHiddenMedia((prev) => [
       {
@@ -159,18 +164,18 @@ export default function AdminHome({
   };
 
   const handleDeleteApprovedMedia = async (media: ApprovedMediaView) => {
-    await deleteMedia(media.id);
+    await deleteMedia(weddingId, media.id);
     setApprovedMedia((prev) => prev.filter((m) => m.id !== media.id));
   };
 
   const handleApproveWish = async (wish: PendingWishView) => {
-    await approveWish(wish.id);
+    await approveWish(weddingId, wish.id);
     setPendingWishes((prev) => prev.filter((w) => w.id !== wish.id));
     setApprovedWishes((prev) => [{ id: wish.id, guestName: wish.guestName, message: wish.message }, ...prev]);
   };
 
   const handleHideWish = async (wish: PendingWishView) => {
-    await hideWish(wish.id);
+    await hideWish(weddingId, wish.id);
     setPendingWishes((prev) => prev.filter((w) => w.id !== wish.id));
     setHiddenWishes((prev) => [
       { id: wish.id, guestName: wish.guestName, message: wish.message, dateSubmitted: wish.dateSubmitted },
@@ -179,7 +184,7 @@ export default function AdminHome({
   };
 
   const handleRestoreWish = async (wish: HiddenWishView) => {
-    await approveWish(wish.id);
+    await approveWish(weddingId, wish.id);
     setHiddenWishes((prev) => prev.filter((w) => w.id !== wish.id));
     setApprovedWishes((prev) => [{ id: wish.id, guestName: wish.guestName, message: wish.message }, ...prev]);
   };
@@ -198,6 +203,7 @@ export default function AdminHome({
   ];
 
   return (
+    <AdminWeddingProvider weddingId={weddingId}>
     <div className="min-h-screen bg-ivory px-4 py-12 sm:px-8">
       <LiveRefresh />
       <div className="mx-auto max-w-5xl">
@@ -207,6 +213,14 @@ export default function AdminHome({
             <h1 className="font-(family-name:--serif) text-3xl text-foreground sm:text-4xl">
               {story.brideName} &amp; {story.groomName}&apos;s Dashboard
             </h1>
+            <a
+              href={guestUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-sm text-olive underline hover:text-burnt-orange"
+            >
+              View guest site
+            </a>
           </div>
           <form action={logout}>
             <SignOutButton />
@@ -280,5 +294,6 @@ export default function AdminHome({
         )}
       </div>
     </div>
+    </AdminWeddingProvider>
   );
 }

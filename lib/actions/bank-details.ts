@@ -1,16 +1,16 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
-import { verifySession } from "@/lib/dal";
+import { requireWeddingAccess } from "@/lib/dal";
+import { revalidateWedding } from "@/lib/tenant";
 
 export type SaveBankDetailsState = { error?: string; success?: boolean } | undefined;
 
 export async function saveBankDetails(
+  weddingId: string,
   _prevState: SaveBankDetailsState,
   formData: FormData
 ): Promise<SaveBankDetailsState> {
-  await verifySession();
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
   const name = formData.get("name");
   const bank = formData.get("bank");
@@ -31,14 +31,13 @@ export async function saveBankDetails(
     swift: typeof swift === "string" && swift.trim() ? swift.trim() : null,
   };
 
-  await prisma.bankDetails.upsert({
-    where: { id: "main" },
+  await db.bankDetails.upsert({
+    where: { weddingId: wedding.id },
     update: trimmed,
-    create: { id: "main", ...trimmed },
+    create: { ...trimmed, weddingId: wedding.id },
   });
 
-  revalidatePath("/admin");
-  revalidatePath("/");
+  revalidateWedding(wedding);
 
   return { success: true };
 }

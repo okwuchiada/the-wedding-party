@@ -7,32 +7,31 @@ import HeroSkeleton from "./hero-skeleton";
 import Rsvp from "./rsvp";
 import HowWeMet from "./how-we-met";
 import LoveNotes from "./love-notes";
-import CoupleGallery from "./couple-gallery";
 import Registry from "./registry";
 import MonetaryGift from "./monetary-gift";
 import Footer from "./footer";
 import FooterSkeleton from "./footer-skeleton";
 
-export default function GuestHome() {
+export default function GuestHome({ weddingId, slug }: { weddingId: string; slug: string }) {
   return (
     <div>
       <LiveRefresh />
       <Suspense fallback={<NavSkeleton />}>
-        <GuestNav />
+        <GuestNav weddingId={weddingId} slug={slug} />
       </Suspense>
       <main>
         <Suspense fallback={<HeroSkeleton />}>
-          <Hero />
+          <Hero weddingId={weddingId} />
         </Suspense>
-        <HowWeMet />
-        <LoveNotes />
-        {/* <CoupleGallery /> */}
-        <Registry />
-        <MonetaryGift />
+        <HowWeMet weddingId={weddingId} />
+        <LoveNotes weddingId={weddingId} />
+        {/* <CoupleGallery weddingId={weddingId} /> */}
+        <Registry weddingId={weddingId} />
+        <MonetaryGift weddingId={weddingId} />
         <Rsvp />
       </main>
       <Suspense fallback={<FooterSkeleton />}>
-        <Footer />
+        <Footer weddingId={weddingId} />
       </Suspense>
     </div>
   );

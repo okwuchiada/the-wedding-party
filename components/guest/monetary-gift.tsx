@@ -3,10 +3,8 @@ import { prisma } from "@/lib/prisma";
 import CopyRow from "./copy-row";
 import MonetaryGiftSkeleton from "./monetary-gift-skeleton";
 
-async function MonetaryGiftCard() {
-  const bankDetails = await prisma.bankDetails.findUnique({
-    where: { id: "main" },
-  });
+async function MonetaryGiftCard({ weddingId }: { weddingId: string }) {
+  const bankDetails = await prisma.bankDetails.findUnique({ where: { weddingId } });
 
   if (!bankDetails?.account) return null;
 
@@ -33,7 +31,7 @@ async function MonetaryGiftCard() {
   );
 }
 
-export default function MonetaryGift() {
+export default function MonetaryGift({ weddingId }: { weddingId: string }) {
   return (
     <section id="monetary-gift" className="bg-ivory pl-4 py-20 sm:py-28">
       <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-[0.9fr_1.1fr]">
@@ -51,7 +49,7 @@ export default function MonetaryGift() {
         </div>
 
         <Suspense fallback={<MonetaryGiftSkeleton />}>
-          <MonetaryGiftCard />
+          <MonetaryGiftCard weddingId={weddingId} />
         </Suspense>
       </div>
     </section>

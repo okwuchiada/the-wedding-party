@@ -8,10 +8,12 @@ import GalleryGridSkeleton from "@/components/guest/gallery-grid-skeleton";
 import Footer from "@/components/guest/footer";
 import FooterSkeleton from "@/components/guest/footer-skeleton";
 import { prisma } from "@/lib/prisma";
+import { hasFeature } from "@/lib/plans";
+import { getGuestWedding, getStory } from "@/lib/tenant";
 
-async function GalleryGrid() {
+async function GalleryGrid({ weddingId }: { weddingId: string }) {
   const media = await prisma.media.findMany({
-    where: { status: "APPROVED" },
+    where: { weddingId, status: "APPROVED" },
     orderBy: { createdAt: "desc" },
   });
 
@@ -39,18 +41,17 @@ async function GalleryGrid() {
   );
 }
 
-export default async function GalleryPage() {
-  const story = await prisma.storyContent.findUnique({
-    where: { id: "main" },
-    select: { galleryEnabled: true },
-  });
-  const galleryEnabled = story?.galleryEnabled ?? false;
+export default async function GalleryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const { wedding } = await getGuestWedding(slug);
+  const story = await getStory(wedding.id);
+  const galleryEnabled = (story?.galleryEnabled ?? false) && hasFeature(wedding.plan, "gallery");
 
   return (
     <div>
       <LiveRefresh />
       <Suspense fallback={<NavSkeleton />}>
-        <GuestNav />
+        <GuestNav weddingId={wedding.id} slug={wedding.slug} />
       </Suspense>
       <main className="bg-ivory px-4 pt-32 pb-24 sm:px-6">
         {galleryEnabled ? (
@@ -78,7 +79,7 @@ export default async function GalleryPage() {
                 Gallery Wall
               </p>
               <Suspense fallback={<GalleryGridSkeleton />}>
-                <GalleryGrid />
+                <GalleryGrid weddingId={wedding.id} />
               </Suspense>
             </div>
           </>
@@ -98,7 +99,7 @@ export default async function GalleryPage() {
         )}
       </main>
       <Suspense fallback={<FooterSkeleton />}>
-        <Footer />
+        <Footer weddingId={wedding.id} />
       </Suspense>
     </div>
   );

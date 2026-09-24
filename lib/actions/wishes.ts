@@ -1,17 +1,21 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
-import { verifySession } from "@/lib/dal";
+import { requireWeddingAccess } from "@/lib/dal";
+import { resolveGuestAction, revalidateDashboard, revalidateWedding } from "@/lib/tenant";
 
 export type SubmitWishState =
   | { error?: string; success?: boolean; guestName?: string; message?: string }
   | undefined;
 
 export async function submitWish(
+  slug: string,
   _prevState: SubmitWishState,
   formData: FormData
 ): Promise<SubmitWishState> {
+  const guest = await resolveGuestAction(slug);
+  if (!guest) return { error: "This wedding isn't accepting wishes." };
+  const { wedding, db } = guest;
+
   const guestName = formData.get("guestName");
   const message = formData.get("message");
 
@@ -25,29 +29,28 @@ export async function submitWish(
     return { error: "Message is too long" };
   }
 
-  await prisma.wish.create({
+  await db.wish.create({
     data: {
+      weddingId: wedding.id,
       guestName: guestName.trim(),
       message: message.trim(),
       status: "PENDING",
     },
   });
 
-  revalidatePath("/admin");
+  revalidateDashboard(wedding);
 
   return { success: true, guestName: guestName.trim(), message: message.trim() };
 }
 
-export async function approveWish(id: string) {
-  await verifySession();
-  await prisma.wish.update({ where: { id }, data: { status: "APPROVED" } });
-  revalidatePath("/admin");
-  revalidatePath("/wishes");
+export async function approveWish(weddingId: string, id: string) {
+  const { wedding, db } = await requireWeddingAccess(weddingId);
+  await db.wish.update({ where: { id, weddingId: wedding.id }, data: { status: "APPROVED" } });
+  revalidateWedding(wedding);
 }
 
-export async function hideWish(id: string) {
-  await verifySession();
-  await prisma.wish.update({ where: { id }, data: { status: "HIDDEN" } });
-  revalidatePath("/admin");
-  revalidatePath("/wishes");
+export async function hideWish(weddingId: string, id: string) {
+  const { wedding, db } = await requireWeddingAccess(weddingId);
+  await db.wish.update({ where: { id, weddingId: wedding.id }, data: { status: "HIDDEN" } });
+  revalidateWedding(wedding);
 }

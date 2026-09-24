@@ -2,11 +2,13 @@
 
 import { useActionState, useState } from "react";
 import { submitWish } from "@/lib/actions/wishes";
+import { useGuestSlug } from "./wedding-context";
 
 const MAX_MESSAGE_LENGTH = 500;
 
 export default function WishForm() {
-  const [state, formAction, pending] = useActionState(submitWish, undefined);
+  const slug = useGuestSlug();
+  const [state, formAction, pending] = useActionState(submitWish.bind(null, slug), undefined);
   const [messageLength, setMessageLength] = useState(0);
 
   if (state?.success) {

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { prisma } from "@/lib/prisma";
+import { getStory } from "@/lib/tenant";
 import LoveNotesSkeleton from "./love-notes-skeleton";
 
 function LoveNoteCard({
@@ -31,8 +31,8 @@ function LoveNoteCard({
   );
 }
 
-async function LoveNotesContent() {
-  const story = await prisma.storyContent.findUnique({ where: { id: "main" } });
+async function LoveNotesContent({ weddingId }: { weddingId: string }) {
+  const story = await getStory(weddingId);
 
   const notes = [
     story?.brideNote && {
@@ -72,7 +72,7 @@ async function LoveNotesContent() {
   );
 }
 
-export default function LoveNotes() {
+export default function LoveNotes({ weddingId }: { weddingId: string }) {
   return (
     <section id="love-notes" className="bg-cream px-4 py-20 sm:px-6 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
@@ -90,7 +90,7 @@ export default function LoveNotes() {
 
       <div className="mt-14">
         <Suspense fallback={<LoveNotesSkeleton />}>
-          <LoveNotesContent />
+          <LoveNotesContent weddingId={weddingId} />
         </Suspense>
       </div>
     </section>

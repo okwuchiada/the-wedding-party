@@ -1,23 +1,22 @@
 "use server";
 
 import { headers } from "next/headers";
-import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
-import { verifySession } from "@/lib/dal";
+import type { ScopedPrisma } from "@/lib/db-scoped";
+import { requireWeddingAccess } from "@/lib/dal";
+import { resolveGuestAction, revalidateDashboard } from "@/lib/tenant";
 import { sendMail, rsvpConfirmationEmail } from "@/lib/mail";
 
 export type SubmitRsvpState =
   | { error?: string; success?: boolean; guestName?: string; attending?: boolean }
   | undefined;
 
-const MAX_TOTAL_GUESTS = 100;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const RATE_LIMIT_MAX = 5;
 const BURST_WINDOW_MS = 30 * 1000;
 
-function findRsvpByEmail(email: string, excludeId?: string) {
-  return prisma.rsvp.findFirst({
+function findRsvpByEmail(db: ScopedPrisma, email: string, excludeId?: string) {
+  return db.rsvp.findFirst({
     where: {
       email: { equals: email.trim(), mode: "insensitive" },
       ...(excludeId ? { id: { not: excludeId } } : {}),
@@ -34,9 +33,14 @@ async function getClientIp(): Promise<string | null> {
 }
 
 export async function submitRsvp(
+  slug: string,
   _prevState: SubmitRsvpState,
   formData: FormData
 ): Promise<SubmitRsvpState> {
+  const guest = await resolveGuestAction(slug);
+  if (!guest) return { error: "This wedding isn't accepting RSVPs." };
+  const { wedding, db } = guest;
+
   const honeypot = formData.get("hp_rsvp_x7");
   const firstName = formData.get("firstName");
   const lastName = formData.get("lastName");
@@ -60,8 +64,8 @@ export async function submitRsvp(
   const userAgent = (await headers()).get("user-agent");
 
   if (ip) {
-    const recent = await prisma.rsvp.findMany({
-      where: { ipAddress: ip, createdAt: { gte: new Date(Date.now() - RATE_LIMIT_WINDOW_MS) } },
+    const recent = await db.rsvp.findMany({
+      where: { weddingId: wedding.id, ipAddress: ip, createdAt: { gte: new Date(Date.now() - RATE_LIMIT_WINDOW_MS) } },
       select: { createdAt: true },
       orderBy: { createdAt: "desc" },
     });
@@ -93,7 +97,7 @@ export async function submitRsvp(
 
   const attending = attendingRaw === "yes";
 
-  if (await findRsvpByEmail(email)) {
+  if (await findRsvpByEmail(db, email)) {
     return {
       error:
         "You've already RSVPed with this email. Please contact the couple if you need to make changes.",
@@ -101,20 +105,22 @@ export async function submitRsvp(
   }
 
   if (attending) {
-    const { _sum } = await prisma.rsvp.aggregate({
-      where: { attending: true },
+    const { _sum } = await db.rsvp.aggregate({
+      where: { weddingId: wedding.id, attending: true },
       _sum: { guestCount: true },
     });
     const currentTotal = _sum.guestCount ?? 0;
-    if (currentTotal + 1 > MAX_TOTAL_GUESTS) {
+    const maxGuests = Math.min(wedding.maxGuests, wedding.plan?.maxGuests ?? wedding.maxGuests);
+    if (currentTotal + 1 > maxGuests) {
       return { error: "Sorry, we've reached full capacity and can no longer accept RSVPs." };
     }
   }
 
   const trimmedEmail = email.trim();
 
-  await prisma.rsvp.create({
+  await db.rsvp.create({
     data: {
+      weddingId: wedding.id,
       guestName,
       email: trimmedEmail,
       attending,
@@ -125,15 +131,16 @@ export async function submitRsvp(
     },
   });
 
-  revalidatePath("/admin");
+  revalidateDashboard(wedding);
 
   return { success: true, guestName: firstName.trim(), attending };
 }
 
-export async function deleteRsvp(id: string): Promise<{ error?: string }> {
-  await verifySession();
-  await prisma.rsvp.delete({ where: { id } });
-  revalidatePath("/admin");
+export async function deleteRsvp(weddingId: string, id: string): Promise<{ error?: string }> {
+  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { count } = await db.rsvp.deleteMany({ where: { id, weddingId: wedding.id } });
+  if (count === 0) return { error: "RSVP not found" };
+  revalidateDashboard(wedding);
   return {};
 }
 
@@ -178,19 +185,20 @@ function parseAdminRsvpForm(formData: FormData) {
 }
 
 export async function createRsvpAdmin(
+  weddingId: string,
   _prevState: AdminRsvpFormState,
   formData: FormData
 ): Promise<AdminRsvpFormState> {
-  await verifySession();
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
   const parsed = parseAdminRsvpForm(formData);
   if ("error" in parsed) return { error: parsed.error };
 
   const { email, guestName } = parsed.data;
   const duplicate = email
-    ? await findRsvpByEmail(email)
-    : await prisma.rsvp.findFirst({
-        where: { guestName: { equals: guestName, mode: "insensitive" } },
+    ? await findRsvpByEmail(db, email)
+    : await db.rsvp.findFirst({
+        where: { weddingId: wedding.id, guestName: { equals: guestName, mode: "insensitive" } },
         select: { id: true, guestName: true },
       });
   if (duplicate) {
@@ -199,17 +207,18 @@ export async function createRsvpAdmin(
     };
   }
 
-  await prisma.rsvp.create({ data: parsed.data });
+  await db.rsvp.create({ data: { ...parsed.data, weddingId: wedding.id } });
 
-  revalidatePath("/admin");
+  revalidateDashboard(wedding);
   return { success: true };
 }
 
 export async function updateRsvpAdmin(
+  weddingId: string,
   _prevState: AdminRsvpFormState,
   formData: FormData
 ): Promise<AdminRsvpFormState> {
-  await verifySession();
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing RSVP id" };
@@ -217,11 +226,11 @@ export async function updateRsvpAdmin(
   const parsed = parseAdminRsvpForm(formData);
   if ("error" in parsed) return { error: parsed.error };
 
-  const existing = await prisma.rsvp.findUnique({ where: { id } });
+  const existing = await db.rsvp.findUnique({ where: { id, weddingId: wedding.id } });
   if (!existing) return { error: "RSVP not found" };
 
   if (parsed.data.email) {
-    const duplicate = await findRsvpByEmail(parsed.data.email, id);
+    const duplicate = await findRsvpByEmail(db, parsed.data.email, id);
     if (duplicate) return { error: `${duplicate.guestName} already uses this email` };
   }
 
@@ -229,12 +238,12 @@ export async function updateRsvpAdmin(
   const stale =
     existing.attending !== parsed.data.attending || existing.email !== parsed.data.email;
 
-  await prisma.rsvp.update({
-    where: { id },
+  await db.rsvp.update({
+    where: { id, weddingId: wedding.id },
     data: { ...parsed.data, ...(stale ? { confirmationSentAt: null } : {}) },
   });
 
-  revalidatePath("/admin");
+  revalidateDashboard(wedding);
   return { success: true };
 }
 
@@ -256,8 +265,11 @@ const MAX_IMPORT_ROWS = 1000;
 
 // Rows match existing RSVPs by email, or by name when the row has no email,
 // so re-uploading an edited sheet updates guests instead of duplicating them.
-export async function importRsvps(rows: ImportRsvpRow[]): Promise<ImportRsvpsResult> {
-  await verifySession();
+export async function importRsvps(
+  weddingId: string,
+  rows: ImportRsvpRow[]
+): Promise<ImportRsvpsResult> {
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
   if (!Array.isArray(rows) || rows.length === 0) return { error: "The file has no guest rows" };
   if (rows.length > MAX_IMPORT_ROWS) return { error: `Too many rows (max ${MAX_IMPORT_ROWS})` };
@@ -275,7 +287,8 @@ export async function importRsvps(rows: ImportRsvpRow[]): Promise<ImportRsvpsRes
     return { error: "Nothing was imported. Fix these rows and upload again.", rowErrors };
   }
 
-  const existing = await prisma.rsvp.findMany({
+  const existing = await db.rsvp.findMany({
+    where: { weddingId: wedding.id },
     select: { id: true, guestName: true, email: true, attending: true },
   });
   const byEmail = new Map(existing.filter((r) => r.email).map((r) => [r.email.toLowerCase(), r]));
@@ -285,7 +298,7 @@ export async function importRsvps(rows: ImportRsvpRow[]): Promise<ImportRsvpsRes
   let updated = 0;
   const seen = new Set<string>();
 
-  await prisma.$transaction(
+  await db.$transaction(
     async (tx) => {
       for (const data of valid) {
         const key = data.email ? `e:${data.email.toLowerCase()}` : `n:${data.guestName.toLowerCase()}`;
@@ -298,7 +311,7 @@ export async function importRsvps(rows: ImportRsvpRow[]): Promise<ImportRsvpsRes
 
         if (match) {
           await tx.rsvp.update({
-            where: { id: match.id },
+            where: { id: match.id, weddingId: wedding.id },
             data: {
               ...data,
               // A name-matched row without an email keeps the address on file.
@@ -308,7 +321,7 @@ export async function importRsvps(rows: ImportRsvpRow[]): Promise<ImportRsvpsRes
           });
           updated++;
         } else {
-          await tx.rsvp.create({ data });
+          await tx.rsvp.create({ data: { ...data, weddingId: wedding.id } });
           created++;
         }
       }
@@ -316,19 +329,22 @@ export async function importRsvps(rows: ImportRsvpRow[]): Promise<ImportRsvpsRes
     { timeout: 60_000 }
   );
 
-  revalidatePath("/admin");
+  revalidateDashboard(wedding);
   return { created, updated };
 }
 
-export async function sendRsvpConfirmation(id: string): Promise<{ error?: string }> {
-  await verifySession();
+export async function sendRsvpConfirmation(
+  weddingId: string,
+  id: string
+): Promise<{ error?: string }> {
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
-  const rsvp = await prisma.rsvp.findUnique({ where: { id } });
+  const rsvp = await db.rsvp.findUnique({ where: { id, weddingId: wedding.id } });
   if (!rsvp) return { error: "RSVP not found" };
   if (rsvp.confirmationSentAt) return { error: "Confirmation already sent" };
   if (!rsvp.email) return { error: "This guest has no email address" };
 
-  const story = await prisma.storyContent.findUnique({ where: { id: "main" } });
+  const story = await db.storyContent.findUnique({ where: { weddingId: wedding.id } });
   if (!story) return { error: "Story details not configured" };
 
   await sendMail({
@@ -345,7 +361,10 @@ export async function sendRsvpConfirmation(id: string): Promise<{ error?: string
     }),
   });
 
-  await prisma.rsvp.update({ where: { id }, data: { confirmationSentAt: new Date() } });
-  revalidatePath("/admin");
+  await db.rsvp.update({
+    where: { id, weddingId: wedding.id },
+    data: { confirmationSentAt: new Date() },
+  });
+  revalidateDashboard(wedding);
   return {};
 }

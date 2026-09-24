@@ -1,31 +1,34 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { requireWeddingAccess } from "@/lib/dal";
 import { createPresignedUploadUrl } from "@/lib/s3";
-import { verifySession } from "@/lib/dal";
-
-const MAX_FILE_SIZE = 25 * 1024 * 1024;
+import { revalidateWedding } from "@/lib/tenant";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL, weddingUploadFolder } from "@/lib/uploads";
 
 export type CreateRegistryItemUploadUrlState =
   | { error?: string; uploadUrl?: string; publicUrl?: string }
   | undefined;
 
 export async function createRegistryItemUploadUrl(
+  weddingId: string,
   fileName: string,
   fileType: string,
   fileSize: number
 ): Promise<CreateRegistryItemUploadUrlState> {
-  await verifySession();
+  const { wedding } = await requireWeddingAccess(weddingId);
 
   if (!fileType.startsWith("image/")) {
     return { error: "Only image files are allowed" };
   }
-  if (fileSize > MAX_FILE_SIZE) {
-    return { error: "Image is over the 25MB limit" };
+  if (fileSize > MAX_UPLOAD_BYTES) {
+    return { error: `Image is over the ${MAX_UPLOAD_LABEL} limit` };
   }
 
-  const { uploadUrl, publicUrl } = await createPresignedUploadUrl("registry", fileName, fileType);
+  const { uploadUrl, publicUrl } = await createPresignedUploadUrl(
+    weddingUploadFolder(wedding.id, "registry"),
+    fileName,
+    fileType
+  );
   return { uploadUrl, publicUrl };
 }
 
@@ -64,27 +67,28 @@ function parseRegistryItemForm(formData: FormData) {
 }
 
 export async function createRegistryItem(
+  weddingId: string,
   _prevState: RegistryItemFormState,
   formData: FormData
 ): Promise<RegistryItemFormState> {
-  await verifySession();
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
   const parsed = parseRegistryItemForm(formData);
   if ("error" in parsed) return { error: parsed.error };
 
-  await prisma.registryItem.create({ data: parsed.data });
+  await db.registryItem.create({ data: { ...parsed.data, weddingId: wedding.id } });
 
-  revalidatePath("/admin");
-  revalidatePath("/");
+  revalidateWedding(wedding);
 
   return { success: true };
 }
 
 export async function updateRegistryItem(
+  weddingId: string,
   _prevState: RegistryItemFormState,
   formData: FormData
 ): Promise<RegistryItemFormState> {
-  await verifySession();
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
   const id = formData.get("id");
   if (typeof id !== "string" || !id) {
@@ -94,26 +98,29 @@ export async function updateRegistryItem(
   const parsed = parseRegistryItemForm(formData);
   if ("error" in parsed) return { error: parsed.error };
 
-  await prisma.registryItem.update({ where: { id }, data: parsed.data });
+  await db.registryItem.update({ where: { id, weddingId: wedding.id }, data: parsed.data });
 
-  revalidatePath("/admin");
-  revalidatePath("/");
+  revalidateWedding(wedding);
 
   return { success: true };
 }
 
-export async function deleteRegistryItem(id: string): Promise<{ error?: string }> {
-  await verifySession();
+export async function deleteRegistryItem(
+  weddingId: string,
+  id: string
+): Promise<{ error?: string }> {
+  const { wedding, db } = await requireWeddingAccess(weddingId);
 
-  const contributionCount = await prisma.contribution.count({ where: { registryItemId: id } });
+  const contributionCount = await db.contribution.count({
+    where: { weddingId: wedding.id, registryItemId: id },
+  });
   if (contributionCount > 0) {
     return { error: "Can't delete an item that already has contributions." };
   }
 
-  await prisma.registryItem.delete({ where: { id } });
+  await db.registryItem.delete({ where: { id, weddingId: wedding.id } });
 
-  revalidatePath("/admin");
-  revalidatePath("/");
+  revalidateWedding(wedding);
 
   return {};
 }

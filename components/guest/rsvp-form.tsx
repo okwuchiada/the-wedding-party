@@ -2,9 +2,11 @@
 
 import { useActionState, useState } from "react";
 import { submitRsvp } from "@/lib/actions/rsvp";
+import { useGuestSlug } from "./wedding-context";
 
 export default function RsvpForm() {
-  const [state, formAction, pending] = useActionState(submitRsvp, undefined);
+  const slug = useGuestSlug();
+  const [state, formAction, pending] = useActionState(submitRsvp.bind(null, slug), undefined);
   const [attending, setAttending] = useState<"yes" | "no" | "">("");
 
   if (state?.success) {

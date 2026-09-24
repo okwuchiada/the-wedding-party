@@ -173,11 +173,13 @@ function editorialBand({
 }
 
 export function contributionNotificationEmail({
+  weddingId,
   guestName,
   itemName,
   amountCents,
   note,
 }: {
+  weddingId: string;
   guestName: string;
   itemName: string;
   amountCents: number;
@@ -201,7 +203,7 @@ export function contributionNotificationEmail({
     subline: `toward the ${safeItemName}`,
     bodyHtml: `<p style="margin:0 0 20px;font-size:15.5px;line-height:1.7;color:#252a1a;"><strong>${safeGuestName}</strong> just sent this your way — one gift closer to the life you're building together.</p>
       ${noteBlock}
-      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#6b7a44;">Confirm the transfer from your <a href="${SITE_URL}/admin" style="color:#c1440e;font-weight:bold;text-decoration:underline;">admin dashboard</a> once it lands.</p>`,
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#6b7a44;">Confirm the transfer from your <a href="${SITE_URL}/dashboard/${encodeURIComponent(weddingId)}" style="color:#c1440e;font-weight:bold;text-decoration:underline;">admin dashboard</a> once it lands.</p>`,
   });
 
   return { subject, html };
