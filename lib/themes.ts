@@ -18,22 +18,22 @@ export type ThemeColors = Record<ColorKey, string> & { ink: string };
 export type ThemePreset = { key: string; name: string; colors: ThemeColors; fonts: ThemeFonts };
 
 export const THEME_PRESETS: ThemePreset[] = [
-  {
-    key: "terracotta-olive",
-    name: "Terracotta & Olive",
-    colors: {
-      background: "#fdf6ec",
-      foreground: "#252a1a",
-      primary: "#c1440e",
-      primaryDark: "#9c3709",
-      accent: "#6b7a44",
-      accentDark: "#4f5a32",
-      ivory: "#fdf6ec",
-      cream: "#f0ead9",
-      ink: "#3a2e28",
-    },
-    fonts: { serif: "cormorant", script: "dancing-script", sans: "geist" },
-  },
+  // {
+  //   key: "terracotta-olive",
+  //   name: "Terracotta & Olive",
+  //   colors: {
+  //     background: "#fdf6ec",
+  //     foreground: "#252a1a",
+  //     primary: "#c1440e",
+  //     primaryDark: "#9c3709",
+  //     accent: "#6b7a44",
+  //     accentDark: "#4f5a32",
+  //     ivory: "#fdf6ec",
+  //     cream: "#f0ead9",
+  //     ink: "#3a2e28",
+  //   },
+  //   fonts: { serif: "cormorant", script: "dancing-script", sans: "geist" },
+  // },
   {
     key: "blush-rose",
     name: "Blush & Rose",

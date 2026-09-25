@@ -22,7 +22,7 @@ function stripeCloth(c: Colors, offset: number) {
  * re-dyes the sample guest site with that theme's real colors and fonts.
  */
 export default function ThemeShowcase({ children }: { children: React.ReactNode }) {
-  const [active, setActive] = useState("adire-indigo");
+  const [active, setActive] = useState("blush-rose");
   const preset = THEME_PRESETS.find((p) => p.key === active) ?? THEME_PRESETS[0];
 
   return (
