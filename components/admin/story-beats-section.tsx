@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useEffect, useState } from "react";
 import {
   addStoryBeat,
   createStoryBeatUploadUrl,
@@ -78,7 +78,10 @@ function BeatForm({
     }
     formData.delete("file");
 
-    formAction(formData);
+    // Run the action as a transition: the dashboard keeps showing while the server
+    // refreshes it, instead of dropping to the full-page loading screen (which looked
+    // like a page reload and jumped back to the top).
+    startTransition(() => formAction(formData));
   };
 
   return (

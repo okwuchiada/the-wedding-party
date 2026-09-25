@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { saveStory } from "@/lib/actions/story";
 import {
   addStoryPhoto,
@@ -14,6 +14,8 @@ import {
 import { convertHeicToJpeg, isImageFile } from "@/lib/heic";
 import { compressImage } from "@/lib/image-compress";
 import { useConfirm } from "./use-confirm";
+import DatePicker from "@/components/marketing/date-picker";
+import TimePicker from "@/components/marketing/time-picker";
 import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
 import StoryBeatsSection, { type StoryBeatView } from "./story-beats-section";
@@ -99,7 +101,10 @@ function PhotoForm({
     }
     formData.delete("file");
 
-    formAction(formData);
+    // Run the action as a transition: the dashboard keeps showing while the server
+    // refreshes it, instead of dropping to the full-page loading screen (which looked
+    // like a page reload and jumped back to the top).
+    startTransition(() => formAction(formData));
   };
 
   return (
@@ -395,6 +400,9 @@ export default function StoryTab({
 }) {
   const weddingId = useAdminWeddingId();
   const [state, formAction, pending] = useActionState(saveStory.bind(null, weddingId), undefined);
+  // Held in state so the pickers keep their values through React's post-save form reset.
+  const [weddingDate, setWeddingDate] = useState(story.weddingDate);
+  const [weddingTime, setWeddingTime] = useState(story.weddingTime);
 
   return (
     <div>
@@ -424,25 +432,15 @@ export default function StoryTab({
           </label>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-            Wedding date
-            <input
-              type="date"
-              name="weddingDate"
-              defaultValue={story.weddingDate}
-              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-            Wedding time
-            <input
-              type="time"
-              name="weddingTime"
-              defaultValue={story.weddingTime}
-              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
-            />
-          </label>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5 text-xs text-foreground/60">
+            <span id="story-date-label">Wedding date</span>
+            <DatePicker name="weddingDate" value={weddingDate} onChange={setWeddingDate} labelledBy="story-date-label" />
+          </div>
+          <div className="flex flex-col gap-1.5 text-xs text-foreground/60">
+            <span id="story-time-label">Wedding time</span>
+            <TimePicker name="weddingTime" value={weddingTime} onChange={setWeddingTime} labelledBy="story-time-label" />
+          </div>
         </div>
         <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
           Contact email

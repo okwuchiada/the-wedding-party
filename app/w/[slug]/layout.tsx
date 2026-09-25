@@ -3,7 +3,8 @@ import BlockedAccess from "@/components/guest/blocked-access";
 import { GuestWeddingProvider } from "@/components/guest/wedding-context";
 import { themeFontVars } from "@/lib/fonts";
 import { getGuestAccess } from "@/lib/guest-access";
-import { dashboardPath, getStory, moneyFormat, weddingTheme } from "@/lib/tenant";
+import { coupleTitle } from "@/lib/layouts";
+import { dashboardPath, getNameStyle, getStory, moneyFormat, weddingTheme } from "@/lib/tenant";
 import { themeColorVars } from "@/lib/themes";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -13,7 +14,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { wedding, block } = await getGuestAccess(slug);
   const story = await getStory(wedding.id);
   if (!story || block) return { robots: { index: false, follow: false } };
-  const names = `${story.brideName} & ${story.groomName}`;
+  const names = coupleTitle(story, await getNameStyle(wedding.id)) ?? wedding.slug;
   return {
     title: names,
     description: story.tagline ?? `Celebrate with ${names}`,

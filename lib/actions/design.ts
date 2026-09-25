@@ -5,6 +5,7 @@ import { COPY_FIELDS, COPY_MAX_LENGTH } from "@/lib/copy";
 import { FONT_OPTIONS, isFontKey, type FontRole } from "@/lib/font-options";
 import { prisma } from "@/lib/prisma";
 import { revalidateWedding } from "@/lib/tenant";
+import { isHeroKey, isHeroNameStyle, isTemplateKey, normalizeSections } from "@/lib/layouts";
 import { COLOR_FIELDS, getPreset, isHexColor, THEME_PRESETS } from "@/lib/themes";
 
 export type DesignFormState = { error?: string; success?: boolean } | undefined;
@@ -41,12 +42,29 @@ export async function saveTheme(
     fonts[role] = value && value !== preset.fonts[role] ? value : null;
   }
 
+  const layoutTemplate = text(formData, "layoutTemplate") || "classic";
+  if (!isTemplateKey(layoutTemplate)) return { error: "Choose a template" };
+  const heroLayout = text(formData, "heroLayout");
+  if (heroLayout && !isHeroKey(heroLayout)) return { error: "Choose a layout for the top of the site" };
+  const heroNames = text(formData, "heroNames") || "full";
+  if (!isHeroNameStyle(heroNames)) return { error: "Choose how your names appear" };
+  let sections;
+  try {
+    sections = normalizeSections(JSON.parse(text(formData, "sections") || "[]"));
+  } catch {
+    return { error: "The section order couldn't be read. Refresh and try again." };
+  }
+
   const data = {
     presetKey,
     colors,
     serifFont: fonts.serif,
     scriptFont: fonts.script,
     sansFont: fonts.sans,
+    layoutTemplate,
+    heroLayout: heroLayout || null,
+    heroNames,
+    sections,
   };
   await prisma.weddingTheme.upsert({
     where: { weddingId: wedding.id },

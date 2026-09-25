@@ -6,6 +6,7 @@ import NoteForm from "@/components/super/note-form";
 import { date, Table } from "@/components/super/table";
 import { impersonateUser, reverifyPayment, sendUserPasswordReset, setWeddingStatus } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
+import { coupleTitle, resolveLayout } from "@/lib/layouts";
 import { formatMoney } from "@/lib/money";
 import { can, isStaff, ROLE_LABELS } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -23,6 +24,7 @@ export default async function WeddingCasePage({ params }: { params: Promise<{ we
     where: { id: weddingId },
     include: {
       story: true,
+      theme: { select: { heroNames: true } },
       plan: true,
       members: { include: { user: true }, orderBy: { createdAt: "asc" } },
       payments: { include: { plan: true }, orderBy: { createdAt: "desc" } },
@@ -51,7 +53,7 @@ export default async function WeddingCasePage({ params }: { params: Promise<{ we
     reverify: can(staff.role, "payment.reverify"),
     notes: can(staff.role, "notes.write"),
   };
-  const names = wedding.story ? `${wedding.story.brideName} & ${wedding.story.groomName}` : wedding.slug;
+  const names = coupleTitle(wedding.story, resolveLayout(wedding.theme).heroNames) ?? wedding.slug;
 
   return (
     <div className="flex flex-col gap-8">

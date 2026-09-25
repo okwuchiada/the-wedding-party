@@ -4,6 +4,7 @@ import CompForm from "@/components/super/comp-form";
 import { date, SearchForm, Table } from "@/components/super/table";
 import { impersonateUser, setWeddingStatus } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
+import { coupleTitle, resolveLayout } from "@/lib/layouts";
 import { can, isStaff } from "@/lib/permissions";
 import type { Prisma, WeddingStatus } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -47,6 +48,7 @@ export default async function SuperWeddingsPage({
       take: LIMIT,
       include: {
         story: { select: { brideName: true, groomName: true, weddingDate: true } },
+        theme: { select: { heroNames: true } },
         plan: { select: { name: true } },
         members: { where: { role: "OWNER" }, include: { user: { select: { id: true, email: true, role: true } } } },
       },
@@ -73,7 +75,7 @@ export default async function SuperWeddingsPage({
           <tr key={w.id}>
             <td className="px-3 py-3">
               <Link href={`/super/weddings/${w.id}`} className="font-medium text-foreground underline decoration-(--m-ink)/20 underline-offset-4 hover:decoration-(--m-ink)">
-                {w.story ? `${w.story.brideName} & ${w.story.groomName}` : w.slug}
+                {coupleTitle(w.story, resolveLayout(w.theme).heroNames) ?? w.slug}
               </Link>
               <p className="text-xs text-foreground/60">
                 /w/{w.slug} · {w.story ? date(w.story.weddingDate) : "no date"} · created {date(w.createdAt)}

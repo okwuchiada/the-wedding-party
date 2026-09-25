@@ -9,6 +9,7 @@ import { upgradeCharge } from "@/lib/billing";
 import { paystackConfigured } from "@/lib/paystack";
 import { hasFeature, type PlanFeature } from "@/lib/plans";
 import { getWeddingById, guestPath, moneyFormat } from "@/lib/tenant";
+import { coupleTitle, resolveLayout } from "@/lib/layouts";
 import { resolveTheme } from "@/lib/themes";
 
 export default async function WeddingDashboardPage({
@@ -110,11 +111,20 @@ export default async function WeddingDashboardPage({
       weddingId={wedding.id}
       money={moneyFormat(wedding)}
       guestUrl={guestPath(wedding.slug)}
+      coupleTitle={coupleTitle(story, resolveLayout(settings.theme).heroNames)}
       isOwner={isOwner}
       readOnly={!canEdit}
       design={{
         // Show what they saved even if their plan doesn't render it.
         theme: resolveTheme(settings.theme, true),
+        layout: resolveLayout(settings.theme),
+        emptySections: [
+          storyBeats.length === 0 && "story",
+          !story?.brideNote && !story?.groomNote && "notes",
+          registryItems.length === 0 && "registry",
+          !bankDetails?.account && "gift",
+          !copy?.asoebiFabric && !story?.bridePhone && "asoebi",
+        ].filter((id): id is string => Boolean(id)),
         allowCustom: hasFeature(wedding.plan, "customTheme"),
         isDraft: wedding.status === "DRAFT",
       }}

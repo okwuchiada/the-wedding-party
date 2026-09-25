@@ -5,6 +5,7 @@ import type { ScopedPrisma } from "@/lib/db-scoped";
 import { requireWeddingAccess } from "@/lib/dal";
 import { getWeddingById, resolveGuestAction, revalidateDashboard, weddingTheme } from "@/lib/tenant";
 import { emailPalette, sendMail, rsvpConfirmationEmail } from "@/lib/mail";
+import { coupleNames, resolveLayout } from "@/lib/layouts";
 import { getClientIp } from "@/lib/request";
 
 export type SubmitRsvpState =
@@ -349,8 +350,9 @@ export async function sendRsvpConfirmation(
     ...rsvpConfirmationEmail({
       guestName: rsvp.guestName,
       attending: rsvp.attending,
-      brideName: story.brideName,
-      groomName: story.groomName,
+      // As the couple chose to show their names (full or first names only).
+      brideName: coupleNames(story, resolveLayout(settings.theme).heroNames)[0],
+      groomName: coupleNames(story, resolveLayout(settings.theme).heroNames)[1],
       weddingDate: story.weddingDate,
       location: story.location,
       venueAddress: story.venueAddress,

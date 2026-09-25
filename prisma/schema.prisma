@@ -259,15 +259,22 @@ model WeddingMember {
 }
 
 model WeddingTheme {
-  id         String  @id @default(cuid())
-  wedding    Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
-  weddingId  String  @unique
-  presetKey  String  @default("terracotta-olive")
+  id             String  @id @default(cuid())
+  wedding        Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId      String  @unique
+  presetKey      String  @default("terracotta-olive")
   // Overrides on top of the preset: { background, foreground, primary, ... }
-  colors     Json    @default("{}")
-  serifFont  String?
-  scriptFont String?
-  sansFont   String?
+  colors         Json    @default("{}")
+  serifFont      String?
+  scriptFont     String?
+  sansFont       String?
+  // Page layout (lib/layouts.ts): a whole-page template, an optional hero override
+  // (null = the template's default) and the section order with visibility.
+  layoutTemplate String  @default("classic")
+  heroLayout     String?
+  sections       Json    @default("[]")
+  // "full" or "first": how the couple's names appear on the site (top and footer).
+  heroNames      String  @default("full")
 }
 
 // Section copy overrides; null fields fall back to the component defaults.

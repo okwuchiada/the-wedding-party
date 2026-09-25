@@ -7,6 +7,7 @@ import { scopedPrisma } from "@/lib/db-scoped";
 import { canManageWedding } from "@/lib/dal";
 import { checkGeoAccess } from "@/lib/geo";
 import { hasFeature } from "@/lib/plans";
+import { resolveLayout } from "@/lib/layouts";
 import { resolveTheme } from "@/lib/themes";
 
 const WEDDING_INCLUDE = { plan: true, theme: true, copy: true } as const;
@@ -29,6 +30,11 @@ type ThemedWedding = {
 /** Custom colors and fonts need the plan feature; drafts preview them regardless. */
 export function weddingTheme(wedding: ThemedWedding) {
   return resolveTheme(wedding.theme, wedding.status === "DRAFT" || hasFeature(wedding.plan, "customTheme"));
+}
+
+/** How the couple shows their names everywhere: full or first names only. */
+export async function getNameStyle(weddingId: string) {
+  return resolveLayout((await getWeddingById(weddingId)).theme).heroNames;
 }
 
 export function moneyFormat(wedding: { currency: string; locale: string }) {

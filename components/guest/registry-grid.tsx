@@ -5,12 +5,17 @@ import type { BankDetailsView } from "@/lib/types";
 import type { RegistryItemWithContributions } from "@/lib/types";
 import GiftCard from "./gift-card";
 
+export type GiftCardVariant = "card" | "row" | "bold";
+
 export default function RegistryGrid({
   items,
   bankDetails,
+  variant = "card",
 }: {
   items: RegistryItemWithContributions[];
   bankDetails: BankDetailsView;
+  /** card: photo on top (Classic). row: a list, photo beside (Editorial, Minimal). bold: coloured top (Owambe). */
+  variant?: GiftCardVariant;
 }) {
   const categories = ["All", ...new Set(items.map((item) => item.category))];
   const [active, setActive] = useState("All");
@@ -38,9 +43,16 @@ export default function RegistryGrid({
         })}
       </div>
 
-      <div key={active} className="grid grid-cols-1 items-start gap-5.5 sm:grid-cols-2 lg:grid-cols-3">
+      <div
+        key={active}
+        className={
+          variant === "row"
+            ? "flex flex-col gap-4"
+            : "grid grid-cols-1 items-start gap-5.5 sm:grid-cols-2 lg:grid-cols-3"
+        }
+      >
         {filtered.map((item) => (
-          <GiftCard key={item.id} gift={item} bankDetails={bankDetails} />
+          <GiftCard key={item.id} gift={item} bankDetails={bankDetails} variant={variant} />
         ))}
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
-import { getStory } from "@/lib/tenant";
+import { coupleNames } from "@/lib/layouts";
+import { getNameStyle, getStory } from "@/lib/tenant";
 import LoveNote from "./love-note";
 import StoryCarousel from "./story-carousel";
 import OurStorySkeleton from "./our-story-skeleton";
@@ -11,9 +12,10 @@ async function OurStoryContent({ weddingId }: { weddingId: string }) {
     getStory(weddingId),
   ]);
 
+  const [bride, groom] = coupleNames(story, await getNameStyle(weddingId));
   const notes = [
-    story?.groomNote && { text: story.groomNote, caption: story.groomName },
-    story?.brideNote && { text: story.brideNote, caption: story.brideName },
+    story?.groomNote && { text: story.groomNote, caption: groom },
+    story?.brideNote && { text: story.brideNote, caption: bride },
   ].filter((n): n is { text: string; caption: string } => Boolean(n));
 
   return (

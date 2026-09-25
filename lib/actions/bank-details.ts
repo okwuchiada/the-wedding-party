@@ -21,13 +21,13 @@ export async function saveBankDetails(
   if (typeof name !== "string" || !name.trim()) return { error: "Account name is required" };
   if (typeof bank !== "string" || !bank.trim()) return { error: "Bank name is required" };
   if (typeof account !== "string" || !account.trim()) return { error: "Account number is required" };
-  if (typeof routing !== "string" || !routing.trim()) return { error: "Routing number is required" };
 
   const trimmed = {
     name: name.trim(),
     bank: bank.trim(),
     account: account.trim(),
-    routing: routing.trim(),
+    // Optional: mostly used for US banks. Stored as "" when left empty.
+    routing: typeof routing === "string" ? routing.trim() : "",
     swift: typeof swift === "string" && swift.trim() ? swift.trim() : null,
   };
 

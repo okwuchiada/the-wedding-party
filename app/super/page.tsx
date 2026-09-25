@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { date, Table } from "@/components/super/table";
 import { requirePermission } from "@/lib/dal";
+import { coupleTitle, resolveLayout } from "@/lib/layouts";
 import { formatMoney } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 
@@ -17,7 +18,11 @@ async function loadOverview() {
     prisma.wedding.findMany({
       orderBy: { createdAt: "desc" },
       take: 8,
-      include: { story: { select: { brideName: true, groomName: true } }, plan: { select: { name: true } } },
+      include: {
+        story: { select: { brideName: true, groomName: true } },
+        theme: { select: { heroNames: true } },
+        plan: { select: { name: true } },
+      },
     }),
     prisma.auditLog.findMany({
       orderBy: { createdAt: "desc" },
@@ -59,7 +64,7 @@ export default async function SuperOverviewPage() {
             <tr key={w.id}>
               <td className="px-3 py-2.5">
                 <Link href={`/super/weddings?q=${w.slug}`} className="hover:text-burnt-orange">
-                  {w.story ? `${w.story.brideName} & ${w.story.groomName}` : "—"}
+                  {coupleTitle(w.story, resolveLayout(w.theme).heroNames) ?? "—"}
                 </Link>
               </td>
               <td className="px-3 py-2.5 text-foreground/70">/w/{w.slug}</td>

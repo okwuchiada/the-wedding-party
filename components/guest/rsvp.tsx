@@ -1,24 +1,21 @@
 import { copyText } from "@/lib/copy";
 import { getWeddingById } from "@/lib/tenant";
+import SectionShell, { type SectionFrame } from "./layout/section-shell";
 import RsvpForm from "./rsvp-form";
 
-export default async function Rsvp({ weddingId }: { weddingId: string }) {
+export default async function Rsvp({ weddingId, frame }: { weddingId: string; frame: SectionFrame }) {
   const wedding = await getWeddingById(weddingId);
   return (
-    <section id="rsvp" className="bg-cream px-4 py-20 sm:px-6 sm:py-28">
-      <div className="mx-auto max-w-2xl text-center">
-        <p className="mb-3 text-xs uppercase tracking-[0.2em] text-olive">RSVP</p>
-        <h2 className="font-(family-name:--serif) text-4xl text-foreground sm:text-5xl">
-          Will you join us?
-        </h2>
-        <p className="mt-6 text-base text-foreground/80 sm:text-lg">
-          {copyText(wedding.copy, "rsvpIntro")}
-        </p>
-      </div>
-
-      <div className="mt-14">
-        <RsvpForm />
-      </div>
-    </section>
+    <SectionShell
+      id="rsvp"
+      frame={frame}
+      classicTone="cream"
+      eyebrow="RSVP"
+      title="Will you join us?"
+      intro={copyText(wedding.copy, "rsvpIntro")}
+      width="max-w-5xl"
+    >
+      <RsvpForm />
+    </SectionShell>
   );
 }

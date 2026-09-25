@@ -50,9 +50,11 @@ type Action = "BUY" | "CHIPIN";
 export default function GiftCard({
   gift,
   bankDetails,
+  variant = "card",
 }: {
   gift: RegistryItemWithContributions;
   bankDetails: BankDetailsView;
+  variant?: "card" | "row" | "bold";
 }) {
   const raised = sumContributions(gift.contributions);
   const remaining = Math.max(0, gift.priceCents - raised);
@@ -106,13 +108,21 @@ export default function GiftCard({
   const handleBuyTransfer = () => submitContributionOf(gift.priceCents);
 
   return (
-    <article className="flex flex-col bg-white shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]">
-      <div className="relative h-45 w-full overflow-hidden bg-olive/10">
+    <article
+      className={
+        variant === "row"
+          ? "grid grid-cols-[6rem_1fr] border border-olive/15 bg-white sm:grid-cols-[10rem_1fr]"
+          : variant === "bold"
+            ? "flex flex-col border-t-8 border-burnt-orange bg-white"
+            : "flex flex-col bg-white shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)]"
+      }
+    >
+      <div className={`relative w-full overflow-hidden bg-olive/10 ${variant === "row" ? "h-full min-h-24" : "h-45"}`}>
         <Image
           src={gift.image}
           alt={gift.name}
           fill
-          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+          sizes={variant === "row" ? "10rem" : "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"}
           className="object-cover"
           loading="eager"
         />

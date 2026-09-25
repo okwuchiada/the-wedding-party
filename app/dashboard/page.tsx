@@ -4,6 +4,7 @@ import DashboardBar from "@/components/admin/dashboard-bar";
 import { can } from "@/lib/permissions";
 import { verifySession } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
+import { coupleTitle, resolveLayout } from "@/lib/layouts";
 import { dashboardPath, guestPath, weddingTheme } from "@/lib/tenant";
 
 const STATUS = {
@@ -68,7 +69,7 @@ export default async function DashboardIndexPage() {
                   </span>
                   <span className="flex flex-1 flex-col gap-3 p-5">
                     <span className="font-(family-name:--m-display) text-2xl font-bold tracking-tight group-hover:underline">
-                      {wedding.story ? `${wedding.story.brideName} & ${wedding.story.groomName}` : wedding.slug}
+                      {coupleTitle(wedding.story, resolveLayout(wedding.theme).heroNames) ?? wedding.slug}
                     </span>
                     <span className="text-sm text-(--m-ink)/65">{guestPath(wedding.slug)}</span>
                     <span className="mt-auto flex items-center gap-2 text-xs font-medium">

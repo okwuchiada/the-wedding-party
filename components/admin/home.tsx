@@ -28,6 +28,7 @@ import DesignTab from "./design-tab";
 import WordingTab, { type CopyView } from "./wording-tab";
 import SettingsTab, { type SettingsView } from "./settings-tab";
 import BillingTab, { type BillingView } from "./billing-tab";
+import type { ResolvedLayout } from "@/lib/layouts";
 import type { ResolvedTheme } from "@/lib/themes";
 import { AdminWeddingProvider } from "./wedding-context";
 import { formatMoney, type MoneyFormat } from "@/lib/money";
@@ -45,6 +46,7 @@ export default function AdminHome({
   weddingId,
   money,
   guestUrl,
+  coupleTitle,
   members,
   isOwner,
   readOnly,
@@ -70,11 +72,13 @@ export default function AdminHome({
   weddingId: string;
   money: MoneyFormat;
   guestUrl: string;
+  /** The couple's names as they chose to show them. */
+  coupleTitle: string | null;
   members: MemberView[];
   isOwner: boolean;
   /** Staff with view-only access: every control in the tabs is disabled. */
   readOnly: boolean;
-  design: { theme: ResolvedTheme; allowCustom: boolean; isDraft: boolean };
+  design: { theme: ResolvedTheme; layout: ResolvedLayout; emptySections: string[]; allowCustom: boolean; isDraft: boolean };
   copy: CopyView & { canRemoveBranding: boolean };
   settings: SettingsView;
   billing: BillingView;
@@ -229,7 +233,7 @@ export default function AdminHome({
       <div>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <h1 className="font-(family-name:--m-display) text-4xl leading-none font-extrabold tracking-[-0.03em] sm:text-5xl">
-            {story.brideName} &amp; {story.groomName}
+            {coupleTitle ?? `${story.brideName} & ${story.groomName}`}
           </h1>
           <a
             href={guestUrl}

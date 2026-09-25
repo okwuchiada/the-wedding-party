@@ -14,6 +14,21 @@ import {
   type ColorKey,
   type ResolvedTheme,
 } from "@/lib/themes";
+import {
+  encodeSections,
+  heroName,
+  HEROES,
+  PREVIEW_PARAMS,
+  SECTIONS,
+  TEMPLATES,
+  type HeroKey,
+  type HeroNameStyle,
+  type ResolvedLayout,
+  type SectionSetting,
+  type TemplateKey,
+} from "@/lib/layouts";
+import { AccordionItem } from "./accordion";
+import { HeroNamesPicker, HeroPicker, SectionsEditor, TemplatePicker } from "./layout-picker";
 import { useAdminWeddingId } from "./wedding-context";
 
 
@@ -39,6 +54,8 @@ export default function DesignTab({
   isDraft,
   guestUrl,
   names,
+  layout,
+  emptySections,
 }: {
   theme: ResolvedTheme;
   allowCustom: boolean;
@@ -46,18 +63,31 @@ export default function DesignTab({
   guestUrl: string;
   /** The couple's names, used as the font sample. */
   names: [string, string];
+  /** The saved page layout. */
+  layout: ResolvedLayout;
+  /** Sections with nothing to show yet. */
+  emptySections: string[];
 }) {
   const weddingId = useAdminWeddingId();
   const [presetKey, setPresetKey] = useState(theme.presetKey);
   const [colors, setColors] = useState<Record<ColorKey, string>>(theme.colors);
   const [fonts, setFonts] = useState<ThemeFonts>(theme.fonts);
-  const snapshot = JSON.stringify({ presetKey, colors, fonts });
+  const [template, setTemplate] = useState<TemplateKey>(layout.template);
+  const [heroChoice, setHeroChoice] = useState<HeroKey | null>(layout.heroChoice);
+  const [sections, setSections] = useState<SectionSetting[]>(layout.sections);
+  const [nameStyle, setNameStyle] = useState<HeroNameStyle>(layout.heroNames);
+  const snapshot = JSON.stringify({ presetKey, colors, fonts, template, heroChoice, nameStyle, sections });
+  const layoutSnapshot = JSON.stringify({ template, heroChoice, nameStyle, sections });
+  const [savedLayout, setSavedLayout] = useState(layoutSnapshot);
   const [savedSnapshot, setSavedSnapshot] = useState(snapshot);
   const unsaved = snapshot !== savedSnapshot;
   const [state, formAction, pending] = useActionState(
     async (prev: Awaited<ReturnType<typeof saveTheme>>, formData: FormData) => {
       const result = await saveTheme(weddingId, prev, formData);
-      if (result?.success) setSavedSnapshot(snapshot);
+      if (result?.success) {
+        setSavedSnapshot(snapshot);
+        setSavedLayout(layoutSnapshot);
+      }
       return result;
     },
     undefined
@@ -70,12 +100,37 @@ export default function DesignTab({
     setFonts(preset.fonts);
   };
 
-  const lowContrast = CONTRAST_PAIRS.map((pair) => ({
-    ...pair,
-    ratio: contrastRatio(colors[pair.fg], colors[pair.bg]),
-  })).filter((pair) => pair.ratio < 4.5);
 
   const customEditable = allowCustom || isDraft;
+
+  // One panel open at a time keeps the tab calm; Layout starts open.
+  type Panel = "layout" | "hero" | "sections" | "theme" | "colors";
+  const [openPanel, setOpenPanel] = useState<Panel | null>("layout");
+  const togglePanel = (panel: Panel) => setOpenPanel((current) => (current === panel ? null : panel));
+
+  // What each closed panel says about the current choice.
+  const templateInfo = TEMPLATES.find((t) => t.key === template)!;
+  const heroSummary = heroChoice
+    ? HEROES.find((h) => h.key === heroChoice)!.name
+    : `Template default (${HEROES.find((h) => h.key === templateInfo.defaultHero)!.name})`;
+  const hiddenNames = sections.filter((s) => !s.visible).map((s) => SECTIONS.find((d) => d.id === s.id)!.name);
+  const sectionsSummary = `${sections.length - hiddenNames.length} shown${hiddenNames.length ? ` · ${hiddenNames.join(", ")} hidden` : ""}`;
+  const basePreset = getPreset(presetKey);
+  const customised =
+    COLOR_FIELDS.some(({ key }) => colors[key] !== basePreset.colors[key]) ||
+    (Object.keys(fonts) as FontRole[]).some((role) => fonts[role] !== basePreset.fonts[role]);
+  // Only the couple's own colour changes are checked; the shipped palettes are vetted.
+  const colorsChanged = COLOR_FIELDS.some(({ key }) => colors[key] !== basePreset.colors[key]);
+  const lowContrast = colorsChanged
+    ? CONTRAST_PAIRS.map((pair) => ({ ...pair, ratio: contrastRatio(colors[pair.fg], colors[pair.bg]) })).filter(
+        (pair) => pair.ratio < 4.5
+      )
+    : [];
+  const headingFont = FONT_OPTIONS.serif.find((f) => f.key === fonts.serif)?.label ?? "";
+  const colorsSummary =
+    lowContrast.length > 0 && customEditable
+      ? `${lowContrast.length} colour pair${lowContrast.length === 1 ? "" : "s"} may be hard to read`
+      : `${customised && customEditable ? "Custom" : "Theme's own"} colours · ${headingFont} headings`;
 
   // Live preview: restyle the guest site in the frame as changes are made, before saving.
   // It mirrors the site's own rule: without custom themes, a live site shows the plain preset.
@@ -93,17 +148,64 @@ export default function DesignTab({
     }
   }, [previewVars]);
   useEffect(applyPreview, [applyPreview]);
-  const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? "";
-  const sample = `${firstName(names[0]) || "Ada"} & ${firstName(names[1]) || "Tobi"}`;
+
+  // Layout changes need the page re-rendered, so the preview reloads with the unsaved
+  // layout in its URL (honoured only for people who manage this wedding).
+  const layoutUrl =
+    layoutSnapshot === savedLayout
+      ? guestUrl
+      : `${guestUrl}?${new URLSearchParams({
+          [PREVIEW_PARAMS.template]: template,
+          [PREVIEW_PARAMS.hero]: heroChoice ?? "",
+          [PREVIEW_PARAMS.names]: nameStyle,
+          [PREVIEW_PARAMS.sections]: encodeSections(sections),
+        })}`;
+  const [previewUrl, setPreviewUrl] = useState(layoutUrl);
+  useEffect(() => {
+    const timer = setTimeout(() => setPreviewUrl(layoutUrl), 400);
+    return () => clearTimeout(timer);
+  }, [layoutUrl]);
+  const sample = `${heroName(names[0], nameStyle) || "Ada"} & ${heroName(names[1], nameStyle) || "Tobi"}`;
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      <form action={formAction} className="flex flex-col gap-8">
+      <form action={formAction} className="flex flex-col gap-5">
         <input type="hidden" name="presetKey" value={presetKey} />
+        <input type="hidden" name="layoutTemplate" value={template} />
+        <input type="hidden" name="heroLayout" value={heroChoice ?? ""} />
+        <input type="hidden" name="heroNames" value={nameStyle} />
+        <input type="hidden" name="sections" value={JSON.stringify(sections)} />
 
-        <section>
-          <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Theme</h2>
-          <p className="mt-1 mb-4 text-sm text-foreground/60">Start from a palette, then fine-tune it below.</p>
+        <div className="flex flex-col gap-3">
+          <AccordionItem title="Layout" summary={templateInfo.name} open={openPanel === "layout"} onToggle={() => togglePanel("layout")}>
+            <p className="mb-4 text-sm text-foreground/60">The overall style of the page. Colours and fonts work with every layout.</p>
+            <TemplatePicker value={template} onChange={setTemplate} />
+          </AccordionItem>
+
+          <AccordionItem
+            title="Top of the site"
+            summary={`${heroSummary} · ${nameStyle === "first" ? "First names only" : "Full names"}`}
+            open={openPanel === "hero"}
+            onToggle={() => togglePanel("hero")}
+          >
+            <div className="flex flex-col gap-5">
+              <HeroPicker value={heroChoice} template={template} onChange={setHeroChoice} />
+              <div className="flex flex-col gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold">Names on your site</h3>
+                  <p className="mt-0.5 text-xs text-foreground/60">Used everywhere your names appear: your site, emails to guests and your dashboard.</p>
+                </div>
+                <HeroNamesPicker value={nameStyle} names={names} onChange={setNameStyle} />
+              </div>
+            </div>
+          </AccordionItem>
+
+          <AccordionItem title="Sections" summary={sectionsSummary} open={openPanel === "sections"} onToggle={() => togglePanel("sections")}>
+            <SectionsEditor value={sections} onChange={setSections} empty={emptySections} />
+          </AccordionItem>
+
+          <AccordionItem title="Theme" summary={getPreset(presetKey).name} open={openPanel === "theme"} onToggle={() => togglePanel("theme")}>
+            <p className="mb-4 text-sm text-foreground/60">Start from a palette, then fine-tune it in Colours &amp; fonts.</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {THEME_PRESETS.map((preset) => (
               <button
@@ -120,10 +222,15 @@ export default function DesignTab({
               </button>
             ))}
           </div>
-        </section>
+          </AccordionItem>
 
-        <section>
-          <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Colors &amp; fonts</h2>
+          <AccordionItem
+            title="Colours & fonts"
+            summary={colorsSummary}
+            summaryTone={lowContrast.length > 0 && customEditable ? "warn" : "muted"}
+            open={openPanel === "colors"}
+            onToggle={() => togglePanel("colors")}
+          >
           {!allowCustom && (
             <p className="mt-2 bg-cream px-3 py-2 text-xs text-foreground/70">
               {isDraft
@@ -187,7 +294,8 @@ export default function DesignTab({
               ))}
             </div>
           </fieldset>
-        </section>
+          </AccordionItem>
+        </div>
 
         {state?.error && <p className="text-xs text-burnt-orange">{state.error}</p>}
         {unsaved ? (
@@ -221,7 +329,7 @@ export default function DesignTab({
         <iframe
           ref={frameRef}
           onLoad={applyPreview}
-          src={guestUrl}
+          src={previewUrl}
           title="Guest site preview"
           className="h-[640px] w-full border border-(--m-mist) rounded-[6px] bg-white"
         />

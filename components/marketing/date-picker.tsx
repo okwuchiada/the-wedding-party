@@ -29,7 +29,16 @@ function dateNote(value: string, today: Date) {
   if (!value) return null;
   const d = parse(value);
   const days = Math.round((d.getTime() - today.getTime()) / DAY_MS);
-  const countdown = days === 0 ? "That's today" : days === 1 ? "1 day to go" : `${days} days to go`;
+  const countdown =
+    days === 0
+      ? "That's today"
+      : days === 1
+        ? "1 day to go"
+        : days > 0
+          ? `${days} days to go`
+          : days === -1
+            ? "Married yesterday"
+            : `Married ${-days} days ago`;
   const on = holidayOn(value);
   const near = on ?? holidayOn(iso(addDays(d, -1))) ?? holidayOn(iso(addDays(d, 1)));
   const holiday = on

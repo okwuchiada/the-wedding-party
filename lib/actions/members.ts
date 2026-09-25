@@ -4,7 +4,8 @@ import { requireWeddingAccess } from "@/lib/dal";
 import { sendInvite } from "@/lib/invites";
 import { prisma } from "@/lib/prisma";
 import { takeRateLimit } from "@/lib/rate-limit";
-import { revalidateDashboard } from "@/lib/tenant";
+import { coupleTitle } from "@/lib/layouts";
+import { getNameStyle, revalidateDashboard } from "@/lib/tenant";
 
 export type InviteMemberState = { error?: string; message?: string } | undefined;
 
@@ -38,7 +39,7 @@ export async function inviteMember(
   let message = `${email} can now manage this wedding.`;
   if (!user.passwordHash) {
     const story = await prisma.storyContent.findUnique({ where: { weddingId: wedding.id } });
-    await sendInvite(user, story ? `${story.brideName} & ${story.groomName}` : null);
+    await sendInvite(user, coupleTitle(story, await getNameStyle(wedding.id)));
     message = `Invite sent to ${email}.`;
   }
 

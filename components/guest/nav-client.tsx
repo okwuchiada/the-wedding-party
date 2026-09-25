@@ -3,29 +3,32 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-function navLinks(basePath: string) {
+function navLinks(basePath: string, show: { rsvp: boolean; registry: boolean }) {
   return [
-    { label: "RSVP", href: `${basePath}#rsvp` },
-    { label: "Registry", href: `${basePath}#registry` },
+    show.rsvp && { label: "RSVP", href: `${basePath}#rsvp` },
+    show.registry && { label: "Registry", href: `${basePath}#registry` },
     { label: "Gallery Wall", href: `${basePath}/gallery` },
     { label: "Wall of Wishes", href: `${basePath}/wishes` },
-  ];
+  ].filter((link): link is { label: string; href: string } => Boolean(link));
 }
 
 export default function GuestNavClient({
   basePath,
+  show,
   dateLabel,
   brideInitial,
   groomInitial,
 }: {
   basePath: string;
+  /** Links to sections the couple has switched off are left out. */
+  show: { rsvp: boolean; registry: boolean };
   dateLabel: string;
   brideInitial: string;
   groomInitial: string;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const links = navLinks(basePath);
+  const links = navLinks(basePath, show);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);

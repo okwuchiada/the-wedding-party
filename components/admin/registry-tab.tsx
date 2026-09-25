@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useEffect, useState } from "react";
 import type { BankDetailsView, RegistryItemWithContributions } from "@/lib/types";
 import {
   createRegistryItem,
@@ -14,6 +14,7 @@ import { convertHeicToJpeg } from "@/lib/heic";
 import { compressImage } from "@/lib/image-compress";
 import { useConfirm } from "./use-confirm";
 import { currencySymbol, formatMoney } from "@/lib/money";
+import CategoryField from "./category-field";
 import { useAdminMoney, useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
 
@@ -36,9 +37,12 @@ function RegistryItemForm({
   initialValues,
   onCancel,
   submitLabel,
+  categories,
 }: {
   action: (state: RegistryItemFormState, formData: FormData) => Promise<RegistryItemFormState>;
   initialValues?: ItemFormValues;
+  /** Categories already on this registry, for the dropdown. */
+  categories: string[];
   onCancel: () => void;
   submitLabel: string;
 }) {
@@ -86,7 +90,10 @@ function RegistryItemForm({
     }
     formData.delete("file");
 
-    formAction(formData);
+    // Run the action as a transition: the dashboard keeps showing while the server
+    // refreshes it, instead of dropping to the full-page loading screen (which looked
+    // like a page reload and jumped back to the top).
+    startTransition(() => formAction(formData));
   };
 
   return (
@@ -102,14 +109,7 @@ function RegistryItemForm({
         />
       </label>
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-        Category
-        <input
-          name="category"
-          defaultValue={initialValues?.category}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
-        />
-      </label>
+      <CategoryField name="category" defaultValue={initialValues?.category} existing={categories} />
 
       <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
         Price ({currencySymbol(money)})
@@ -222,7 +222,7 @@ function BankDetailsForm({
         />
       </label>
       <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-        Routing number
+        Routing number (optional)
         <input
           name="routing"
           defaultValue={bankDetails.routing}
@@ -270,6 +270,8 @@ export default function RegistryTab({
   const weddingId = useAdminWeddingId();
   const money = useAdminMoney();
   const [adding, setAdding] = useState(false);
+  // Categories in use, in the order they first appear (matches the guest registry's tabs).
+  const categories = [...new Set(items.map((item) => item.category))];
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBank, setEditingBank] = useState(false);
   const [deleteError, setDeleteError] = useState("");
@@ -324,7 +326,7 @@ export default function RegistryTab({
           </div>
           <div>
             <p className="text-xs text-foreground/50">Routing</p>
-            <p className="mt-1 text-foreground">{bankDetails.routing}</p>
+            <p className="mt-1 text-foreground">{bankDetails.routing || "—"}</p>
           </div>
           <div>
             <p className="text-xs text-foreground/50">SWIFT / BIC</p>
@@ -348,7 +350,12 @@ export default function RegistryTab({
 
       {adding && (
         <div className="mb-5">
-          <RegistryItemForm action={createRegistryItem.bind(null, weddingId)} onCancel={() => setAdding(false)} submitLabel="Add Item" />
+          <RegistryItemForm
+            action={createRegistryItem.bind(null, weddingId)}
+            onCancel={() => setAdding(false)}
+            submitLabel="Add Item"
+            categories={categories}
+          />
         </div>
       )}
 
@@ -373,6 +380,7 @@ export default function RegistryTab({
                   <td colSpan={6} className="p-0">
                     <RegistryItemForm
                       action={updateRegistryItem.bind(null, weddingId)}
+                      categories={categories}
                       initialValues={{
                         id: item.id,
                         name: item.name,
