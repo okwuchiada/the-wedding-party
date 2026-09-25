@@ -220,6 +220,8 @@ model Wedding {
   // ISO country codes allowed to view the guest site; empty means everyone.
   allowedCountries String[]      @default([])
   geoBypassToken   String?
+  // A domain staff have connected by hand (e.g. "amaraanddavid.com"); served by proxy.ts.
+  customDomain     String?       @unique
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
@@ -275,6 +277,8 @@ model WeddingTheme {
   sections       Json    @default("[]")
   // "full" or "first": how the couple's names appear on the site (top and footer).
   heroNames      String  @default("full")
+  // How-we-met style (lib/layouts.ts STORY_STYLES); null = the template's default.
+  storyLayout    String?
 }
 
 // Section copy overrides; null fields fall back to the component defaults.
@@ -302,10 +306,19 @@ model Plan {
   name      String
   priceKobo Int
   maxGuests Int
-  // { gallery: boolean, customTheme: boolean, removeBranding: boolean }
+  // On/off features (lib/plans.ts PlanFeature): { gallery, video, customTheme, ... }
   features  Json     @default("{}")
   active    Boolean  @default(true)
   sortOrder Int      @default(0)
+  // Shown on the pricing page and in Billing; edited in the staff console.
+  tagline     String?
+  popular     Boolean  @default(false)
+  highlights  String[] @default([])
+  limitations String[] @default([])
+  // Limits; null means unlimited (uploads), permanent (availability) or every theme (empty list).
+  maxUploads         Int?
+  availabilityMonths Int?
+  themes             String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

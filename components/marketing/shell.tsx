@@ -18,14 +18,18 @@ export function BrandLink({ href }: { href: string }) {
   return (
     <Link
       href={href}
-      className="flex items-center gap-2.5 font-(family-name:--m-display) text-base font-bold tracking-tight whitespace-nowrap sm:text-lg"
+      aria-label="Vowly, the wedding party"
+      className="flex items-center gap-2.5 whitespace-nowrap"
     >
-      <span aria-hidden className="flex h-6 overflow-hidden rounded-[3px]">
+      <span aria-hidden className="flex h-9 overflow-hidden rounded-[3px]">
         {WOVEN.map((c) => (
           <span key={c} style={{ background: `var(${c})` }} className="w-1.5" />
         ))}
       </span>
-      The Wedding Party
+      <span aria-hidden className="flex flex-col">
+        <span className="font-(family-name:--m-display) text-xl leading-none font-bold tracking-tight sm:text-2xl">Vowly</span>
+        <span className="mt-1 text-[11px] leading-none font-medium text-(--m-ink)/60 sm:text-xs">The wedding party</span>
+      </span>
     </Link>
   );
 }
@@ -60,7 +64,7 @@ export default async function MarketingShell({ children }: { children: React.Rea
       <main className="flex-1">{children}</main>
       <footer className="border-t border-(--m-mist)">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8 text-sm text-(--m-ink)/70 sm:px-8">
-          <p>The Wedding Party — wedding sites for couples and their guests.</p>
+          <p>Vowly — wedding sites for couples and their guests.</p>
           <div className="flex gap-5">
             <Link href="/pricing" className="hover:text-(--m-ink)">
               Pricing

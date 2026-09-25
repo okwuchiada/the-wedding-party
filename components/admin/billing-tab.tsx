@@ -2,27 +2,37 @@
 
 import { useActionState } from "react";
 import { startCheckout } from "@/lib/actions/billing";
+import PlanCard, { type PlanCardPlan } from "@/components/marketing/plan-card";
 import { formatMoney } from "@/lib/money";
-import { FEATURE_LABELS, type PlanFeature } from "@/lib/plans";
 import { useAdminWeddingId } from "./wedding-context";
 
 export type BillingView = {
-  currentPlan: { name: string; comped: boolean } | null;
-  paymentsEnabled: boolean;
-  plans: {
-    key: string;
+  currentPlan: {
     name: string;
-    priceKobo: number;
-    maxGuests: number;
-    features: PlanFeature[];
-    /** Amount due now, or null if this plan can't be chosen. */
+    comped: boolean;
+    free: boolean;
+    /** When the guest site closes (ISO), or null if it stays up. */
+    closesAt: string | null;
+  } | null;
+  paymentsEnabled: boolean;
+  plans: (PlanCardPlan & {
+    key: string;
+    /** Amount due now, or null if this plan can't be bought (free, or not an upgrade). */
     chargeKobo: number | null;
     current: boolean;
-  }[];
+  })[];
   payments: { reference: string; planName: string; amountKobo: number; status: string; date: string }[];
 };
 
 const NAIRA = { currency: "NGN", locale: "en-NG" };
+
+function closingNote(closesAt: string | null) {
+  if (!closesAt) return "Your site stays online for good.";
+  const date = new Date(closesAt).toLocaleDateString("en-GB", { dateStyle: "long", timeZone: "UTC" });
+  return new Date(closesAt) <= new Date()
+    ? `Your site closed to guests on ${date}. Upgrade to bring it back.`
+    : `Your site stays online until ${date}. Upgrade to keep it longer.`;
+}
 
 export default function BillingTab({ billing }: { billing: BillingView }) {
   const weddingId = useAdminWeddingId();
@@ -33,10 +43,13 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
       <section>
         <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Your plan</h2>
         <p className="mt-1 text-sm text-foreground/70">
-          {billing.currentPlan
-            ? `${billing.currentPlan.name}${billing.currentPlan.comped ? " (complimentary)" : ""} — a one-time payment for this wedding.`
-            : "You're on a free draft. Choose a plan to publish your site for guests."}
+          {!billing.currentPlan
+            ? "You're on a free draft. Choose a plan to publish your site for guests."
+            : billing.currentPlan.free
+              ? `You're on ${billing.currentPlan.name}. Upgrade any time; you only pay once per wedding.`
+              : `${billing.currentPlan.name}${billing.currentPlan.comped ? " (complimentary)" : ""}, a one-time payment for this wedding.`}
         </p>
+        {billing.currentPlan && <p className="mt-1 text-sm text-foreground/70">{closingNote(billing.currentPlan.closesAt)}</p>}
       </section>
 
       {!billing.paymentsEnabled && (
@@ -44,43 +57,41 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
       )}
       {state?.error && <p className="text-xs text-burnt-orange">{state.error}</p>}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 pt-3 md:grid-cols-2 xl:grid-cols-3">
         {billing.plans.map((plan) => (
-          <form
+          <PlanCard
             key={plan.key}
-            action={formAction}
-            className={`flex flex-col gap-3 rounded-[6px] bg-white p-5 ${plan.current ? "ring-2 ring-burnt-orange" : "ring-1 ring-olive/15"}`}
-          >
-            <input type="hidden" name="planKey" value={plan.key} />
-            <h3 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">{plan.name}</h3>
-            <p className="text-xl text-foreground">{formatMoney(plan.priceKobo, NAIRA)}</p>
-            <ul className="flex flex-col gap-1 text-sm text-foreground/75">
-              <li>Up to {plan.maxGuests.toLocaleString()} guests</li>
-              <li>RSVPs, registry &amp; wishes</li>
-              {plan.features.map((feature) => (
-                <li key={feature}>{FEATURE_LABELS[feature]}</li>
-              ))}
-            </ul>
-            <div className="mt-auto pt-2">
-              {plan.current ? (
-                <p className="text-xs font-medium text-olive">Current plan</p>
+            plan={plan}
+            current={plan.current}
+            action={
+              plan.current ? (
+                <p className={`text-sm font-semibold ${plan.popular ? "text-(--m-gold)" : "text-(--m-emerald)"}`}>Your current plan</p>
               ) : plan.chargeKobo === null ? (
-                <p className="text-xs text-foreground/50">Included in your plan</p>
+                <p className={`text-sm ${plan.popular ? "text-(--m-paper)/70" : "text-(--m-ink)/60"}`}>
+                  {plan.priceKobo === 0 ? "Included free" : "Included in your plan"}
+                </p>
               ) : (
-                <button
-                  type="submit"
-                  disabled={pending || !billing.paymentsEnabled}
-                  className="w-full rounded-full bg-(--m-gold) px-4 py-2.5 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-50"
-                >
-                  {pending
-                    ? "Redirecting…"
-                    : billing.currentPlan
-                      ? `Upgrade — pay ${formatMoney(plan.chargeKobo, NAIRA)}`
-                      : `Choose ${plan.name}`}
-                </button>
-              )}
-            </div>
-          </form>
+                <form action={formAction}>
+                  <input type="hidden" name="planKey" value={plan.key} />
+                  <button
+                    type="submit"
+                    disabled={pending || !billing.paymentsEnabled}
+                    className={`w-full rounded-full px-4 py-3 text-sm font-semibold disabled:opacity-50 ${
+                      plan.popular
+                        ? "bg-(--m-gold) text-(--m-ink) hover:bg-(--m-paper)"
+                        : "bg-(--m-ink) text-(--m-paper) hover:bg-(--m-emerald)"
+                    }`}
+                  >
+                    {pending
+                      ? "Redirecting…"
+                      : billing.currentPlan
+                        ? `Upgrade, pay ${formatMoney(plan.chargeKobo, NAIRA)}`
+                        : `Choose ${plan.name}`}
+                  </button>
+                </form>
+              )
+            }
+          />
         ))}
       </div>
 

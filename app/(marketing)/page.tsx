@@ -15,7 +15,7 @@ const FAQS = [
     q: "How do gifts work? Do you hold our money?",
     a: "We never touch it. Guests see your account details, send a transfer from their own bank, and tell you what it's for. You mark it received when it arrives, and the registry updates.",
   },
-  { q: "Is it a subscription?", a: "No. You pay once per wedding. Building and previewing your site is free; you pay when you're ready to publish." },
+  { q: "Is it a subscription?", a: "No. Start on the free plan, and if you want more, upgrade once per wedding. Upgrading later costs only the difference." },
   {
     q: "Can we keep it private?",
     a: "Until you publish, only you can see it. After that, anyone with the link can visit. You can also limit it to certain countries and give an access code to guests abroad.",
@@ -63,9 +63,9 @@ export default function LandingPage() {
       </section>
 
       <section id="pricing" className="mx-auto max-w-6xl scroll-mt-8 px-5 py-20 sm:px-8">
-        <h2 className="font-(family-name:--m-display) text-4xl font-bold tracking-tight sm:text-5xl">Pay once, when you publish</h2>
+        <h2 className="font-(family-name:--m-display) text-4xl font-bold tracking-tight sm:text-5xl">Start free, pay once if you upgrade</h2>
         <p className="mt-4 max-w-xl text-lg text-(--m-ink)/75">
-          Build and preview your site for free. Choose a plan when you&apos;re ready to share it.
+          Publish on the free plan, or upgrade for every theme, your own colours and a bigger gallery.
         </p>
         <div className="mt-10">
           <Pricing />

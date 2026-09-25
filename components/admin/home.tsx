@@ -78,8 +78,16 @@ export default function AdminHome({
   isOwner: boolean;
   /** Staff with view-only access: every control in the tabs is disabled. */
   readOnly: boolean;
-  design: { theme: ResolvedTheme; layout: ResolvedLayout; emptySections: string[]; allowCustom: boolean; isDraft: boolean };
-  copy: CopyView & { canRemoveBranding: boolean };
+  design: {
+    theme: ResolvedTheme;
+    layout: ResolvedLayout;
+    emptySections: string[];
+    allowCustom: boolean;
+    allowedThemes: string[];
+    planName: string | null;
+    isDraft: boolean;
+  };
+  copy: CopyView & { canCustomCredit: boolean; brandingRemoved: boolean };
   settings: SettingsView;
   billing: BillingView;
   registryItems: RegistryItemWithContributions[];
@@ -313,7 +321,7 @@ export default function AdminHome({
           <StoryTab story={story} photos={storyPhotos} storyBeats={storyBeats} />
         )}
         {activeTab === "Design" && <DesignTab {...design} guestUrl={guestUrl} names={[story.brideName, story.groomName]} />}
-        {activeTab === "Wording" && <WordingTab copy={copy} canRemoveBranding={copy.canRemoveBranding} />}
+        {activeTab === "Wording" && <WordingTab copy={copy} canCustomCredit={copy.canCustomCredit} brandingRemoved={copy.brandingRemoved} />}
         {activeTab === "People" && <MembersTab members={members} isOwner={isOwner} />}
         {activeTab === "Settings" && isOwner && <SettingsTab settings={settings} />}
         {activeTab === "Billing" && isOwner && <BillingTab billing={billing} />}

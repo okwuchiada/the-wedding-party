@@ -72,7 +72,7 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
             </div>
 
             <div className="mt-14">
-              <GalleryUpload />
+              <GalleryUpload allowVideo={hasFeature(wedding.plan, "video")} />
             </div>
 
             <div className="mx-auto mt-20 max-w-5xl">

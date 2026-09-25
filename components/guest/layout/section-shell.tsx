@@ -1,4 +1,4 @@
-import type { HeroNameStyle, TemplateKey } from "@/lib/layouts";
+import type { HeroNameStyle, StoryStyle, TemplateKey } from "@/lib/layouts";
 import StripeBand from "./stripe-band";
 
 export type SectionFrame = {
@@ -7,6 +7,8 @@ export type SectionFrame = {
   index: number;
   /** Full or first names, as chosen in Design (the preview's choice on the home page). */
   nameStyle: HeroNameStyle;
+  /** How the How we met moments are laid out. */
+  storyStyle: StoryStyle;
 };
 
 /**

@@ -7,10 +7,12 @@ import {
   HEROES,
   heroName,
   SECTIONS,
+  STORY_STYLES,
   TEMPLATES,
   type HeroKey,
   type HeroNameStyle,
   type SectionSetting,
+  type StoryStyle,
   type TemplateKey,
 } from "@/lib/layouts";
 
@@ -104,6 +106,115 @@ export function HeroPicker({
         <button key={h.key ?? "default"} type="button" role="radio" aria-checked={h.key === value} onClick={() => onChange(h.key)} className={cardClass(h.key === value)}>
           <span className="font-semibold">{h.name}</span>
           <span className="text-xs leading-snug text-(--m-ink)/60">{h.description}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Tiny wireframes of each how-we-met style. */
+function StorySketch({ style }: { style: StoryStyle }) {
+  const photo = "rounded-[2px] bg-(--m-ink)/20";
+  const line = "rounded-[2px] bg-(--m-ink)/15";
+  const year = "rounded-[2px] bg-(--m-gold)";
+  const sketches: Record<StoryStyle, React.ReactNode> = {
+    timeline: (
+      <div className="relative flex h-full flex-col justify-center gap-1.5 px-3">
+        <span className="absolute inset-y-1.5 left-1/2 w-px bg-(--m-ink)/25" />
+        {[false, true].map((flip) => (
+          <div key={String(flip)} className={`flex items-center gap-2 ${flip ? "flex-row-reverse" : ""}`}>
+            <span className={`h-5 w-5 border-2 border-white bg-(--m-ink)/20 shadow-sm ${flip ? "rotate-3" : "-rotate-3"}`} />
+            <span className="flex flex-1 flex-col gap-0.5">
+              <span className={`${year} h-1 w-1/3 ${flip ? "self-end" : ""}`} />
+              <span className={`${line} h-1 w-2/3 ${flip ? "self-end" : ""}`} />
+            </span>
+          </div>
+        ))}
+      </div>
+    ),
+    list: (
+      <div className="flex h-full flex-col justify-center divide-y divide-(--m-ink)/15 px-2">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="grid grid-cols-[1fr_2fr_1fr] items-center gap-1.5 py-1">
+            <span className={`${year} h-1.5`} />
+            <span className={`${line} h-1`} />
+            <span className={`${photo} h-2.5`} />
+          </div>
+        ))}
+      </div>
+    ),
+    cards: (
+      <div className="grid h-full grid-cols-3 gap-1 p-2">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex flex-col gap-0.5 bg-white">
+            <span className={`${photo} flex-1`} />
+            <span className={`${year} h-1 w-2/3`} />
+            <span className={`${line} h-1`} />
+          </div>
+        ))}
+      </div>
+    ),
+    strip: (
+      <div className="flex h-full gap-1 overflow-hidden py-2 pl-2">
+        {[0, 1, 2, 3].map((i) => (
+          <span key={i} className={`${photo} relative w-7 shrink-0`}>
+            <span className="absolute right-1 bottom-1 left-1 h-1 rounded-[1px] bg-white/80" />
+          </span>
+        ))}
+      </div>
+    ),
+    chapters: (
+      <div className="grid h-full grid-cols-[1.4fr_1fr] items-center gap-2 p-2">
+        <span className={`${photo} h-full`} />
+        <span className="flex flex-col gap-1">
+          <span className={`${year} h-2 w-4/5`} />
+          <span className={`${line} h-1`} />
+          <span className={`${line} h-1 w-3/4`} />
+        </span>
+      </div>
+    ),
+    simple: (
+      <div className="flex h-full flex-col items-center justify-center gap-1.5">
+        {[0, 1].map((i) => (
+          <span key={i} className="flex w-1/2 flex-col items-center gap-0.5">
+            <span className={`${line} h-1 w-1/3`} />
+            <span className="h-1.5 w-3/4 rounded-[2px] bg-(--m-ink)/25" />
+            <span className={`${line} h-1 w-full`} />
+          </span>
+        ))}
+      </div>
+    ),
+  };
+  return (
+    <div aria-hidden className="h-16 overflow-hidden rounded-[4px] bg-(--m-paper)">
+      {sketches[style]}
+    </div>
+  );
+}
+
+export function StoryStylePicker({
+  value,
+  template,
+  onChange,
+}: {
+  /** null = the template's default style. */
+  value: StoryStyle | null;
+  template: TemplateKey;
+  onChange: (v: StoryStyle | null) => void;
+}) {
+  const templateInfo = TEMPLATES.find((t) => t.key === template)!;
+  const defaultStyle = STORY_STYLES.find((s) => s.key === templateInfo.defaultStory)!;
+  const options = [
+    { key: null, sketch: defaultStyle.key, name: "Template default", description: `${defaultStyle.name} for ${templateInfo.name}` },
+    ...STORY_STYLES.map((s) => ({ ...s, sketch: s.key })),
+  ];
+  return (
+    <div role="radiogroup" aria-label="How we met style" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {options.map((o) => (
+        <button key={o.key ?? "default"} type="button" role="radio" aria-checked={o.key === value} onClick={() => onChange(o.key)} className={cardClass(o.key === value)}>
+          <StorySketch style={o.sketch} />
+          <span className="font-semibold">{o.name}</span>
+          <span className="text-xs leading-snug text-(--m-ink)/60">{o.description}</span>
         </button>
       ))}
     </div>

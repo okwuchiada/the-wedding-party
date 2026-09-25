@@ -12,7 +12,9 @@ import { fulfillPayment } from "@/lib/payments";
 import { verifyTransaction } from "@/lib/paystack";
 import { FEATURE_LABELS, type PlanFeature } from "@/lib/plans";
 import { takeRateLimit } from "@/lib/rate-limit";
+import { THEME_PRESETS } from "@/lib/themes";
 import { prisma } from "@/lib/prisma";
+import { getStarterPlan } from "@/lib/starter-plan";
 import { revalidateWedding } from "@/lib/tenant";
 import { createUserToken } from "@/lib/tokens";
 
@@ -36,8 +38,9 @@ export async function setWeddingStatus(
   const wedding = await findWedding(weddingId);
   if (!wedding) return { error: "Wedding not found" };
 
-  const status =
-    action === "suspend" ? "SUSPENDED" : action === "archive" ? "ARCHIVED" : wedding.paidAt || wedding.comped ? "ACTIVE" : "DRAFT";
+  const plan = wedding.planId ? await prisma.plan.findUnique({ where: { id: wedding.planId } }) : null;
+  const canBeLive = Boolean(wedding.paidAt || wedding.comped || plan?.priceKobo === 0);
+  const status = action === "suspend" ? "SUSPENDED" : action === "archive" ? "ARCHIVED" : canBeLive ? "ACTIVE" : "DRAFT";
 
   await prisma.wedding.update({ where: { id: wedding.id }, data: { status } });
   await audit(admin.id, `wedding.${action}`, { weddingId: wedding.id, meta: { from: wedding.status, to: status } });
@@ -61,20 +64,21 @@ export async function compWedding(weddingId: string, planKey: string | null): Pr
     });
     await audit(admin.id, "wedding.comp", { weddingId: wedding.id, meta: { plan: plan.key } });
   } else {
-    // Back to the best plan they actually paid for, if any.
+    // Back to the best plan they actually paid for, or else the free plan.
     const paid = await prisma.payment.findFirst({
       where: { weddingId: wedding.id, status: "SUCCESS" },
       include: { plan: true },
       orderBy: { plan: { priceKobo: "desc" } },
     });
+    const starter = paid ? null : await getStarterPlan();
     await prisma.wedding.update({
       where: { id: wedding.id },
       data: {
         comped: false,
-        planId: paid?.planId ?? null,
+        planId: paid?.planId ?? starter?.id ?? null,
         paidAt: paid ? (paid.paidAt ?? wedding.paidAt) : null,
-        // An unpaid wedding can't stay live.
-        ...(!paid && wedding.status === "ACTIVE" ? { status: "DRAFT" as const } : {}),
+        // A wedding with neither a payment nor a free plan can't stay live.
+        ...(!paid && !starter && wedding.status === "ACTIVE" ? { status: "DRAFT" as const } : {}),
       },
     });
     await audit(admin.id, "wedding.uncomp", { weddingId: wedding.id, meta: { fallbackPlan: paid?.plan.key ?? null } });
@@ -83,6 +87,41 @@ export async function compWedding(weddingId: string, planKey: string | null): Pr
   revalidateWedding(wedding);
   revalidatePath("/super/weddings");
   return { message: planKey ? "Plan granted" : "Complimentary plan removed" };
+}
+
+/** "https://www.Amara.com/" → "amara.com"; null if it isn't a plain domain name. */
+function normalizeDomain(input: string) {
+  const host = input.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "");
+  return /^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(host) ? host : null;
+}
+
+/**
+ * Connects a domain the couple owns to their guest site, or disconnects it.
+ * Staff do this by hand (Forever plans, or as an exception); DNS is set up
+ * separately with the host.
+ */
+export async function setCustomDomain(weddingId: string, _prev: SuperActionResult | undefined, formData: FormData): Promise<SuperActionResult> {
+  const admin = await requirePermission("wedding.manage");
+  const wedding = await findWedding(weddingId);
+  if (!wedding) return { error: "Wedding not found" };
+
+  const raw = String(formData.get("domain") ?? "");
+  const domain = raw.trim() ? normalizeDomain(raw) : null;
+  if (raw.trim() && !domain) return { error: "Enter a domain like amaraanddavid.com" };
+  const ownHost = process.env.SITE_URL ? new URL(process.env.SITE_URL).hostname.replace(/^www\./, "") : null;
+  if (domain && domain === ownHost) return { error: "That's Vowly's own domain" };
+  if (domain) {
+    const taken = await prisma.wedding.findUnique({ where: { customDomain: domain }, select: { id: true } });
+    if (taken && taken.id !== wedding.id) return { error: "Another wedding already uses that domain" };
+  }
+
+  await prisma.wedding.update({ where: { id: wedding.id }, data: { customDomain: domain } });
+  await audit(admin.id, domain ? "wedding.domain.set" : "wedding.domain.clear", {
+    weddingId: wedding.id,
+    meta: { from: wedding.customDomain, to: domain },
+  });
+  revalidatePath(`/super/weddings/${wedding.id}`);
+  return { message: domain ? `Connected ${domain}. Point its DNS at Vowly to finish.` : "Domain disconnected" };
 }
 
 // ─── Users & impersonation ───────────────────────────────────────────────────
@@ -209,12 +248,36 @@ export async function savePlan(_prevState: PlanFormState, formData: FormData): P
   const priceNaira = Number(formData.get("priceNaira"));
   const maxGuests = Number(formData.get("maxGuests"));
   const sortOrder = Number(formData.get("sortOrder") ?? 0);
+  const tagline = String(formData.get("tagline") ?? "").trim();
+  // Empty means "no limit" (uploads) or "permanent" (availability).
+  const optionalWhole = (name: string) => {
+    const raw = String(formData.get(name) ?? "").trim();
+    return raw === "" ? null : Number(raw);
+  };
+  const maxUploads = optionalWhole("maxUploads");
+  const availabilityMonths = optionalWhole("availabilityMonths");
+  const lines = (name: string) =>
+    String(formData.get(name) ?? "")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+  const highlights = lines("highlights");
+  const limitations = lines("limitations");
+  const themes = formData.getAll("themes").filter((t): t is string => typeof t === "string" && THEME_PRESETS.some((p) => p.key === t));
 
   if (!PLAN_KEY.test(key)) return { error: "Key: 2–30 lowercase letters, numbers or dashes" };
   if (!name || name.length > 40) return { error: "Name is required (max 40 characters)" };
   if (!Number.isFinite(priceNaira) || priceNaira < 0) return { error: "Enter a valid price" };
   if (!Number.isInteger(maxGuests) || maxGuests < 1) return { error: "Guest limit must be a whole number" };
   if (!Number.isInteger(sortOrder)) return { error: "Order must be a whole number" };
+  if (tagline.length > 120) return { error: "Tagline is too long (max 120 characters)" };
+  if (maxUploads !== null && (!Number.isInteger(maxUploads) || maxUploads < 0)) return { error: "Upload limit must be a whole number" };
+  if (availabilityMonths !== null && (!Number.isInteger(availabilityMonths) || availabilityMonths < 1)) {
+    return { error: "Months online must be a whole number, or empty for permanent" };
+  }
+  if (highlights.length > 20 || limitations.length > 20 || [...highlights, ...limitations].some((l) => l.length > 120)) {
+    return { error: "Keep each list to 20 lines of up to 120 characters" };
+  }
 
   const features = Object.fromEntries(
     (Object.keys(FEATURE_LABELS) as PlanFeature[]).map((f) => [f, formData.get(`feature_${f}`) === "on"])
@@ -227,6 +290,13 @@ export async function savePlan(_prevState: PlanFormState, formData: FormData): P
     sortOrder,
     features,
     active: formData.get("active") === "on",
+    popular: formData.get("popular") === "on",
+    tagline: tagline || null,
+    maxUploads,
+    availabilityMonths,
+    themes,
+    highlights,
+    limitations,
   };
 
   const clash = await prisma.plan.findUnique({ where: { key } });
@@ -239,6 +309,9 @@ export async function savePlan(_prevState: PlanFormState, formData: FormData): P
   }
   await audit(admin.id, "plan.save", { meta: { key, priceKobo: data.priceKobo, active: data.active } });
   revalidatePath("/super/plans");
+  // The landing and pricing pages list the plans.
+  revalidatePath("/");
+  revalidatePath("/pricing");
   return { success: true };
 }
 

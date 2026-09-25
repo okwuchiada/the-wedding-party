@@ -1,5 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../lib/generated/prisma/client";
+import { PLAN_CATALOG } from "./plan-catalog";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -128,28 +129,8 @@ const groomNote =
 const brideNote =
   "You are the calm in every storm and the reason I believe in soft, steady love. I love how you show up for the people you care about, how you make me laugh even on my hardest days, and how being with you always feels like home. Marrying you isn't the end of our story — it's just the beginning of the best chapter yet. I can't wait to call you my husband.";
 
-// Placeholder prices; real pricing is managed by the super admin.
-const plans = [
-  {
-    key: "basic",
-    name: "Basic",
-    priceKobo: 25_000_00,
-    maxGuests: 150,
-    features: { gallery: false, customTheme: false, removeBranding: false },
-    sortOrder: 0,
-  },
-  {
-    key: "premium",
-    name: "Premium",
-    priceKobo: 60_000_00,
-    maxGuests: 500,
-    features: { gallery: true, customTheme: true, removeBranding: true },
-    sortOrder: 1,
-  },
-];
-
 async function seedPlans() {
-  for (const plan of plans) {
+  for (const plan of PLAN_CATALOG) {
     await prisma.plan.upsert({ where: { key: plan.key }, update: {}, create: plan });
   }
 }
@@ -159,9 +140,9 @@ async function seedDemoWedding() {
   const slug = "amara-and-david";
   if (await prisma.wedding.findUnique({ where: { slug } })) return;
 
-  const premium = await prisma.plan.findUniqueOrThrow({ where: { key: "premium" } });
+  const forever = await prisma.plan.findUniqueOrThrow({ where: { key: "forever" } });
   const { id: weddingId } = await prisma.wedding.create({
-    data: { slug, status: "ACTIVE", planId: premium.id, paidAt: new Date(), comped: true },
+    data: { slug, status: "ACTIVE", planId: forever.id, paidAt: new Date(), comped: true },
   });
 
   for (const item of registryItems) {
@@ -261,9 +242,9 @@ async function seedSecondWedding() {
   const slug = "kemi-and-tolu";
   if (await prisma.wedding.findUnique({ where: { slug } })) return;
 
-  const basic = await prisma.plan.findUniqueOrThrow({ where: { key: "basic" } });
+  const signature = await prisma.plan.findUniqueOrThrow({ where: { key: "signature" } });
   const { id: weddingId } = await prisma.wedding.create({
-    data: { slug, status: "ACTIVE", planId: basic.id, paidAt: new Date(), comped: true },
+    data: { slug, status: "ACTIVE", planId: signature.id, paidAt: new Date(), comped: true },
   });
 
   await prisma.storyContent.create({

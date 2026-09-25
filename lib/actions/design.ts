@@ -5,7 +5,8 @@ import { COPY_FIELDS, COPY_MAX_LENGTH } from "@/lib/copy";
 import { FONT_OPTIONS, isFontKey, type FontRole } from "@/lib/font-options";
 import { prisma } from "@/lib/prisma";
 import { revalidateWedding } from "@/lib/tenant";
-import { isHeroKey, isHeroNameStyle, isTemplateKey, normalizeSections } from "@/lib/layouts";
+import { isHeroKey, isHeroNameStyle, isStoryStyle, isTemplateKey, normalizeSections } from "@/lib/layouts";
+import { planAllowsTheme } from "@/lib/plans";
 import { COLOR_FIELDS, getPreset, isHexColor, THEME_PRESETS } from "@/lib/themes";
 
 export type DesignFormState = { error?: string; success?: boolean } | undefined;
@@ -25,6 +26,10 @@ export async function saveTheme(
 
   const presetKey = text(formData, "presetKey");
   if (!THEME_PRESETS.some((p) => p.key === presetKey)) return { error: "Choose a theme" };
+  // Drafts may try any theme in their preview; publishing checks it against the plan.
+  if (wedding.status !== "DRAFT" && !planAllowsTheme(wedding.plan, presetKey)) {
+    return { error: `${getPreset(presetKey).name} isn't included in your plan. Upgrade in Billing to use it.` };
+  }
   const preset = getPreset(presetKey);
 
   const colors: Record<string, string> = {};
@@ -48,6 +53,8 @@ export async function saveTheme(
   if (heroLayout && !isHeroKey(heroLayout)) return { error: "Choose a layout for the top of the site" };
   const heroNames = text(formData, "heroNames") || "full";
   if (!isHeroNameStyle(heroNames)) return { error: "Choose how your names appear" };
+  const storyLayout = text(formData, "storyLayout");
+  if (storyLayout && !isStoryStyle(storyLayout)) return { error: "Choose a style for How we met" };
   let sections;
   try {
     sections = normalizeSections(JSON.parse(text(formData, "sections") || "[]"));
@@ -64,6 +71,7 @@ export async function saveTheme(
     layoutTemplate,
     heroLayout: heroLayout || null,
     heroNames,
+    storyLayout: storyLayout || null,
     sections,
   };
   await prisma.weddingTheme.upsert({

@@ -21,7 +21,7 @@ type PendingUpload = {
 const STATUS_POLL_INTERVAL_MS = 5_000;
 
 
-export default function GalleryUpload() {
+export default function GalleryUpload({ allowVideo }: { allowVideo: boolean }) {
   const slug = useGuestSlug();
   const [guestName, setGuestName] = useState("");
   const [error, setError] = useState("");
@@ -88,8 +88,8 @@ export default function GalleryUpload() {
 
     for (const rawFile of Array.from(files)) {
       const isVideo = rawFile.type.startsWith("video/");
-      if (!isImageFile(rawFile) && !isVideo) {
-        setError(`${rawFile.name} isn't a photo or video`);
+      if (!isImageFile(rawFile) && !(isVideo && allowVideo)) {
+        setError(allowVideo ? `${rawFile.name} isn't a photo or video` : `${rawFile.name} isn't a photo. This gallery takes photos only.`);
         continue;
       }
       if (rawFile.size > MAX_UPLOAD_BYTES) {
@@ -120,12 +120,12 @@ export default function GalleryUpload() {
 
         <label className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-2 border border-dashed border-olive/30 bg-ivory px-4 py-8 text-center transition-colors hover:border-burnt-orange">
           <span className="text-sm font-medium text-foreground">
-            Tap to share a photo or video
+            {allowVideo ? "Tap to share a photo or video" : "Tap to share a photo"}
           </span>
           <span className="text-xs text-foreground/60">JPG, PNG, MP4 up to {MAX_UPLOAD_LABEL}</span>
           <input
             type="file"
-            accept="image/*,video/*,.heic,.heif"
+            accept={allowVideo ? "image/*,video/*,.heic,.heif" : "image/*,.heic,.heif"}
             multiple
             onChange={(e) => {
               void handleFiles(e.target.files);

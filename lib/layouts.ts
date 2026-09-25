@@ -1,11 +1,11 @@
-// Page layout choices for a couple's site: a whole-page template, a hero layout and
-// the order and visibility of sections. Pure, so the Design tab and server share it.
+// Page layout choices for a couple's site: a whole-page template, a hero layout, a
+// how-we-met style and the order and visibility of sections. Pure, so the Design tab and server share it.
 
 export const TEMPLATES = [
-  { key: "classic", name: "Classic", description: "Warm and photo-led, like a scrapbook.", defaultHero: "split" },
-  { key: "editorial", name: "Editorial", description: "A magazine feature: huge names, tidy columns.", defaultHero: "type" },
-  { key: "minimal", name: "Minimal", description: "One calm, centred column, like a printed invitation.", defaultHero: "card" },
-  { key: "owambe", name: "Owambe", description: "Bold colour blocks and aso-oke stripes.", defaultHero: "type" },
+  { key: "classic", name: "Classic", description: "Warm and photo-led, like a scrapbook.", defaultHero: "split", defaultStory: "timeline" },
+  { key: "editorial", name: "Editorial", description: "A magazine feature: huge names, tidy columns.", defaultHero: "type", defaultStory: "list" },
+  { key: "minimal", name: "Minimal", description: "One calm, centred column, like a printed invitation.", defaultHero: "card", defaultStory: "simple" },
+  { key: "owambe", name: "Owambe", description: "Bold colour blocks and aso-oke stripes.", defaultHero: "type", defaultStory: "cards" },
 ] as const;
 
 export const HEROES = [
@@ -13,6 +13,16 @@ export const HEROES = [
   { key: "card", name: "Invitation card", description: "A framed, centred card like the IV." },
   { key: "cover", name: "Full cover photo", description: "Your hero photo edge to edge." },
   { key: "type", name: "Names only", description: "Huge type, no photo needed." },
+] as const;
+
+/** How the "How we met" moments are laid out. */
+export const STORY_STYLES = [
+  { key: "timeline", name: "Polaroid timeline", description: "Tilted photos either side of a line." },
+  { key: "list", name: "Magazine list", description: "Big years, text and a small photo in rows." },
+  { key: "cards", name: "Photo cards", description: "A grid of cards, photo on top." },
+  { key: "strip", name: "Photo strip", description: "Tall photos guests swipe through." },
+  { key: "chapters", name: "Chapters", description: "One large photo per moment, like a photo book." },
+  { key: "simple", name: "Words only", description: "A quiet centred list, no photos." },
 ] as const;
 
 export const SECTIONS = [
@@ -32,6 +42,7 @@ export const HERO_NAME_STYLES = [
 export type TemplateKey = (typeof TEMPLATES)[number]["key"];
 export type HeroNameStyle = (typeof HERO_NAME_STYLES)[number]["key"];
 export type HeroKey = (typeof HEROES)[number]["key"];
+export type StoryStyle = (typeof STORY_STYLES)[number]["key"];
 export type SectionId = (typeof SECTIONS)[number]["id"];
 export type SectionSetting = { id: SectionId; visible: boolean };
 export type ResolvedLayout = {
@@ -42,11 +53,16 @@ export type ResolvedLayout = {
   heroChoice: HeroKey | null;
   /** Full names or first names only, at the top of the site and in the footer. */
   heroNames: HeroNameStyle;
+  /** The how-we-met style shown: the couple's choice, or the template's default. */
+  story: StoryStyle;
+  /** The couple's own how-we-met choice; null means "the template's default". */
+  storyChoice: StoryStyle | null;
   sections: SectionSetting[];
 };
 
 export const isTemplateKey = (v: unknown): v is TemplateKey => TEMPLATES.some((t) => t.key === v);
 export const isHeroKey = (v: unknown): v is HeroKey => HEROES.some((h) => h.key === v);
+export const isStoryStyle = (v: unknown): v is StoryStyle => STORY_STYLES.some((s) => s.key === v);
 const isSectionId = (v: unknown): v is SectionId => SECTIONS.some((s) => s.id === v);
 export const isHeroNameStyle = (v: unknown): v is HeroNameStyle => HERO_NAME_STYLES.some((s) => s.key === v);
 
@@ -86,16 +102,22 @@ export function normalizeSections(value: unknown): SectionSetting[] {
 }
 
 export function resolveLayout(
-  stored: { layoutTemplate?: unknown; heroLayout?: unknown; heroNames?: unknown; sections?: unknown } | null | undefined
+  stored:
+    | { layoutTemplate?: unknown; heroLayout?: unknown; heroNames?: unknown; storyLayout?: unknown; sections?: unknown }
+    | null
+    | undefined
 ): ResolvedLayout {
   const template = isTemplateKey(stored?.layoutTemplate) ? stored.layoutTemplate : "classic";
   const heroChoice = isHeroKey(stored?.heroLayout) ? stored.heroLayout : null;
-  const defaultHero = TEMPLATES.find((t) => t.key === template)!.defaultHero;
+  const storyChoice = isStoryStyle(stored?.storyLayout) ? stored.storyLayout : null;
+  const defaults = TEMPLATES.find((t) => t.key === template)!;
   return {
     template,
-    hero: heroChoice ?? defaultHero,
+    hero: heroChoice ?? defaults.defaultHero,
     heroChoice,
     heroNames: isHeroNameStyle(stored?.heroNames) ? stored.heroNames : "full",
+    story: storyChoice ?? defaults.defaultStory,
+    storyChoice,
     sections: normalizeSections(stored?.sections),
   };
 }
@@ -104,7 +126,7 @@ export const visibleSections = (layout: ResolvedLayout) => layout.sections.filte
 
 // ── Unsaved previews: the Design tab passes a layout in the preview URL. ──
 
-export const PREVIEW_PARAMS = { template: "layout", hero: "hero", names: "names", sections: "sections" } as const;
+export const PREVIEW_PARAMS = { template: "layout", hero: "hero", names: "names", story: "story", sections: "sections" } as const;
 
 /** Compact form for a URL: "story,notes,-asoebi,registry" (a leading "-" = hidden). */
 export function encodeSections(sections: SectionSetting[]) {
@@ -123,12 +145,14 @@ export function withPreview(saved: ResolvedLayout, params: Record<string, string
   const template = one(PREVIEW_PARAMS.template);
   const hero = one(PREVIEW_PARAMS.hero);
   const names = one(PREVIEW_PARAMS.names);
+  const story = one(PREVIEW_PARAMS.story);
   const sections = one(PREVIEW_PARAMS.sections);
-  if (template === undefined && hero === undefined && names === undefined && sections === undefined) return saved;
+  if ([template, hero, names, story, sections].every((v) => v === undefined)) return saved;
   return resolveLayout({
     layoutTemplate: template ?? saved.template,
     heroLayout: hero === undefined ? saved.heroChoice : hero || null,
     heroNames: names ?? saved.heroNames,
+    storyLayout: story === undefined ? saved.storyChoice : story || null,
     sections: sections === undefined ? saved.sections : decodeSections(sections),
   });
 }

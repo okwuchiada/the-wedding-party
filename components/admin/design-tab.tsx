@@ -20,15 +20,17 @@ import {
   HEROES,
   PREVIEW_PARAMS,
   SECTIONS,
+  STORY_STYLES,
   TEMPLATES,
   type HeroKey,
   type HeroNameStyle,
   type ResolvedLayout,
   type SectionSetting,
+  type StoryStyle,
   type TemplateKey,
 } from "@/lib/layouts";
 import { AccordionItem } from "./accordion";
-import { HeroNamesPicker, HeroPicker, SectionsEditor, TemplatePicker } from "./layout-picker";
+import { HeroNamesPicker, HeroPicker, SectionsEditor, StoryStylePicker, TemplatePicker } from "./layout-picker";
 import { useAdminWeddingId } from "./wedding-context";
 
 
@@ -51,6 +53,8 @@ function Swatches({ colors }: { colors: Record<string, string> }) {
 export default function DesignTab({
   theme,
   allowCustom,
+  allowedThemes,
+  planName,
   isDraft,
   guestUrl,
   names,
@@ -59,6 +63,9 @@ export default function DesignTab({
 }: {
   theme: ResolvedTheme;
   allowCustom: boolean;
+  /** Themes the plan includes; empty means all of them. */
+  allowedThemes: string[];
+  planName: string | null;
   isDraft: boolean;
   guestUrl: string;
   /** The couple's names, used as the font sample. */
@@ -76,8 +83,9 @@ export default function DesignTab({
   const [heroChoice, setHeroChoice] = useState<HeroKey | null>(layout.heroChoice);
   const [sections, setSections] = useState<SectionSetting[]>(layout.sections);
   const [nameStyle, setNameStyle] = useState<HeroNameStyle>(layout.heroNames);
-  const snapshot = JSON.stringify({ presetKey, colors, fonts, template, heroChoice, nameStyle, sections });
-  const layoutSnapshot = JSON.stringify({ template, heroChoice, nameStyle, sections });
+  const [storyChoice, setStoryChoice] = useState<StoryStyle | null>(layout.storyChoice);
+  const snapshot = JSON.stringify({ presetKey, colors, fonts, template, heroChoice, nameStyle, storyChoice, sections });
+  const layoutSnapshot = JSON.stringify({ template, heroChoice, nameStyle, storyChoice, sections });
   const [savedLayout, setSavedLayout] = useState(layoutSnapshot);
   const [savedSnapshot, setSavedSnapshot] = useState(snapshot);
   const unsaved = snapshot !== savedSnapshot;
@@ -102,9 +110,10 @@ export default function DesignTab({
 
 
   const customEditable = allowCustom || isDraft;
+  const lockedThemes = allowedThemes.length > 0;
 
   // One panel open at a time keeps the tab calm; Layout starts open.
-  type Panel = "layout" | "hero" | "sections" | "theme" | "colors";
+  type Panel = "layout" | "hero" | "story" | "sections" | "theme" | "colors";
   const [openPanel, setOpenPanel] = useState<Panel | null>("layout");
   const togglePanel = (panel: Panel) => setOpenPanel((current) => (current === panel ? null : panel));
 
@@ -113,6 +122,9 @@ export default function DesignTab({
   const heroSummary = heroChoice
     ? HEROES.find((h) => h.key === heroChoice)!.name
     : `Template default (${HEROES.find((h) => h.key === templateInfo.defaultHero)!.name})`;
+  const storySummary = storyChoice
+    ? STORY_STYLES.find((s) => s.key === storyChoice)!.name
+    : `Template default (${STORY_STYLES.find((s) => s.key === templateInfo.defaultStory)!.name})`;
   const hiddenNames = sections.filter((s) => !s.visible).map((s) => SECTIONS.find((d) => d.id === s.id)!.name);
   const sectionsSummary = `${sections.length - hiddenNames.length} shown${hiddenNames.length ? ` · ${hiddenNames.join(", ")} hidden` : ""}`;
   const basePreset = getPreset(presetKey);
@@ -158,6 +170,7 @@ export default function DesignTab({
           [PREVIEW_PARAMS.template]: template,
           [PREVIEW_PARAMS.hero]: heroChoice ?? "",
           [PREVIEW_PARAMS.names]: nameStyle,
+          [PREVIEW_PARAMS.story]: storyChoice ?? "",
           [PREVIEW_PARAMS.sections]: encodeSections(sections),
         })}`;
   const [previewUrl, setPreviewUrl] = useState(layoutUrl);
@@ -165,6 +178,21 @@ export default function DesignTab({
     const timer = setTimeout(() => setPreviewUrl(layoutUrl), 400);
     return () => clearTimeout(timer);
   }, [layoutUrl]);
+
+  // While choosing a How we met style, keep the preview on that section so the change is visible.
+  const showStory = openPanel === "story";
+  const scrollToStory = useCallback(() => {
+    if (!showStory) return;
+    // Streamed sections arrive hidden and are revealed shortly after load, so retry briefly.
+    let tries = 0;
+    const timer = setInterval(() => {
+      const section = frameRef.current?.contentDocument?.getElementById("how-we-met");
+      if (section?.checkVisibility()) section.scrollIntoView({ block: "start" });
+      if (section?.checkVisibility() || ++tries > 30) clearInterval(timer);
+    }, 100);
+    return () => clearInterval(timer);
+  }, [showStory]);
+  useEffect(scrollToStory, [scrollToStory]);
   const sample = `${heroName(names[0], nameStyle) || "Ada"} & ${heroName(names[1], nameStyle) || "Tobi"}`;
 
   return (
@@ -174,6 +202,7 @@ export default function DesignTab({
         <input type="hidden" name="layoutTemplate" value={template} />
         <input type="hidden" name="heroLayout" value={heroChoice ?? ""} />
         <input type="hidden" name="heroNames" value={nameStyle} />
+        <input type="hidden" name="storyLayout" value={storyChoice ?? ""} />
         <input type="hidden" name="sections" value={JSON.stringify(sections)} />
 
         <div className="flex flex-col gap-3">
@@ -200,27 +229,47 @@ export default function DesignTab({
             </div>
           </AccordionItem>
 
+          <AccordionItem title="How we met" summary={storySummary} open={openPanel === "story"} onToggle={() => togglePanel("story")}>
+            <p className="mb-4 text-sm text-foreground/60">How your story moments are laid out. Styles with photos use the ones you add in Our Story.</p>
+            <StoryStylePicker value={storyChoice} template={template} onChange={setStoryChoice} />
+          </AccordionItem>
+
           <AccordionItem title="Sections" summary={sectionsSummary} open={openPanel === "sections"} onToggle={() => togglePanel("sections")}>
             <SectionsEditor value={sections} onChange={setSections} empty={emptySections} />
           </AccordionItem>
 
           <AccordionItem title="Theme" summary={getPreset(presetKey).name} open={openPanel === "theme"} onToggle={() => togglePanel("theme")}>
             <p className="mb-4 text-sm text-foreground/60">Start from a palette, then fine-tune it in Colours &amp; fonts.</p>
+            {lockedThemes && (
+              <p className="mb-4 bg-cream px-3 py-2 text-xs text-foreground/70">
+                {isDraft
+                  ? `${planName} includes ${allowedThemes.length} themes. You can preview the others; upgrade in Billing to publish with one.`
+                  : `${planName} includes ${allowedThemes.length} themes. Upgrade in Billing to use the others.`}
+              </p>
+            )}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {THEME_PRESETS.map((preset) => (
-              <button
-                key={preset.key}
-                type="button"
-                onClick={() => choosePreset(preset.key)}
-                aria-pressed={preset.key === presetKey}
-                className={`flex flex-col gap-2 rounded-[6px] bg-white p-3 text-left text-xs text-foreground transition-shadow ${
-                  preset.key === presetKey ? "ring-2 ring-burnt-orange" : "ring-1 ring-olive/15 hover:ring-olive/40"
-                }`}
-              >
-                <Swatches colors={preset.colors} />
-                {preset.name}
-              </button>
-            ))}
+            {THEME_PRESETS.map((preset) => {
+              const included = !lockedThemes || allowedThemes.includes(preset.key);
+              return (
+                <button
+                  key={preset.key}
+                  type="button"
+                  onClick={() => choosePreset(preset.key)}
+                  aria-pressed={preset.key === presetKey}
+                  // Live sites can only switch to themes their plan includes; drafts may preview any.
+                  disabled={!included && !isDraft}
+                  className={`flex flex-col gap-2 rounded-[6px] bg-white p-3 text-left text-xs text-foreground transition-shadow disabled:cursor-not-allowed disabled:opacity-45 ${
+                    preset.key === presetKey ? "ring-2 ring-burnt-orange" : "ring-1 ring-olive/15 hover:ring-olive/40"
+                  }`}
+                >
+                  <Swatches colors={preset.colors} />
+                  <span className="flex items-center justify-between gap-2">
+                    {preset.name}
+                    {!included && <span className="rounded-full bg-(--m-gold)/30 px-1.5 py-0.5 text-[10px] font-semibold">Upgrade</span>}
+                  </span>
+                </button>
+              );
+            })}
           </div>
           </AccordionItem>
 
@@ -328,7 +377,10 @@ export default function DesignTab({
         </div>
         <iframe
           ref={frameRef}
-          onLoad={applyPreview}
+          onLoad={() => {
+            applyPreview();
+            scrollToStory();
+          }}
           src={previewUrl}
           title="Guest site preview"
           className="h-[640px] w-full border border-(--m-mist) rounded-[6px] bg-white"

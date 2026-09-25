@@ -9,6 +9,7 @@ import { can, isStaff } from "@/lib/permissions";
 import type { Prisma, WeddingStatus } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { dashboardPath, guestPath } from "@/lib/tenant";
+import { hasFeature } from "@/lib/plans";
 
 const STATUSES: WeddingStatus[] = ["DRAFT", "ACTIVE", "SUSPENDED", "ARCHIVED"];
 const LIMIT = 100;
@@ -49,7 +50,7 @@ export default async function SuperWeddingsPage({
       include: {
         story: { select: { brideName: true, groomName: true, weddingDate: true } },
         theme: { select: { heroNames: true } },
-        plan: { select: { name: true } },
+        plan: { select: { name: true, features: true } },
         members: { where: { role: "OWNER" }, include: { user: { select: { id: true, email: true, role: true } } } },
       },
     }),
@@ -92,6 +93,9 @@ export default async function SuperWeddingsPage({
             <td className="px-3 py-3 text-foreground/80">{w.status.toLowerCase()}</td>
             <td className="px-3 py-3 text-foreground/80">
               {w.plan?.name ?? "—"}
+              {hasFeature(w.plan, "prioritySupport") && (
+                <span className="ml-1.5 rounded-full bg-(--m-gold) px-1.5 py-0.5 text-[10px] font-bold">Priority</span>
+              )}
               {w.comped && <span className="text-xs text-foreground/55"> (comped)</span>}
               {w.paidAt && !w.comped && <span className="text-xs text-foreground/55"> (paid)</span>}
             </td>

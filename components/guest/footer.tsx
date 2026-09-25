@@ -2,7 +2,7 @@ import { heroName, resolveLayout, type HeroNameStyle } from "@/lib/layouts";
 import { hasFeature } from "@/lib/plans";
 import { getStory, getWeddingById } from "@/lib/tenant";
 
-const PLATFORM_CREDIT = { name: "The Wedding Party", url: process.env.SITE_URL || "/" };
+const PLATFORM_CREDIT = { name: "Vowly", url: process.env.SITE_URL || "/" };
 
 export default async function Footer({
   weddingId,
@@ -14,12 +14,14 @@ export default async function Footer({
 }) {
   const [story, wedding] = await Promise.all([getStory(weddingId), getWeddingById(weddingId)]);
   const style = nameStyle ?? resolveLayout(wedding.theme).heroNames;
-  // Plans with removeBranding may credit anyone (or no one) instead of the platform.
-  const credit = hasFeature(wedding.plan, "removeBranding")
+  // Plans with customCredit may credit anyone (or no one); removeBranding only drops Vowly's credit.
+  const credit = hasFeature(wedding.plan, "customCredit")
     ? wedding.copy?.footerCredit
       ? { name: wedding.copy.footerCredit, url: wedding.copy.footerCreditUrl }
       : null
-    : PLATFORM_CREDIT;
+    : hasFeature(wedding.plan, "removeBranding")
+      ? null
+      : PLATFORM_CREDIT;
 
   const brideName = heroName(story?.brideName ?? "", style);
   const groomName = heroName(story?.groomName ?? "", style);

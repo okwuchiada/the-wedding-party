@@ -33,10 +33,17 @@ export default async function WeddingLayout({ children, params }: Params & { chi
     <div style={style} data-wedding-theme className="flex min-h-screen flex-col bg-background text-foreground">
       {block?.kind === "unavailable" ? (
         <main className="flex min-h-screen items-center justify-center p-6 text-center">
-          <div className="max-w-md">
-            <h1 className="font-(family-name:--serif) text-3xl">This site isn&apos;t available</h1>
-            <p className="mt-4 text-foreground/70">Please contact the couple directly.</p>
-          </div>
+          {block.reason === "closed" ? (
+            <div className="max-w-md">
+              <h1 className="font-(family-name:--serif) text-3xl">This wedding site has closed</h1>
+              <p className="mt-4 text-foreground/70">Thank you for celebrating with the couple.</p>
+            </div>
+          ) : (
+            <div className="max-w-md">
+              <h1 className="font-(family-name:--serif) text-3xl">This site isn&apos;t available</h1>
+              <p className="mt-4 text-foreground/70">Please contact the couple directly.</p>
+            </div>
+          )}
         </main>
       ) : block?.kind === "geo" ? (
         <BlockedAccess codeRejected={block.codeRejected} />
@@ -44,7 +51,9 @@ export default async function WeddingLayout({ children, params }: Params & { chi
         <GuestWeddingProvider slug={wedding.slug} money={moneyFormat(wedding)}>
           {preview && (
             <div className="fixed inset-x-0 bottom-0 z-60 bg-foreground px-4 py-2 text-center text-xs text-ivory">
-              Preview — this site isn&apos;t published yet, so only you can see it.{" "}
+              {wedding.status === "DRAFT"
+                ? "Preview — this site isn't published yet, so only you can see it."
+                : "Preview — this site's plan has run out, so guests see a closed page. Upgrade in Billing to reopen it."}{" "}
               <a href={dashboardPath(wedding.id)} className="underline hover:text-burnt-orange">
                 Back to dashboard
               </a>

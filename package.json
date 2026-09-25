@@ -9,7 +9,8 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "test": "vitest run",
-    "invite-user": "tsx --conditions=react-server --env-file-if-exists=.env scripts/invite-user.ts"
+    "invite-user": "tsx --conditions=react-server --env-file-if-exists=.env scripts/invite-user.ts",
+    "plans:load": "tsx prisma/load-plans.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1095.0",

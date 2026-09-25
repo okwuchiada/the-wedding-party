@@ -2,12 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ActionButton from "@/components/super/action-button";
 import CompForm from "@/components/super/comp-form";
+import DomainForm from "@/components/super/domain-form";
 import NoteForm from "@/components/super/note-form";
 import { date, Table } from "@/components/super/table";
 import { impersonateUser, reverifyPayment, sendUserPasswordReset, setWeddingStatus } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
 import { formatMoney } from "@/lib/money";
+import { hasFeature, siteClosesAt } from "@/lib/plans";
 import { can, isStaff, ROLE_LABELS } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { dashboardPath, guestPath } from "@/lib/tenant";
@@ -52,7 +54,9 @@ export default async function WeddingCasePage({ params }: { params: Promise<{ we
     impersonate: can(staff.role, "user.impersonate"),
     reverify: can(staff.role, "payment.reverify"),
     notes: can(staff.role, "notes.write"),
+    domain: can(staff.role, "wedding.manage"),
   };
+  const closes = siteClosesAt(wedding.plan, wedding.story?.weddingDate);
   const names = coupleTitle(wedding.story, resolveLayout(wedding.theme).heroNames) ?? wedding.slug;
 
   return (
@@ -68,6 +72,13 @@ export default async function WeddingCasePage({ params }: { params: Promise<{ we
             /w/{wedding.slug} · {wedding.status.toLowerCase()} · {wedding.plan?.name ?? "no plan"}
             {wedding.comped ? " (comped)" : wedding.paidAt ? " (paid)" : ""}
             {wedding.story && ` · wedding ${date(wedding.story.weddingDate)}`}
+          </p>
+          {hasFeature(wedding.plan, "prioritySupport") && (
+            <p className="mt-2 inline-block rounded-full bg-(--m-gold) px-2.5 py-0.5 text-xs font-bold">Priority support</p>
+          )}
+          <p className="mt-1 text-sm text-(--m-ink)/60">
+            {closes ? `Site ${closes <= new Date() ? "closed" : "open until"} ${date(closes)}` : "Site stays online"}
+            {wedding.customDomain && ` · ${wedding.customDomain}`}
           </p>
           <p className="mt-1 text-sm text-(--m-ink)/60">
             {wedding._count.rsvps} RSVPs · {wedding._count.registryItems} registry items · {wedding._count.contributions} contributions
@@ -105,6 +116,22 @@ export default async function WeddingCasePage({ params }: { params: Promise<{ we
               />
             ))}
           {allowed.comp && <CompForm weddingId={wedding.id} plans={plans} comped={wedding.comped} />}
+        </section>
+      )}
+
+      {allowed.domain && (
+        <section className="flex flex-col gap-3 rounded-[6px] border border-(--m-mist) bg-white p-4">
+          <div>
+            <h3 className="font-(family-name:--m-display) text-xl font-bold tracking-tight">Custom domain</h3>
+            <p className="mt-1 text-sm text-(--m-ink)/65">
+              {hasFeature(wedding.plan, "customDomain")
+                ? "Their plan includes a custom domain."
+                : "Their plan doesn't include a custom domain; connect one only as an agreed exception."}{" "}
+              Add the domain to the hosting project and point its DNS there, then save it here. Guests on that domain see this
+              wedding&apos;s site.
+            </p>
+          </div>
+          <DomainForm weddingId={wedding.id} domain={wedding.customDomain} />
         </section>
       )}
 

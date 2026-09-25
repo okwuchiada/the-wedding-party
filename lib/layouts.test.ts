@@ -76,3 +76,19 @@ describe("couple names", () => {
     expect(coupleTitle(null, "first")).toBeNull();
   });
 });
+
+describe("how-we-met style", () => {
+  it("uses each template's default unless the couple picked one", () => {
+    expect(resolveLayout(null)).toMatchObject({ story: "timeline", storyChoice: null });
+    expect(resolveLayout({ layoutTemplate: "owambe" }).story).toBe("cards");
+    expect(resolveLayout({ layoutTemplate: "owambe", storyLayout: "chapters" })).toMatchObject({ story: "chapters", storyChoice: "chapters" });
+    expect(resolveLayout({ layoutTemplate: "minimal", storyLayout: "carousel" })).toMatchObject({ story: "simple", storyChoice: null });
+  });
+
+  it("can be previewed, and cleared back to the template default", () => {
+    const saved = resolveLayout({ layoutTemplate: "editorial", storyLayout: "strip" });
+    expect(withPreview(saved, { story: "cards" }).story).toBe("cards");
+    expect(withPreview(saved, { story: "" })).toMatchObject({ story: "list", storyChoice: null });
+    expect(withPreview(saved, { layout: "classic" }).story).toBe("strip");
+  });
+});

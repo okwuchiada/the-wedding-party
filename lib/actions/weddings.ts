@@ -8,6 +8,7 @@ import { takeRateLimit } from "@/lib/rate-limit";
 import { slugError } from "@/lib/slug";
 import { THEME_PRESETS } from "@/lib/themes";
 import { dashboardPath } from "@/lib/tenant";
+import { getStarterPlan } from "@/lib/starter-plan";
 
 export type CreateWeddingState = { error?: string } | undefined;
 
@@ -44,10 +45,13 @@ export async function createWedding(
     return { error: "That web address is taken. Try another." };
   }
 
+  // New weddings start on the free plan, if there is one, with its guest cap.
+  const starter = await getStarterPlan();
   const wedding = await prisma.wedding.create({
     data: {
       slug,
       status: "DRAFT",
+      ...(starter ? { planId: starter.id, maxGuests: starter.maxGuests } : {}),
       members: { create: { userId: user.id, role: "OWNER" } },
       theme: { create: { presetKey: presetKey as string } },
       story: {

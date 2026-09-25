@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache";
 import { requireWeddingAccess } from "@/lib/dal";
 import { CURRENCIES, LOCALES } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
+import { planAllowsTheme, siteClosesAt } from "@/lib/plans";
 import { slugError } from "@/lib/slug";
+import { getStarterPlan } from "@/lib/starter-plan";
+import { getPreset } from "@/lib/themes";
 import { guestPath, revalidateWedding } from "@/lib/tenant";
 
 export type SettingsFormState = { error?: string; success?: boolean } | undefined;
@@ -84,8 +87,30 @@ export async function setPublished(weddingId: string, publish: boolean): Promise
   if (wedding.status === "SUSPENDED" || wedding.status === "ARCHIVED") {
     return { error: "This wedding has been suspended. Contact support." };
   }
-  if (publish && !wedding.paidAt && !wedding.comped) {
-    return { error: "Choose a plan to publish your site" };
+  // Weddings from before the free plan existed join it when they first publish.
+  let plan = wedding.plan;
+  if (publish && !plan) {
+    plan = await getStarterPlan();
+    if (plan) await prisma.wedding.update({ where: { id: wedding.id }, data: { planId: plan.id } });
+  }
+
+  if (publish) {
+    const onFreePlan = plan?.priceKobo === 0;
+    if (!wedding.paidAt && !wedding.comped && !onFreePlan) return { error: "Choose a plan to publish your site" };
+
+    const [theme, story] = await Promise.all([
+      prisma.weddingTheme.findUnique({ where: { weddingId: wedding.id }, select: { presetKey: true } }),
+      prisma.storyContent.findUnique({ where: { weddingId: wedding.id }, select: { weddingDate: true } }),
+    ]);
+    if (theme && !planAllowsTheme(plan, theme.presetKey)) {
+      return {
+        error: `${getPreset(theme.presetKey).name} isn't included in ${plan!.name}. Pick one of your plan's themes in Design, or upgrade to keep it.`,
+      };
+    }
+    const closes = siteClosesAt(plan, story?.weddingDate);
+    if (closes && closes <= new Date()) {
+      return { error: `Your ${plan!.name} site closed on ${closes.toLocaleDateString("en-GB", { dateStyle: "long", timeZone: "UTC" })}. Upgrade to publish it again.` };
+    }
   }
 
   await prisma.wedding.update({

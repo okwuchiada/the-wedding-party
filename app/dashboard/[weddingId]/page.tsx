@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { COPY_FIELDS } from "@/lib/copy";
 import { upgradeCharge } from "@/lib/billing";
 import { paystackConfigured } from "@/lib/paystack";
-import { hasFeature, type PlanFeature } from "@/lib/plans";
+import { hasFeature, siteClosesAt } from "@/lib/plans";
 import { getWeddingById, guestPath, moneyFormat } from "@/lib/tenant";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
 import { resolveTheme } from "@/lib/themes";
@@ -126,6 +126,8 @@ export default async function WeddingDashboardPage({
           !copy?.asoebiFabric && !story?.bridePhone && "asoebi",
         ].filter((id): id is string => Boolean(id)),
         allowCustom: hasFeature(wedding.plan, "customTheme"),
+        allowedThemes: wedding.plan?.themes ?? [],
+        planName: wedding.plan?.name ?? null,
         isDraft: wedding.status === "DRAFT",
       }}
       copy={{
@@ -137,18 +139,29 @@ export default async function WeddingDashboardPage({
         footerCreditUrl: copy?.footerCreditUrl ?? null,
         asoebiEnabled: copy?.asoebiEnabled ?? false,
         asoebiFabric: copy?.asoebiFabric ?? null,
-        canRemoveBranding: hasFeature(wedding.plan, "removeBranding"),
+        canCustomCredit: hasFeature(wedding.plan, "customCredit"),
+        brandingRemoved: hasFeature(wedding.plan, "removeBranding"),
       }}
       billing={{
-        currentPlan: wedding.plan ? { name: wedding.plan.name, comped: wedding.comped } : null,
+        currentPlan: wedding.plan
+          ? {
+              name: wedding.plan.name,
+              comped: wedding.comped,
+              free: wedding.plan.priceKobo === 0,
+              closesAt: siteClosesAt(wedding.plan, story?.weddingDate)?.toISOString() ?? null,
+            }
+          : null,
         paymentsEnabled: paystackConfigured(),
         plans: plans.map((plan) => ({
           key: plan.key,
           name: plan.name,
           priceKobo: plan.priceKobo,
-          maxGuests: plan.maxGuests,
-          features: (Object.keys(plan.features as object) as PlanFeature[]).filter((f) => hasFeature(plan, f)),
-          chargeKobo: upgradeCharge(plan, wedding.plan, paidKobo),
+          tagline: plan.tagline,
+          popular: plan.popular,
+          highlights: plan.highlights,
+          limitations: plan.limitations,
+          // Free plans need no checkout; weddings start on them.
+          chargeKobo: plan.priceKobo === 0 ? null : upgradeCharge(plan, wedding.plan, paidKobo),
           current: plan.id === wedding.planId,
         })),
         payments: payments
@@ -164,7 +177,8 @@ export default async function WeddingDashboardPage({
       settings={{
         slug: wedding.slug,
         status: wedding.status,
-        canPublish: Boolean(wedding.paidAt || wedding.comped),
+        // Weddings from before the free plan join it when they publish.
+        canPublish: Boolean(wedding.paidAt || wedding.comped || !wedding.plan || wedding.plan.priceKobo === 0),
         currency: wedding.currency,
         locale: wedding.locale,
         phoneCountryCode: wedding.phoneCountryCode,

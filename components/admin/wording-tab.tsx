@@ -14,7 +14,17 @@ export type CopyView = Record<CopyKey, string | null> & {
 
 const fieldClass = "border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-(--m-ink)/50";
 
-export default function WordingTab({ copy, canRemoveBranding }: { copy: CopyView; canRemoveBranding: boolean }) {
+export default function WordingTab({
+  copy,
+  canCustomCredit,
+  brandingRemoved,
+}: {
+  copy: CopyView;
+  /** The plan lets the couple write their own footer credit. */
+  canCustomCredit: boolean;
+  /** The plan hides Vowly's credit (with or without a credit of their own). */
+  brandingRemoved: boolean;
+}) {
   const weddingId = useAdminWeddingId();
   const [state, formAction, pending] = useActionState(saveCopy.bind(null, weddingId), undefined);
 
@@ -61,12 +71,14 @@ export default function WordingTab({ copy, canRemoveBranding }: { copy: CopyView
 
       <section className="flex flex-col gap-3">
         <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Footer credit</h2>
-        {!canRemoveBranding && (
+        {!canCustomCredit && (
           <p className="bg-cream px-3 py-2 text-xs text-foreground/70">
-            Your plan shows &ldquo;Made with love by The Wedding Party&rdquo;. Upgrade to credit someone else, or no one.
+            {brandingRemoved
+              ? "Your plan leaves the footer credit off. Upgrade to Forever to credit someone of your choice."
+              : "Your plan shows \u201cMade with love by Vowly\u201d. Upgrade to remove it, or to Forever to credit someone of your choice."}
           </p>
         )}
-        <fieldset disabled={!canRemoveBranding} className="grid grid-cols-1 gap-3 disabled:opacity-50 sm:grid-cols-2">
+        <fieldset disabled={!canCustomCredit} className="grid grid-cols-1 gap-3 disabled:opacity-50 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
             Made with love by…
             <input name="footerCredit" defaultValue={copy.footerCredit ?? ""} placeholder="Leave empty to hide" maxLength={80} className={fieldClass} />
@@ -77,7 +89,7 @@ export default function WordingTab({ copy, canRemoveBranding }: { copy: CopyView
           </label>
         </fieldset>
         {/* A disabled fieldset doesn't submit; keep the saved values. */}
-        {!canRemoveBranding && (
+        {!canCustomCredit && (
           <>
             <input type="hidden" name="footerCredit" value={copy.footerCredit ?? ""} />
             <input type="hidden" name="footerCreditUrl" value={copy.footerCreditUrl ?? ""} />

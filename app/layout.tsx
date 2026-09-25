@@ -4,7 +4,7 @@ import { DEFAULT_PRESET } from "@/lib/themes";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "The Wedding Party",
+  title: "Vowly",
   description: "Organize your wedding party with ease and style. Create a personalized wedding website, manage RSVPs, and keep your guests informed.",
 };
 

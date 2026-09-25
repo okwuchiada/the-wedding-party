@@ -1,12 +1,11 @@
 "use server";
 
 import { requireWeddingAccess } from "@/lib/dal";
-import { hasFeature } from "@/lib/plans";
+import { hasFeature, uploadsLeft } from "@/lib/plans";
 import { createPresignedUploadUrl, publicUrlForKey } from "@/lib/s3";
 import { resolveGuestAction, revalidateDashboard, revalidateWedding } from "@/lib/tenant";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL, weddingUploadFolder } from "@/lib/uploads";
 
-const ALLOWED_TYPES = ["image/", "video/"];
 const GUEST_UPLOAD_FOLDER = "uploads";
 
 export type CreateUploadUrlState =
@@ -33,9 +32,14 @@ export async function createMediaUploadUrl(
   const guest = await resolveGalleryWedding(slug);
   if (!guest) return { error: "The gallery isn't open yet" };
 
-  if (!ALLOWED_TYPES.some((prefix) => fileType.startsWith(prefix))) {
-    return { error: "Only photos and videos are allowed" };
+  const allowVideo = hasFeature(guest.wedding.plan, "video");
+  const isVideo = fileType.startsWith("video/");
+  if (!fileType.startsWith("image/") && !isVideo) {
+    return { error: allowVideo ? "Only photos and videos are allowed" : "Only photos are allowed" };
   }
+  if (isVideo && !allowVideo) return { error: "This gallery takes photos only" };
+  const limitError = await uploadLimitError(guest);
+  if (limitError) return { error: limitError };
   if (fileSize > MAX_UPLOAD_BYTES) {
     return { error: `File is over the ${MAX_UPLOAD_LABEL} limit` };
   }
@@ -46,6 +50,13 @@ export async function createMediaUploadUrl(
     fileType
   );
   return { uploadUrl, publicUrl };
+}
+
+/** Every stored guest upload counts against the plan's limit, hidden and pending ones too. */
+async function uploadLimitError(guest: NonNullable<Awaited<ReturnType<typeof resolveGalleryWedding>>>) {
+  if (guest.wedding.plan?.maxUploads == null) return null;
+  const used = await guest.db.media.count({ where: { weddingId: guest.wedding.id } });
+  return uploadsLeft(guest.wedding.plan, used) === 0 ? "The gallery is full. Thank you for sharing!" : null;
 }
 
 export type CreateMediaState = { error?: string; success?: boolean; id?: string } | undefined;
@@ -62,6 +73,9 @@ export async function createMediaRecord(
 
   if (!guestName.trim()) return { error: "Please enter your name" };
   if (type !== "PHOTO" && type !== "VIDEO") return { error: "Unsupported file type" };
+  if (type === "VIDEO" && !hasFeature(wedding.plan, "video")) return { error: "This gallery takes photos only" };
+  const limitError = await uploadLimitError(guest);
+  if (limitError) return { error: limitError };
   // Only accept files uploaded through createMediaUploadUrl for this wedding.
   const allowedPrefix = publicUrlForKey(`${weddingUploadFolder(wedding.id, GUEST_UPLOAD_FOLDER)}/`);
   if (typeof url !== "string" || !url.startsWith(allowedPrefix)) {

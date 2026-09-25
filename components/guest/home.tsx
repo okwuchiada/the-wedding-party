@@ -50,7 +50,7 @@ export default async function GuestHome({ weddingId, slug, layout }: { weddingId
         </Suspense>
         {visible.map((id, i) => {
           const Section = SECTION_COMPONENTS[id];
-          return <Section key={id} weddingId={weddingId} frame={{ template: layout.template, index: i + 1, nameStyle: layout.heroNames }} />;
+          return <Section key={id} weddingId={weddingId} frame={{ template: layout.template, index: i + 1, nameStyle: layout.heroNames, storyStyle: layout.story }} />;
         })}
       </main>
       <Suspense fallback={<FooterSkeleton />}>
