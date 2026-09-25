@@ -1,12 +1,30 @@
+import { Camera, HeartHandshake, Link2, PenLine } from "lucide-react";
 import Link from "next/link";
+import FeatureShowcase from "@/components/marketing/feature-showcase";
 import Pricing from "@/components/marketing/pricing";
 import ThemeShowcase from "@/components/marketing/theme-showcase";
 
 const STEPS = [
-  { title: "Make your site", text: "Add your names and date, pick your colours, and tell your story. It stays private until you publish." },
-  { title: "Share one link", text: "Send it on WhatsApp, print it on the IV. Guests open it on their phones; no app, no account." },
-  { title: "Guests RSVP and give", text: "You see every RSVP as it comes in. Guests chip in toward gifts by bank transfer, and you confirm when the money lands." },
-  { title: "Collect the day", text: "On the day, open the gallery wall. Guests post photos and videos; you choose what everyone sees." },
+  {
+    icon: PenLine,
+    title: "Make your site",
+    text: "Add your names and date, pick your colours, and tell your story. It stays private until you publish.",
+  },
+  {
+    icon: Link2,
+    title: "Share one link",
+    text: "Send it on WhatsApp, print it on the IV. Guests open it on their phones; no app, no account.",
+  },
+  {
+    icon: HeartHandshake,
+    title: "Guests RSVP and give",
+    text: "You see every RSVP as it comes in. Guests chip in toward gifts by bank transfer, and you confirm when the money lands.",
+  },
+  {
+    icon: Camera,
+    title: "Collect the day",
+    text: "On the day, open the gallery wall. Guests post photos and videos; you choose what everyone sees.",
+  },
 ];
 
 const FAQS = [
@@ -42,6 +60,7 @@ export default function LandingPage() {
               See pricing
             </Link>
           </div>
+          <p className="mt-4 text-sm text-(--m-ink)/60">Start free, no card required, and publish whenever you&apos;re ready.</p>
         </ThemeShowcase>
       </section>
 
@@ -53,7 +72,10 @@ export default function LandingPage() {
           <ol className="mt-12 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((step, i) => (
               <li key={step.title}>
-                <span className="font-(family-name:--m-display) text-5xl font-extrabold text-(--m-gold)">{i + 1}</span>
+                <div className="flex items-center gap-3">
+                  <span className="font-(family-name:--m-display) text-5xl font-extrabold text-(--m-gold)">{i + 1}</span>
+                  <step.icon aria-hidden className="h-5 w-5 text-(--m-paper)/40" />
+                </div>
                 <h3 className="mt-3 text-lg font-semibold">{step.title}</h3>
                 <p className="mt-2 leading-relaxed text-(--m-paper)/75">{step.text}</p>
               </li>
@@ -61,6 +83,8 @@ export default function LandingPage() {
           </ol>
         </div>
       </section>
+
+      <FeatureShowcase />
 
       <section id="pricing" className="mx-auto max-w-6xl scroll-mt-8 px-5 py-20 sm:px-8">
         <h2 className="font-(family-name:--m-display) text-4xl font-bold tracking-tight sm:text-5xl">Start free, pay once if you upgrade</h2>
@@ -87,9 +111,15 @@ export default function LandingPage() {
             </details>
           ))}
         </div>
-        <Link href="/signup" className="mt-10 inline-block rounded-full bg-(--m-gold) px-6 py-3.5 text-sm font-semibold hover:bg-(--m-ink) hover:text-(--m-paper)">
-          Create your site for free
-        </Link>
+        <div className="mt-10 flex flex-wrap items-center gap-4">
+          <Link href="/signup" className="rounded-full bg-(--m-gold) px-6 py-3.5 text-sm font-semibold hover:bg-(--m-ink) hover:text-(--m-paper)">
+            Create your site for free
+          </Link>
+          <Link href="/pricing" className="text-sm font-semibold text-(--m-ink)/70 underline decoration-(--m-ink)/25 underline-offset-4 hover:text-(--m-ink)">
+            Compare plans
+          </Link>
+        </div>
+        <p className="mt-4 text-sm text-(--m-ink)/60">Start free, no card required, and publish whenever you&apos;re ready.</p>
       </section>
     </>
   );
