@@ -3,19 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const LINKS = [
-  { href: "/super", label: "Overview" },
-  { href: "/super/weddings", label: "Weddings" },
-  { href: "/super/users", label: "Users" },
-  { href: "/super/payments", label: "Payments" },
-  { href: "/super/plans", label: "Plans" },
-];
-
-export default function SuperNav() {
+export default function SuperNav({ links }: { links: { href: string; label: string }[] }) {
   const pathname = usePathname();
   return (
     <nav className="flex gap-1.5 overflow-x-auto pb-1">
-      {LINKS.map((link) => {
+      {links.map((link) => {
         const active = link.href === "/super" ? pathname === "/super" : pathname.startsWith(link.href);
         return (
           <Link

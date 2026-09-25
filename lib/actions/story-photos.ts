@@ -17,7 +17,7 @@ export async function createStoryPhotoUploadUrl(
   fileType: string,
   fileSize: number
 ): Promise<CreateStoryPhotoUploadUrlState> {
-  const { wedding } = await requireWeddingAccess(weddingId);
+  const { wedding } = await requireWeddingAccess(weddingId, "edit");
 
   if (!fileType.startsWith("image/")) {
     return { error: "Only image files are allowed" };
@@ -68,7 +68,7 @@ export async function addStoryPhoto(
   _prevState: StoryPhotoFormState,
   formData: FormData
 ): Promise<StoryPhotoFormState> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "addStoryPhoto");
 
   const meta = parseStoryPhotoMeta(formData);
   if ("error" in meta) return { error: meta.error };
@@ -90,7 +90,7 @@ export async function updateStoryPhoto(
   _prevState: StoryPhotoFormState,
   formData: FormData
 ): Promise<StoryPhotoFormState> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "updateStoryPhoto");
 
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing photo id" };
@@ -116,7 +116,7 @@ export async function updateStoryPhoto(
 }
 
 export async function deleteStoryPhoto(weddingId: string, id: string) {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "deleteStoryPhoto");
 
   await db.storyPhoto.delete({ where: { id, weddingId: wedding.id } });
 
@@ -129,7 +129,7 @@ export async function bulkAddStoryPhotos(
   weddingId: string,
   urls: string[]
 ): Promise<BulkAddStoryPhotosState> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "bulkAddStoryPhotos");
 
   if (!Array.isArray(urls) || urls.length === 0) return { error: "No photos to add" };
 

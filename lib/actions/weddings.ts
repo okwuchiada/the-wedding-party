@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/dal";
+import { forgetPartnerName } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { takeRateLimit } from "@/lib/rate-limit";
 import { slugError } from "@/lib/slug";
@@ -55,6 +56,7 @@ export async function createWedding(
     },
   });
 
+  await forgetPartnerName();
   redirect(dashboardPath(wedding.id));
 }
 

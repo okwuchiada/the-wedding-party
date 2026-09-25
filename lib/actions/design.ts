@@ -20,7 +20,7 @@ export async function saveTheme(
   _prevState: DesignFormState,
   formData: FormData
 ): Promise<DesignFormState> {
-  const { wedding } = await requireWeddingAccess(weddingId);
+  const { wedding } = await requireWeddingAccess(weddingId, "edit", "saveTheme");
 
   const presetKey = text(formData, "presetKey");
   if (!THEME_PRESETS.some((p) => p.key === presetKey)) return { error: "Choose a theme" };
@@ -65,7 +65,7 @@ export async function saveCopy(
   _prevState: DesignFormState,
   formData: FormData
 ): Promise<DesignFormState> {
-  const { wedding } = await requireWeddingAccess(weddingId);
+  const { wedding } = await requireWeddingAccess(weddingId, "edit", "saveCopy");
 
   const data: Record<string, string | boolean | null> = {};
   for (const { key, label } of COPY_FIELDS) {

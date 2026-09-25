@@ -12,20 +12,6 @@ export function AuthHeading({ title, intro }: { title: string; intro?: string })
 export const authInputClass =
   "rounded-[6px] border border-(--m-mist) bg-white px-3.5 py-3 text-base text-(--m-ink) outline-none transition-shadow placeholder:text-(--m-ink)/35 focus:border-(--m-ink)/50 focus:ring-3 focus:ring-(--m-gold)/35";
 
-export function AuthField({
-  label,
-  hint,
-  ...input
-}: { label: string; hint?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <label className="flex flex-col gap-1.5 text-sm font-medium">
-      {label}
-      <input {...input} className={authInputClass} />
-      {hint && <span className="text-xs font-normal text-(--m-ink)/55">{hint}</span>}
-    </label>
-  );
-}
-
 export function AuthSubmit({ pending, label, pendingLabel }: { pending: boolean; label: string; pendingLabel: string }) {
   return (
     <button

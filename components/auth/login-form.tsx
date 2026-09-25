@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { login } from "@/lib/actions/auth";
-import { AuthField, AuthMessage, AuthSubmit, authLinkClass } from "./fields";
+import AuthField from "./auth-field";
+import { AuthMessage, AuthSubmit, authLinkClass } from "./fields";
+import PasswordField from "./password-field";
 
 export default function LoginForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState(login, undefined);
@@ -12,7 +14,7 @@ export default function LoginForm({ next }: { next?: string }) {
     <form action={action} className="flex flex-col gap-5">
       {next && <input type="hidden" name="next" value={next} />}
       <AuthField label="Email" type="email" name="email" autoComplete="email" autoFocus required />
-      <AuthField label="Password" type="password" name="password" autoComplete="current-password" required />
+      <PasswordField label="Password" name="password" autoComplete="current-password" required />
       <AuthMessage error={state?.error} />
       <AuthSubmit pending={pending} label="Sign in" pendingLabel="Signing in…" />
       <div className="flex flex-wrap justify-between gap-3 text-sm">

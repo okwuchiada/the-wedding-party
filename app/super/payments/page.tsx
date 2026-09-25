@@ -1,9 +1,10 @@
 import ActionButton from "@/components/super/action-button";
 import { date, SearchForm, Table } from "@/components/super/table";
 import { reverifyPayment } from "@/lib/actions/super";
-import { requireSuperAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import type { PaymentStatus, Prisma } from "@/lib/generated/prisma/client";
 import { formatMoney } from "@/lib/money";
+import { can } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 const STATUSES: PaymentStatus[] = ["PENDING", "SUCCESS", "FAILED"];
@@ -14,7 +15,8 @@ export default async function SuperPaymentsPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
-  await requireSuperAdmin();
+  const staff = await requirePermission("console.view");
+  const canReverify = can(staff.role, "payment.reverify");
   const { q = "", status } = await searchParams;
   const term = q.trim();
 
@@ -56,7 +58,7 @@ export default async function SuperPaymentsPage({
             </td>
             <td className="px-3 py-3 font-mono text-xs text-foreground/70">{p.reference}</td>
             <td className="px-3 py-3">
-              {p.status !== "SUCCESS" && <ActionButton action={reverifyPayment.bind(null, p.reference)} label="Check with Paystack" />}
+              {canReverify && p.status !== "SUCCESS" && <ActionButton action={reverifyPayment.bind(null, p.reference)} label="Check with Paystack" />}
             </td>
           </tr>
         ))}

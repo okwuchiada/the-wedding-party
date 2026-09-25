@@ -30,7 +30,7 @@ export async function checkGeoAccess(wedding: {
   if (code && wedding.geoBypassToken && code === wedding.geoBypassToken) {
     return { blocked: false };
   }
-  if (await canManageWedding(wedding.id)) return { blocked: false };
+  if (await canManageWedding(wedding.id, "view")) return { blocked: false };
 
   return { blocked: true, codeRejected: Boolean(code) };
 }

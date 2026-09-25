@@ -91,19 +91,19 @@ export async function getMediaStatuses(slug: string, ids: string[]) {
 }
 
 export async function approveMedia(weddingId: string, id: string) {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "approveMedia");
   await db.media.update({ where: { id, weddingId: wedding.id }, data: { status: "APPROVED" } });
   revalidateWedding(wedding);
 }
 
 export async function hideMedia(weddingId: string, id: string) {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "hideMedia");
   await db.media.update({ where: { id, weddingId: wedding.id }, data: { status: "HIDDEN" } });
   revalidateWedding(wedding);
 }
 
 export async function deleteMedia(weddingId: string, id: string) {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "deleteMedia");
   await db.media.delete({ where: { id, weddingId: wedding.id } });
   revalidateWedding(wedding);
 }

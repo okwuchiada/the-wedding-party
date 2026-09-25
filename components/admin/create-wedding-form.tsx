@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { AuthMessage, AuthSubmit, authInputClass } from "@/components/auth/fields";
+import DatePicker from "@/components/marketing/date-picker";
 import SitePreview from "@/components/marketing/site-preview";
 import { checkSlugAvailable, createWedding } from "@/lib/actions/weddings";
 import { suggestWeddingSlug } from "@/lib/slug";
@@ -32,11 +33,18 @@ function Step({ number, title, children }: { number: number; title: string; chil
   );
 }
 
-export default function CreateWeddingForm() {
+export default function CreateWeddingForm({
+  initialNames = { bride: "", groom: "" },
+}: {
+  /** From sign-up: the account holder's name and their partner's. */
+  initialNames?: { bride: string; groom: string };
+}) {
   const [state, action, pending] = useActionState(createWedding, undefined);
-  const [names, setNames] = useState({ bride: "", groom: "" });
+  const [names, setNames] = useState(initialNames);
   const [date, setDate] = useState("");
-  const [slug, setSlug] = useState("");
+  const [slug, setSlug] = useState(() =>
+    initialNames.bride && initialNames.groom ? suggestWeddingSlug(initialNames.bride, initialNames.groom) : ""
+  );
   const [slugEdited, setSlugEdited] = useState(false);
   const [check, setCheck] = useState<SlugCheck | null>(null);
   const [presetKey, setPresetKey] = useState("adire-indigo");
@@ -87,10 +95,10 @@ export default function CreateWeddingForm() {
               Your partner&apos;s name
               <input name="groomName" required value={names.groom} onChange={(e) => updateName("groom", e.target.value)} className={authInputClass} />
             </label>
-            <label className="flex flex-col gap-1.5 text-sm font-medium sm:col-span-2 sm:max-w-xs">
-              Wedding date
-              <input type="date" name="weddingDate" required value={date} onChange={(e) => setDate(e.target.value)} className={authInputClass} />
-            </label>
+            <div className="flex flex-col gap-1.5 text-sm font-medium sm:col-span-2 sm:max-w-sm">
+              <span id="wedding-date-label">Wedding date</span>
+              <DatePicker name="weddingDate" value={date} onChange={setDate} labelledBy="wedding-date-label" />
+            </div>
           </div>
         </Step>
 

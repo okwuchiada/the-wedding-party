@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { requestPasswordReset } from "@/lib/actions/auth";
-import { AuthField, AuthMessage, AuthSubmit, authLinkClass } from "./fields";
+import AuthField from "./auth-field";
+import { AuthMessage, AuthSubmit, authLinkClass } from "./fields";
 
 export default function ForgotPasswordForm() {
   const [state, action, pending] = useActionState(requestPasswordReset, undefined);

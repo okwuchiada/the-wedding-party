@@ -17,7 +17,7 @@ export async function createStoryBeatUploadUrl(
   fileType: string,
   fileSize: number
 ): Promise<CreateStoryBeatUploadUrlState> {
-  const { wedding } = await requireWeddingAccess(weddingId);
+  const { wedding } = await requireWeddingAccess(weddingId, "edit");
 
   if (!fileType.startsWith("image/")) {
     return { error: "Only image files are allowed" };
@@ -73,7 +73,7 @@ export async function addStoryBeat(
   _prevState: StoryBeatFormState,
   formData: FormData
 ): Promise<StoryBeatFormState> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "addStoryBeat");
 
   const meta = parseStoryBeatMeta(formData);
   if ("error" in meta) return { error: meta.error };
@@ -92,7 +92,7 @@ export async function updateStoryBeat(
   _prevState: StoryBeatFormState,
   formData: FormData
 ): Promise<StoryBeatFormState> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "updateStoryBeat");
 
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing beat id" };
@@ -117,7 +117,7 @@ export async function updateStoryBeat(
 }
 
 export async function deleteStoryBeat(weddingId: string, id: string) {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "deleteStoryBeat");
 
   await db.storyBeat.delete({ where: { id, weddingId: wedding.id } });
 

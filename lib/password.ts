@@ -1,16 +1,8 @@
 import "server-only";
 import { hash, verify } from "@node-rs/argon2";
 
-export const MIN_PASSWORD_LENGTH = 8;
-const MAX_PASSWORD_LENGTH = 200;
-
-export function validatePassword(password: unknown): string | null {
-  if (typeof password !== "string" || password.length < MIN_PASSWORD_LENGTH) {
-    return `Use at least ${MIN_PASSWORD_LENGTH} characters`;
-  }
-  if (password.length > MAX_PASSWORD_LENGTH) return "That password is too long";
-  return null;
-}
+// New-password rules live in lib/password-rules.ts so the forms can show them live.
+export { MIN_PASSWORD_LENGTH, validatePassword } from "@/lib/password-rules";
 
 export function hashPassword(password: string) {
   return hash(password);

@@ -1,0 +1,201 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import ActionButton from "@/components/super/action-button";
+import CompForm from "@/components/super/comp-form";
+import NoteForm from "@/components/super/note-form";
+import { date, Table } from "@/components/super/table";
+import { impersonateUser, reverifyPayment, sendUserPasswordReset, setWeddingStatus } from "@/lib/actions/super";
+import { requirePermission } from "@/lib/dal";
+import { formatMoney } from "@/lib/money";
+import { can, isStaff, ROLE_LABELS } from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
+import { dashboardPath, guestPath } from "@/lib/tenant";
+
+const NAIRA = { currency: "NGN", locale: "en-NG" };
+const when = (d: Date) => d.toISOString().slice(0, 16).replace("T", " ");
+
+/** A wedding's case file: who, what state it's in, what's been paid, and what staff have done. */
+export default async function WeddingCasePage({ params }: { params: Promise<{ weddingId: string }> }) {
+  const staff = await requirePermission("console.view");
+  const { weddingId } = await params;
+
+  const wedding = await prisma.wedding.findUnique({
+    where: { id: weddingId },
+    include: {
+      story: true,
+      plan: true,
+      members: { include: { user: true }, orderBy: { createdAt: "asc" } },
+      payments: { include: { plan: true }, orderBy: { createdAt: "desc" } },
+      supportNotes: { include: { author: { select: { email: true, name: true } } }, orderBy: { createdAt: "desc" } },
+      _count: { select: { rsvps: true, registryItems: true, contributions: true } },
+    },
+  });
+  if (!wedding) notFound();
+
+  const [activity, plans] = await Promise.all([
+    prisma.auditLog.findMany({
+      where: { weddingId: wedding.id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: { actor: { select: { email: true } } },
+    }),
+    prisma.plan.findMany({ orderBy: [{ sortOrder: "asc" }, { priceKobo: "asc" }], select: { key: true, name: true } }),
+  ]);
+
+  const allowed = {
+    edit: can(staff.role, "wedding.edit"),
+    status: can(staff.role, "wedding.status"),
+    comp: can(staff.role, "wedding.comp"),
+    reset: can(staff.role, "user.reset"),
+    impersonate: can(staff.role, "user.impersonate"),
+    reverify: can(staff.role, "payment.reverify"),
+    notes: can(staff.role, "notes.write"),
+  };
+  const names = wedding.story ? `${wedding.story.brideName} & ${wedding.story.groomName}` : wedding.slug;
+
+  return (
+    <div className="flex flex-col gap-8">
+      <Link href="/super/weddings" className="text-sm underline decoration-(--m-ink)/25 underline-offset-4">
+        All weddings
+      </Link>
+
+      <section className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h2 className="font-(family-name:--m-display) text-3xl font-extrabold tracking-tight">{names}</h2>
+          <p className="mt-2 text-sm text-(--m-ink)/70">
+            /w/{wedding.slug} · {wedding.status.toLowerCase()} · {wedding.plan?.name ?? "no plan"}
+            {wedding.comped ? " (comped)" : wedding.paidAt ? " (paid)" : ""}
+            {wedding.story && ` · wedding ${date(wedding.story.weddingDate)}`}
+          </p>
+          <p className="mt-1 text-sm text-(--m-ink)/60">
+            {wedding._count.rsvps} RSVPs · {wedding._count.registryItems} registry items · {wedding._count.contributions} contributions
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={dashboardPath(wedding.id)}
+            className="rounded-full bg-(--m-ink) px-5 py-2.5 text-sm font-semibold text-(--m-paper) hover:bg-(--m-emerald)"
+          >
+            {allowed.edit ? "Open their dashboard" : "View their dashboard"}
+          </Link>
+          <a
+            href={guestPath(wedding.slug)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full border border-(--m-ink)/25 px-5 py-2.5 text-sm font-semibold hover:border-(--m-ink)"
+          >
+            Guest site
+          </a>
+        </div>
+      </section>
+
+      {(allowed.status || allowed.comp) && (
+        <section className="flex flex-wrap items-center gap-3 rounded-[6px] border border-(--m-mist) bg-white p-4">
+          {allowed.status &&
+            (wedding.status === "SUSPENDED" || wedding.status === "ARCHIVED" ? (
+              <ActionButton action={setWeddingStatus.bind(null, wedding.id, "restore")} label="Restore" />
+            ) : (
+              <ActionButton
+                action={setWeddingStatus.bind(null, wedding.id, "suspend")}
+                label="Suspend"
+                tone="danger"
+                confirmText={`Suspend /w/${wedding.slug}? Guests will no longer see the site.`}
+              />
+            ))}
+          {allowed.comp && <CompForm weddingId={wedding.id} plans={plans} comped={wedding.comped} />}
+        </section>
+      )}
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <section className="flex flex-col gap-4">
+          <h3 className="font-(family-name:--m-display) text-2xl font-bold tracking-tight">Case notes</h3>
+          {allowed.notes && <NoteForm weddingId={wedding.id} />}
+          {wedding.supportNotes.length === 0 ? (
+            <p className="text-sm text-(--m-ink)/60">No notes yet.</p>
+          ) : (
+            <ol className="flex flex-col gap-3">
+              {wedding.supportNotes.map((note) => (
+                <li key={note.id} className="rounded-[6px] border border-(--m-mist) bg-white p-4">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{note.body}</p>
+                  <p className="mt-2 text-xs text-(--m-ink)/55">
+                    {note.author?.name ?? note.author?.email ?? "Former staff"} · {when(note.createdAt)}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+
+        <section className="flex flex-col gap-4">
+          <h3 className="font-(family-name:--m-display) text-2xl font-bold tracking-tight">People</h3>
+          <ul className="flex flex-col divide-y divide-(--m-mist) rounded-[6px] border border-(--m-mist) bg-white">
+            {wedding.members.map((m) => (
+              <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
+                <span>
+                  {m.user.email} <span className="text-(--m-ink)/55">({m.role.toLowerCase()})</span>
+                  {!m.user.passwordHash && <span className="text-(--m-ink)/55"> · invite pending</span>}
+                </span>
+                <span className="flex gap-1">
+                  {allowed.impersonate && !isStaff(m.user.role) && (
+                    <ActionButton action={impersonateUser.bind(null, m.user.id)} label="View as" />
+                  )}
+                  {allowed.reset && (
+                    <ActionButton
+                      action={sendUserPasswordReset.bind(null, m.user.id)}
+                      label="Send reset link"
+                      confirmText={`Email a password reset link to ${m.user.email}?`}
+                    />
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          <h3 className="mt-4 font-(family-name:--m-display) text-2xl font-bold tracking-tight">Payments</h3>
+          {wedding.payments.length === 0 ? (
+            <p className="text-sm text-(--m-ink)/60">No payments.</p>
+          ) : (
+            <Table head={["Date", "Plan", "Amount", "Status", ""]}>
+              {wedding.payments.map((p) => (
+                <tr key={p.id}>
+                  <td className="px-3 py-2.5 text-foreground/70">{date(p.createdAt)}</td>
+                  <td className="px-3 py-2.5">{p.plan.name}</td>
+                  <td className="px-3 py-2.5">{formatMoney(p.amountKobo, NAIRA)}</td>
+                  <td className="px-3 py-2.5">{p.status.toLowerCase()}</td>
+                  <td className="px-3 py-2.5">
+                    {allowed.reverify && p.status !== "SUCCESS" && (
+                      <ActionButton action={reverifyPayment.bind(null, p.reference)} label="Check" />
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </Table>
+          )}
+        </section>
+      </div>
+
+      <section>
+        <h3 className="mb-3 font-(family-name:--m-display) text-2xl font-bold tracking-tight">Activity</h3>
+        {activity.length === 0 ? (
+          <p className="text-sm text-(--m-ink)/60">Nothing recorded yet.</p>
+        ) : (
+          <Table head={["When", "Who", "What"]}>
+            {activity.map((a) => {
+              const meta = (a.meta ?? {}) as { role?: keyof typeof ROLE_LABELS };
+              return (
+                <tr key={a.id}>
+                  <td className="px-3 py-2.5 whitespace-nowrap text-foreground/70">{when(a.createdAt)}</td>
+                  <td className="px-3 py-2.5 text-foreground/80">
+                    {a.actor?.email ?? "system"}
+                    {meta.role && <span className="text-foreground/50"> ({ROLE_LABELS[meta.role]})</span>}
+                  </td>
+                  <td className="px-3 py-2.5">{a.action}</td>
+                </tr>
+              );
+            })}
+          </Table>
+        )}
+      </section>
+    </div>
+  );
+}

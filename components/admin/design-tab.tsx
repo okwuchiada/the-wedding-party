@@ -1,14 +1,16 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { saveTheme } from "@/lib/actions/design";
-import { FONT_OPTIONS, fontCssVar, type FontRole, type ThemeFonts } from "@/lib/font-options";
+import { FONT_OPTIONS, fontCssVar, themeFontVars, type FontRole, type ThemeFonts } from "@/lib/font-options";
 import {
   COLOR_FIELDS,
   CONTRAST_PAIRS,
   contrastRatio,
   getPreset,
+  inkFor,
   THEME_PRESETS,
+  themeColorVars,
   type ColorKey,
   type ResolvedTheme,
 } from "@/lib/themes";
@@ -36,26 +38,30 @@ export default function DesignTab({
   allowCustom,
   isDraft,
   guestUrl,
+  names,
 }: {
   theme: ResolvedTheme;
   allowCustom: boolean;
   isDraft: boolean;
   guestUrl: string;
+  /** The couple's names, used as the font sample. */
+  names: [string, string];
 }) {
   const weddingId = useAdminWeddingId();
-  const [previewKey, setPreviewKey] = useState(0);
+  const [presetKey, setPresetKey] = useState(theme.presetKey);
+  const [colors, setColors] = useState<Record<ColorKey, string>>(theme.colors);
+  const [fonts, setFonts] = useState<ThemeFonts>(theme.fonts);
+  const snapshot = JSON.stringify({ presetKey, colors, fonts });
+  const [savedSnapshot, setSavedSnapshot] = useState(snapshot);
+  const unsaved = snapshot !== savedSnapshot;
   const [state, formAction, pending] = useActionState(
     async (prev: Awaited<ReturnType<typeof saveTheme>>, formData: FormData) => {
       const result = await saveTheme(weddingId, prev, formData);
-      // Reload the preview once a save lands.
-      if (result?.success) setPreviewKey((k) => k + 1);
+      if (result?.success) setSavedSnapshot(snapshot);
       return result;
     },
     undefined
   );
-  const [presetKey, setPresetKey] = useState(theme.presetKey);
-  const [colors, setColors] = useState<Record<ColorKey, string>>(theme.colors);
-  const [fonts, setFonts] = useState<ThemeFonts>(theme.fonts);
 
   const choosePreset = (key: string) => {
     const preset = getPreset(key);
@@ -70,6 +76,25 @@ export default function DesignTab({
   })).filter((pair) => pair.ratio < 4.5);
 
   const customEditable = allowCustom || isDraft;
+
+  // Live preview: restyle the guest site in the frame as changes are made, before saving.
+  // It mirrors the site's own rule: without custom themes, a live site shows the plain preset.
+  const preset = getPreset(presetKey);
+  const previewColors = customEditable ? { ...colors, ink: inkFor(colors.foreground, preset) } : preset.colors;
+  const previewFonts = customEditable ? fonts : preset.fonts;
+  const previewVars = JSON.stringify({ ...themeColorVars(previewColors), ...themeFontVars(previewFonts) });
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const applyPreview = useCallback(() => {
+    // Same origin, so the dashboard can reach the guest page's theme wrapper directly.
+    const root = frameRef.current?.contentDocument?.querySelector<HTMLElement>("[data-wedding-theme]");
+    if (!root) return;
+    for (const [name, value] of Object.entries(JSON.parse(previewVars) as Record<string, string>)) {
+      root.style.setProperty(name, value);
+    }
+  }, [previewVars]);
+  useEffect(applyPreview, [applyPreview]);
+  const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? "";
+  const sample = `${firstName(names[0]) || "Ada"} & ${firstName(names[1]) || "Tobi"}`;
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
@@ -156,7 +181,7 @@ export default function DesignTab({
                     style={{ fontFamily: `var(${fontCssVar(fonts[role])})` }}
                     className="text-xl text-foreground"
                   >
-                    Ada &amp; Tobi
+                    {sample}
                   </span>
                 </label>
               ))}
@@ -165,7 +190,11 @@ export default function DesignTab({
         </section>
 
         {state?.error && <p className="text-xs text-burnt-orange">{state.error}</p>}
-        {state?.success && <p className="text-xs text-olive">Saved. The preview has been refreshed.</p>}
+        {unsaved ? (
+          <p className="text-sm text-(--m-ink)/70">You have unsaved changes. The preview shows them; guests won&apos;t until you save.</p>
+        ) : (
+          state?.success && <p className="text-xs text-olive">Saved.</p>
+        )}
         <button
           type="submit"
           disabled={pending}
@@ -176,14 +205,22 @@ export default function DesignTab({
       </form>
 
       <section className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Preview</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2.5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">
+            Preview
+            {unsaved && (
+              <span className="rounded-full bg-(--m-gold)/25 px-2.5 py-0.5 font-(family-name:--m-body) text-xs font-semibold tracking-normal">
+                Unsaved changes
+              </span>
+            )}
+          </h2>
           <a href={guestUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-olive underline hover:text-burnt-orange">
             Open in new tab
           </a>
         </div>
         <iframe
-          key={previewKey}
+          ref={frameRef}
+          onLoad={applyPreview}
           src={guestUrl}
           title="Guest site preview"
           className="h-[640px] w-full border border-(--m-mist) rounded-[6px] bg-white"

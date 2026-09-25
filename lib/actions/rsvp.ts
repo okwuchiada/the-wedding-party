@@ -131,7 +131,7 @@ export async function submitRsvp(
 }
 
 export async function deleteRsvp(weddingId: string, id: string): Promise<{ error?: string }> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "deleteRsvp");
   const { count } = await db.rsvp.deleteMany({ where: { id, weddingId: wedding.id } });
   if (count === 0) return { error: "RSVP not found" };
   revalidateDashboard(wedding);
@@ -183,7 +183,7 @@ export async function createRsvpAdmin(
   _prevState: AdminRsvpFormState,
   formData: FormData
 ): Promise<AdminRsvpFormState> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "createRsvpAdmin");
 
   const parsed = parseAdminRsvpForm(formData);
   if ("error" in parsed) return { error: parsed.error };
@@ -212,7 +212,7 @@ export async function updateRsvpAdmin(
   _prevState: AdminRsvpFormState,
   formData: FormData
 ): Promise<AdminRsvpFormState> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "updateRsvpAdmin");
 
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing RSVP id" };
@@ -263,7 +263,7 @@ export async function importRsvps(
   weddingId: string,
   rows: ImportRsvpRow[]
 ): Promise<ImportRsvpsResult> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "importRsvps");
 
   if (!Array.isArray(rows) || rows.length === 0) return { error: "The file has no guest rows" };
   if (rows.length > MAX_IMPORT_ROWS) return { error: `Too many rows (max ${MAX_IMPORT_ROWS})` };
@@ -331,7 +331,7 @@ export async function sendRsvpConfirmation(
   weddingId: string,
   id: string
 ): Promise<{ error?: string }> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "sendRsvpConfirmation");
 
   const rsvp = await db.rsvp.findUnique({ where: { id, weddingId: wedding.id } });
   if (!rsvp) return { error: "RSVP not found" };

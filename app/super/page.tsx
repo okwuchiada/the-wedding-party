@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { date, Table } from "@/components/super/table";
-import { requireSuperAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import { formatMoney } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 
@@ -28,7 +28,7 @@ async function loadOverview() {
 }
 
 export default async function SuperOverviewPage() {
-  await requireSuperAdmin();
+  await requirePermission("console.view");
   const [byStatus, revenue, revenue30, signups30, recentWeddings, recentAudit] = await loadOverview();
   const count = (status: string) => byStatus.find((s) => s.status === status)?._count ?? 0;
 

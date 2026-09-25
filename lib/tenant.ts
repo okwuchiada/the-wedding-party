@@ -46,7 +46,7 @@ async function resolveViewableWedding(slug: unknown) {
   const wedding = await getWeddingBySlug(slug);
   if (!wedding) return null;
   if (wedding.status === "ACTIVE") return { wedding, preview: false };
-  if (wedding.status === "DRAFT" && (await canManageWedding(wedding.id))) {
+  if (wedding.status === "DRAFT" && (await canManageWedding(wedding.id, "view"))) {
     return { wedding, preview: true };
   }
   return null;

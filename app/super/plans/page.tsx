@@ -1,10 +1,10 @@
 import PlanForm from "@/components/super/plan-form";
-import { requireSuperAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
 import type { PlanFeature } from "@/lib/plans";
 import { prisma } from "@/lib/prisma";
 
 export default async function SuperPlansPage() {
-  await requireSuperAdmin();
+  await requirePermission("plans.manage");
   const plans = await prisma.plan.findMany({
     orderBy: [{ sortOrder: "asc" }, { priceKobo: "asc" }],
     include: { _count: { select: { weddings: true } } },

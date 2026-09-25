@@ -10,7 +10,6 @@ import {
   Parisienne,
   Playfair_Display,
 } from "next/font/google";
-import { fontCssVar, type FontRole, type ThemeFonts } from "@/lib/font-options";
 
 // Every font a couple can pick (lib/font-options.ts). Only the default trio is
 // preloaded; the rest download when a wedding's theme actually uses them.
@@ -32,15 +31,4 @@ export const FONT_VARIABLE_CLASSES = [
   .map((font) => font.variable)
   .join(" ");
 
-
-const FALLBACKS: Record<FontRole, string> = {
-  serif: "Georgia, serif",
-  script: "cursive",
-  sans: "system-ui, sans-serif",
-};
-
-/** The --serif/--script/--sans properties the components read. */
-export function themeFontVars(fonts: ThemeFonts): Record<string, string> {
-  const value = (role: FontRole) => `var(${fontCssVar(fonts[role])}), ${FALLBACKS[role]}`;
-  return { "--serif": value("serif"), "--script": value("script"), "--sans": value("sans") };
-}
+export { themeFontVars } from "@/lib/font-options";

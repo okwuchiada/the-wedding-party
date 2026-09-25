@@ -47,6 +47,7 @@ export default function AdminHome({
   guestUrl,
   members,
   isOwner,
+  readOnly,
   design,
   copy,
   settings,
@@ -71,6 +72,8 @@ export default function AdminHome({
   guestUrl: string;
   members: MemberView[];
   isOwner: boolean;
+  /** Staff with view-only access: every control in the tabs is disabled. */
+  readOnly: boolean;
   design: { theme: ResolvedTheme; allowCustom: boolean; isDraft: boolean };
   copy: CopyView & { canRemoveBranding: boolean };
   settings: SettingsView;
@@ -267,6 +270,8 @@ export default function AdminHome({
           })}
         </div>
 
+        {/* A disabled fieldset disables every control inside it; the server refuses changes too. */}
+        <fieldset disabled={readOnly} className="min-w-0 disabled:opacity-80">
         {activeTab === "Registry" && <RegistryTab items={registryItems} bankDetails={bankDetails} />}
         {activeTab === "Contributions" && (
           <ContributionsTab
@@ -303,11 +308,12 @@ export default function AdminHome({
         {activeTab === "Our Story" && (
           <StoryTab story={story} photos={storyPhotos} storyBeats={storyBeats} />
         )}
-        {activeTab === "Design" && <DesignTab {...design} guestUrl={guestUrl} />}
+        {activeTab === "Design" && <DesignTab {...design} guestUrl={guestUrl} names={[story.brideName, story.groomName]} />}
         {activeTab === "Wording" && <WordingTab copy={copy} canRemoveBranding={copy.canRemoveBranding} />}
         {activeTab === "People" && <MembersTab members={members} isOwner={isOwner} />}
         {activeTab === "Settings" && isOwner && <SettingsTab settings={settings} />}
         {activeTab === "Billing" && isOwner && <BillingTab billing={billing} />}
+        </fieldset>
       </div>
     </div>
     </AdminWeddingProvider>

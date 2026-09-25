@@ -10,7 +10,7 @@ export async function saveStory(
   _prevState: SaveStoryState,
   formData: FormData
 ): Promise<SaveStoryState> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "saveStory");
 
   const brideName = formData.get("brideName");
   const groomName = formData.get("groomName");
@@ -80,7 +80,7 @@ export async function saveStory(
 }
 
 export async function setGalleryEnabled(weddingId: string, enabled: boolean) {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "setGalleryEnabled");
 
   await db.storyContent.upsert({
     where: { weddingId: wedding.id },

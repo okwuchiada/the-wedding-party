@@ -17,7 +17,7 @@ export async function inviteMember(
   _prevState: InviteMemberState,
   formData: FormData
 ): Promise<InviteMemberState> {
-  const { wedding } = await requireWeddingAccess(weddingId, "OWNER");
+  const { wedding } = await requireWeddingAccess(weddingId, "owner", "inviteMember");
 
   const email = typeof formData.get("email") === "string" ? (formData.get("email") as string).trim().toLowerCase() : "";
   const role = formData.get("role") === "OWNER" ? "OWNER" : "EDITOR";
@@ -47,7 +47,7 @@ export async function inviteMember(
 }
 
 export async function removeMember(weddingId: string, memberId: string): Promise<{ error?: string }> {
-  const { wedding } = await requireWeddingAccess(weddingId, "OWNER");
+  const { wedding } = await requireWeddingAccess(weddingId, "owner", "removeMember");
 
   const member = await prisma.weddingMember.findUnique({ where: { id: memberId } });
   if (!member || member.weddingId !== wedding.id) return { error: "Member not found" };

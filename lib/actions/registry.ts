@@ -15,7 +15,7 @@ export async function createRegistryItemUploadUrl(
   fileType: string,
   fileSize: number
 ): Promise<CreateRegistryItemUploadUrlState> {
-  const { wedding } = await requireWeddingAccess(weddingId);
+  const { wedding } = await requireWeddingAccess(weddingId, "edit");
 
   if (!fileType.startsWith("image/")) {
     return { error: "Only image files are allowed" };
@@ -71,7 +71,7 @@ export async function createRegistryItem(
   _prevState: RegistryItemFormState,
   formData: FormData
 ): Promise<RegistryItemFormState> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "createRegistryItem");
 
   const parsed = parseRegistryItemForm(formData);
   if ("error" in parsed) return { error: parsed.error };
@@ -88,7 +88,7 @@ export async function updateRegistryItem(
   _prevState: RegistryItemFormState,
   formData: FormData
 ): Promise<RegistryItemFormState> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "updateRegistryItem");
 
   const id = formData.get("id");
   if (typeof id !== "string" || !id) {
@@ -109,7 +109,7 @@ export async function deleteRegistryItem(
   weddingId: string,
   id: string
 ): Promise<{ error?: string }> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "deleteRegistryItem");
 
   const contributionCount = await db.contribution.count({
     where: { weddingId: wedding.id, registryItemId: id },

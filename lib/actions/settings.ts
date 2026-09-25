@@ -22,7 +22,7 @@ export async function saveSettings(
   _prevState: SettingsFormState,
   formData: FormData
 ): Promise<SettingsFormState> {
-  const { wedding } = await requireWeddingAccess(weddingId, "OWNER");
+  const { wedding } = await requireWeddingAccess(weddingId, "owner", "saveSettings");
 
   const slug = text(formData, "slug").toLowerCase();
   const invalidSlug = slugError(slug);
@@ -79,7 +79,7 @@ export async function saveSettings(
 }
 
 export async function setPublished(weddingId: string, publish: boolean): Promise<{ error?: string }> {
-  const { wedding } = await requireWeddingAccess(weddingId, "OWNER");
+  const { wedding } = await requireWeddingAccess(weddingId, "owner", "setPublished");
 
   if (wedding.status === "SUSPENDED" || wedding.status === "ARCHIVED") {
     return { error: "This wedding has been suspended. Contact support." };

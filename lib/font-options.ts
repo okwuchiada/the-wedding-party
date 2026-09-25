@@ -34,3 +34,15 @@ export function fontCssVar(key: string) {
 export function isFontKey<R extends FontRole>(role: R, key: unknown): key is FontKey<R> {
   return FONT_OPTIONS[role].some((option) => option.key === key);
 }
+
+const FALLBACKS: Record<FontRole, string> = {
+  serif: "Georgia, serif",
+  script: "cursive",
+  sans: "system-ui, sans-serif",
+};
+
+/** The --serif/--script/--sans properties the components read. */
+export function themeFontVars(fonts: ThemeFonts): Record<string, string> {
+  const value = (role: FontRole) => `var(${fontCssVar(fonts[role])}), ${FALLBACKS[role]}`;
+  return { "--serif": value("serif"), "--script": value("script"), "--sans": value("sans") };
+}

@@ -1,5 +1,7 @@
 import AdminHome from "@/components/admin/home";
 import DashboardBar from "@/components/admin/dashboard-bar";
+import StaffBanner from "@/components/admin/staff-banner";
+import { can } from "@/lib/permissions";
 import { canManageWedding, requireWeddingAccess } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { COPY_FIELDS } from "@/lib/copy";
@@ -15,7 +17,7 @@ export default async function WeddingDashboardPage({
   params: Promise<{ weddingId: string }>;
 }) {
   const { weddingId } = await params;
-  const { user, wedding, db } = await requireWeddingAccess(weddingId);
+  const { user, wedding, db, asStaff } = await requireWeddingAccess(weddingId, "view");
   const scope = { weddingId: wedding.id };
 
   const [
@@ -35,6 +37,7 @@ export default async function WeddingDashboardPage({
     bankDetails,
     members,
     isOwner,
+    canEdit,
     settings,
     plans,
     payments,
@@ -88,7 +91,8 @@ export default async function WeddingDashboardPage({
       include: { user: { select: { email: true, name: true, passwordHash: true } } },
       orderBy: { createdAt: "asc" },
     }),
-    canManageWedding(wedding.id, "OWNER"),
+    canManageWedding(wedding.id, "owner"),
+    canManageWedding(wedding.id, "edit"),
     getWeddingById(wedding.id),
     prisma.plan.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { priceKobo: "asc" }] }),
     prisma.payment.findMany({ where: scope, include: { plan: true }, orderBy: { createdAt: "desc" } }),
@@ -98,12 +102,16 @@ export default async function WeddingDashboardPage({
 
   return (
     <>
-    <DashboardBar isSuperAdmin={user.role === "SUPER_ADMIN" && !user.impersonatorId} />
+    <DashboardBar showConsole={can(user.role, "console.view") && !user.impersonatorId} />
+    {asStaff && (
+      <StaffBanner role={user.role} readOnly={!canEdit} consoleHref={`/super/weddings/${wedding.id}`} />
+    )}
     <AdminHome
       weddingId={wedding.id}
       money={moneyFormat(wedding)}
       guestUrl={guestPath(wedding.slug)}
       isOwner={isOwner}
+      readOnly={!canEdit}
       design={{
         // Show what they saved even if their plan doesn't render it.
         theme: resolveTheme(settings.theme, true),

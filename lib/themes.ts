@@ -251,7 +251,7 @@ export function resolveTheme(stored: StoredTheme | undefined, allowCustom: boole
   for (const { key } of COLOR_FIELDS) {
     if (isHexColor(overrides[key])) colors[key] = overrides[key].toLowerCase();
   }
-  if (isHexColor(overrides.foreground)) colors.ink = colors.foreground;
+  colors.ink = inkFor(colors.foreground, preset);
 
   return {
     presetKey: preset.key,
@@ -262,6 +262,11 @@ export function resolveTheme(stored: StoredTheme | undefined, allowCustom: boole
       sans: isFontKey("sans", stored.sansFont) ? stored.sansFont : preset.fonts.sans,
     },
   };
+}
+
+/** Shadows follow a custom text colour; otherwise the preset's own shadow tone. */
+export function inkFor(foreground: string, preset: ThemePreset) {
+  return foreground.toLowerCase() === preset.colors.foreground ? preset.colors.ink : foreground;
 }
 
 function hexToRgb(hex: string) {

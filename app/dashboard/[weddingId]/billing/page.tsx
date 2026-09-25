@@ -25,7 +25,7 @@ export default async function BillingReturnPage({
 }) {
   const { weddingId } = await params;
   const { reference } = await searchParams;
-  const { wedding } = await requireWeddingAccess(weddingId, "OWNER");
+  const { wedding } = await requireWeddingAccess(weddingId, "owner");
 
   const payment = typeof reference === "string"
     ? await prisma.payment.findFirst({ where: { reference, weddingId: wedding.id }, include: { plan: true } })

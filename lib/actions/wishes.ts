@@ -44,13 +44,13 @@ export async function submitWish(
 }
 
 export async function approveWish(weddingId: string, id: string) {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "approveWish");
   await db.wish.update({ where: { id, weddingId: wedding.id }, data: { status: "APPROVED" } });
   revalidateWedding(wedding);
 }
 
 export async function hideWish(weddingId: string, id: string) {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "hideWish");
   await db.wish.update({ where: { id, weddingId: wedding.id }, data: { status: "HIDDEN" } });
   revalidateWedding(wedding);
 }

@@ -3,7 +3,8 @@ import ActionButton from "@/components/super/action-button";
 import CompForm from "@/components/super/comp-form";
 import { date, SearchForm, Table } from "@/components/super/table";
 import { impersonateUser, setWeddingStatus } from "@/lib/actions/super";
-import { requireSuperAdmin } from "@/lib/dal";
+import { requirePermission } from "@/lib/dal";
+import { can, isStaff } from "@/lib/permissions";
 import type { Prisma, WeddingStatus } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { dashboardPath, guestPath } from "@/lib/tenant";
@@ -16,7 +17,12 @@ export default async function SuperWeddingsPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
-  await requireSuperAdmin();
+  const staff = await requirePermission("console.view");
+  const allowed = {
+    status: can(staff.role, "wedding.status"),
+    comp: can(staff.role, "wedding.comp"),
+    impersonate: can(staff.role, "user.impersonate"),
+  };
   const { q = "", status } = await searchParams;
   const term = q.trim();
 
@@ -66,7 +72,9 @@ export default async function SuperWeddingsPage({
         {weddings.map((w) => (
           <tr key={w.id}>
             <td className="px-3 py-3">
-              <p className="text-foreground">{w.story ? `${w.story.brideName} & ${w.story.groomName}` : "—"}</p>
+              <Link href={`/super/weddings/${w.id}`} className="font-medium text-foreground underline decoration-(--m-ink)/20 underline-offset-4 hover:decoration-(--m-ink)">
+                {w.story ? `${w.story.brideName} & ${w.story.groomName}` : w.slug}
+              </Link>
               <p className="text-xs text-foreground/60">
                 /w/{w.slug} · {w.story ? date(w.story.weddingDate) : "no date"} · created {date(w.createdAt)}
               </p>
@@ -89,7 +97,7 @@ export default async function SuperWeddingsPage({
               {w.members.map((m) => (
                 <div key={m.id} className="flex flex-wrap items-center gap-2 text-xs text-foreground/80">
                   {m.user.email}
-                  {m.user.role !== "SUPER_ADMIN" && (
+                  {allowed.impersonate && !isStaff(m.user.role) && (
                     <ActionButton action={impersonateUser.bind(null, m.user.id)} label="View as" />
                   )}
                 </div>
@@ -97,6 +105,7 @@ export default async function SuperWeddingsPage({
             </td>
             <td className="px-3 py-3">
               <div className="flex flex-col items-start gap-2">
+                {allowed.status && (
                 <div className="flex flex-wrap gap-1">
                   {w.status === "SUSPENDED" || w.status === "ARCHIVED" ? (
                     <ActionButton action={setWeddingStatus.bind(null, w.id, "restore")} label="Restore" />
@@ -116,7 +125,13 @@ export default async function SuperWeddingsPage({
                     />
                   )}
                 </div>
-                <CompForm weddingId={w.id} plans={plans} comped={w.comped} />
+                )}
+                {allowed.comp && <CompForm weddingId={w.id} plans={plans} comped={w.comped} />}
+                {!allowed.status && !allowed.comp && (
+                  <Link href={`/super/weddings/${w.id}`} className="text-xs underline underline-offset-4">
+                    Open case
+                  </Link>
+                )}
               </div>
             </td>
           </tr>

@@ -2,10 +2,12 @@
 
 import { redirect } from "next/navigation";
 import { LOGIN_PATH } from "@/lib/dal";
+import { can } from "@/lib/permissions";
 import { passwordResetEmail, sendMail } from "@/lib/mail";
 import { hashPassword, validatePassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { takeRateLimit } from "@/lib/rate-limit";
+import { rememberPartnerName } from "@/lib/onboarding";
 import { getClientIp } from "@/lib/request";
 import { createSession, deleteSession } from "@/lib/session";
 import { createUserToken, findValidToken } from "@/lib/tokens";
@@ -21,9 +23,9 @@ function normalizeEmail(value: unknown) {
 }
 
 /** Only same-site relative paths, so ?next= can't send people to another site. */
-function safeNextPath(value: unknown) {
+function safeNextPath(value: unknown, fallback: string) {
   if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
-    return "/dashboard";
+    return fallback;
   }
   return value;
 }
@@ -48,15 +50,19 @@ export async function login(_prevState: AuthFormState, formData: FormData): Prom
   }
 
   await createSession(user);
-  redirect(safeNextPath(formData.get("next")));
+  // Staff start in the console; couples in their dashboard.
+  redirect(safeNextPath(formData.get("next"), can(user.role, "console.view") ? "/super" : "/dashboard"));
 }
 
 export async function signup(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const name = formData.get("name");
+  const partnerName = formData.get("partnerName");
   const email = normalizeEmail(formData.get("email"));
   const password = formData.get("password");
 
   if (typeof name !== "string" || !name.trim()) return { error: "Please enter your name" };
+  if (typeof partnerName !== "string" || !partnerName.trim()) return { error: "Please enter your partner's name" };
+  if (name.trim().length > 80 || partnerName.trim().length > 80) return { error: "Names can be up to 80 characters" };
   if (!EMAIL_REGEX.test(email)) return { error: "Please enter a valid email" };
   const passwordError = validatePassword(password);
   if (passwordError) return { error: passwordError };
@@ -74,6 +80,8 @@ export async function signup(_prevState: AuthFormState, formData: FormData): Pro
   });
 
   await createSession(user);
+  // Pre-fills "Let's set up your site" with both names.
+  await rememberPartnerName(partnerName.trim());
   redirect("/dashboard/new");
 }
 

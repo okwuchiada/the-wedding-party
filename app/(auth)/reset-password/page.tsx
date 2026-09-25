@@ -1,7 +1,7 @@
 import Link from "next/link";
 import ResetPasswordForm from "@/components/auth/reset-password-form";
 import { AuthHeading, authLinkClass } from "@/components/auth/fields";
-import { MIN_PASSWORD_LENGTH } from "@/lib/password";
+import { MIN_PASSWORD_LENGTH } from "@/lib/password-rules";
 import { findValidToken } from "@/lib/tokens";
 
 export default async function ResetPasswordPage({

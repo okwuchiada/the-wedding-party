@@ -3,8 +3,9 @@ import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { decrypt, getSessionCookie } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { audit } from "@/lib/audit";
 import { scopedPrisma } from "@/lib/db-scoped";
-import type { WeddingRole } from "@/lib/generated/prisma/client";
+import { can, isStaff, type Permission } from "@/lib/permissions";
 
 export const LOGIN_PATH = "/login";
 
@@ -22,13 +23,13 @@ export const getCurrentUser = cache(async () => {
   });
   if (!user || user.sessionVersion !== session.sv) return null;
 
-  // An impersonation session is only valid while the impersonator is still a super admin.
+  // An impersonation session is only valid while the impersonator may still impersonate.
   if (session.impersonatorId) {
     const impersonator = await prisma.user.findUnique({
       where: { id: session.impersonatorId },
       select: { role: true },
     });
-    if (impersonator?.role !== "SUPER_ADMIN") return null;
+    if (!can(impersonator?.role, "user.impersonate")) return null;
   }
 
   return { ...user, impersonatorId: session.impersonatorId ?? null };
@@ -42,9 +43,10 @@ export const verifySession = cache(async () => {
   return user;
 });
 
-export async function requireSuperAdmin() {
+/** Staff console gate: 404s for anyone without the permission (couples included). */
+export async function requirePermission(permission: Permission) {
   const user = await verifySession();
-  if (user.role !== "SUPER_ADMIN") notFound();
+  if (!can(user.role, permission)) notFound();
   return user;
 }
 
@@ -53,25 +55,38 @@ const getMembership = cache(async (weddingId: string, userId: string) =>
 );
 
 /**
- * Whether the current user may manage this wedding: super admins manage every
- * wedding; couples need a membership, and OWNER for owner-only actions.
+ * view: see the dashboard. edit: change content (editor-level).
+ * owner: settings, members, publishing and billing.
  */
-export async function canManageWedding(weddingId: string, minRole: WeddingRole = "EDITOR") {
+export type WeddingAccess = "view" | "edit" | "owner";
+
+const STAFF_PERMISSION: Record<WeddingAccess, Permission> = {
+  view: "wedding.view",
+  edit: "wedding.edit",
+  owner: "wedding.manage",
+};
+
+/**
+ * Whether the current user may act on this wedding at `level`. Couples need a
+ * membership (OWNER for owner-level); staff need the matching permission.
+ */
+export async function canManageWedding(weddingId: string, level: WeddingAccess = "edit") {
   const user = await getCurrentUser();
   if (!user) return false;
-  if (user.role === "SUPER_ADMIN") return true;
+  if (can(user.role, STAFF_PERMISSION[level])) return true;
 
   const membership = await getMembership(weddingId, user.id);
   if (!membership) return false;
-  return minRole === "EDITOR" || membership.role === "OWNER";
+  return level !== "owner" || membership.role === "OWNER";
 }
 
 /**
  * Gate for every admin page and action: requires a session with access to the
- * wedding and returns it along with a client scoped to its rows.
+ * wedding and returns it along with a client scoped to its rows. When staff
+ * change a wedding they don't belong to, the change is logged under their name.
  */
 export const requireWeddingAccess = cache(
-  async (weddingId: string, minRole: WeddingRole = "EDITOR") => {
+  async (weddingId: string, level: WeddingAccess = "edit", auditAction?: string) => {
     const user = await verifySession();
 
     if (typeof weddingId !== "string" || !weddingId) notFound();
@@ -79,8 +94,13 @@ export const requireWeddingAccess = cache(
       where: { id: weddingId },
       include: { plan: true },
     });
-    if (!wedding || !(await canManageWedding(wedding.id, minRole))) notFound();
+    if (!wedding || !(await canManageWedding(wedding.id, level))) notFound();
 
-    return { user, wedding, db: scopedPrisma(wedding.id) };
+    const asStaff = isStaff(user.role) && !(await getMembership(wedding.id, user.id));
+    if (asStaff && level !== "view" && auditAction) {
+      await audit(user.id, `staff.${auditAction}`, { weddingId: wedding.id, meta: { role: user.role } });
+    }
+
+    return { user, wedding, db: scopedPrisma(wedding.id), asStaff };
   }
 );

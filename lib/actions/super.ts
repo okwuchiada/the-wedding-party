@@ -3,12 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { audit } from "@/lib/audit";
-import { getCurrentUser, requireSuperAdmin } from "@/lib/dal";
+import { getCurrentUser, requirePermission } from "@/lib/dal";
+import { sendInvite } from "@/lib/invites";
+import { can, isStaff, ROLE_LABELS, STAFF_ROLES, type Role } from "@/lib/permissions";
 import { decrypt, getSessionCookie, createSession } from "@/lib/session";
 import { passwordResetEmail, sendMail } from "@/lib/mail";
 import { fulfillPayment } from "@/lib/payments";
 import { verifyTransaction } from "@/lib/paystack";
 import { FEATURE_LABELS, type PlanFeature } from "@/lib/plans";
+import { takeRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { revalidateWedding } from "@/lib/tenant";
 import { createUserToken } from "@/lib/tokens";
@@ -28,7 +31,7 @@ export async function setWeddingStatus(
   weddingId: string,
   action: (typeof STATUS_ACTIONS)[number]
 ): Promise<SuperActionResult> {
-  const admin = await requireSuperAdmin();
+  const admin = await requirePermission("wedding.status");
   if (!STATUS_ACTIONS.includes(action)) return { error: "Unknown action" };
   const wedding = await findWedding(weddingId);
   if (!wedding) return { error: "Wedding not found" };
@@ -45,7 +48,7 @@ export async function setWeddingStatus(
 
 /** Grants a plan without payment, or removes the grant (falling back to what they paid for). */
 export async function compWedding(weddingId: string, planKey: string | null): Promise<SuperActionResult> {
-  const admin = await requireSuperAdmin();
+  const admin = await requirePermission("wedding.comp");
   const wedding = await findWedding(weddingId);
   if (!wedding) return { error: "Wedding not found" };
 
@@ -84,21 +87,56 @@ export async function compWedding(weddingId: string, planKey: string | null): Pr
 
 // ─── Users & impersonation ───────────────────────────────────────────────────
 
-export async function setUserRole(userId: string, role: "USER" | "SUPER_ADMIN"): Promise<SuperActionResult> {
-  const admin = await requireSuperAdmin();
-  if (role !== "USER" && role !== "SUPER_ADMIN") return { error: "Unknown role" };
+const ASSIGNABLE_ROLES: readonly Role[] = ["USER", ...STAFF_ROLES];
+
+/** Changes someone's staff access. "USER" removes staff access entirely. */
+export async function setStaffRole(userId: string, role: Role): Promise<SuperActionResult> {
+  const admin = await requirePermission("staff.manage");
+  if (!ASSIGNABLE_ROLES.includes(role)) return { error: "Unknown role" };
   if (userId === admin.id) return { error: "You can't change your own role" };
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return { error: "User not found" };
   await prisma.user.update({ where: { id: user.id }, data: { role } });
-  await audit(admin.id, "user.role", { meta: { userId: user.id, email: user.email, role } });
+  await audit(admin.id, "staff.role", { meta: { userId: user.id, email: user.email, from: user.role, to: role } });
+  revalidatePath("/super/staff");
   revalidatePath("/super/users");
-  return { message: `${user.email} is now ${role === "SUPER_ADMIN" ? "a super admin" : "a regular user"}` };
+  return { message: role === "USER" ? `${user.email} no longer has staff access` : `${user.email} is now ${ROLE_LABELS[role]}` };
+}
+
+export type AddStaffState = { error?: string; message?: string } | undefined;
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Gives someone staff access, inviting them by email if they're new. */
+export async function addStaff(_prevState: AddStaffState, formData: FormData): Promise<AddStaffState> {
+  const admin = await requirePermission("staff.manage");
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const role = String(formData.get("role") ?? "") as Role;
+  if (!EMAIL_REGEX.test(email)) return { error: "Enter a valid email" };
+  if (!isStaff(role)) return { error: "Choose an access level" };
+  if (!(await takeRateLimit("staff:add", admin.id, 30, 24 * 60 * 60 * 1000))) {
+    return { error: "Too many invites today" };
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing?.id === admin.id) return { error: "You can't change your own role" };
+  const user = existing
+    ? await prisma.user.update({ where: { id: existing.id }, data: { role } })
+    : await prisma.user.create({ data: { email, role } });
+  await audit(admin.id, "staff.add", { meta: { userId: user.id, email, role } });
+
+  let message = `${email} is now ${ROLE_LABELS[role]}.`;
+  if (!user.passwordHash) {
+    await sendInvite(user, null);
+    message = `Invite sent to ${email} as ${ROLE_LABELS[role]}.`;
+  }
+  revalidatePath("/super/staff");
+  return { message };
 }
 
 export async function sendUserPasswordReset(userId: string): Promise<SuperActionResult> {
-  const admin = await requireSuperAdmin();
+  const admin = await requirePermission("user.reset");
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return { error: "User not found" };
 
@@ -108,14 +146,14 @@ export async function sendUserPasswordReset(userId: string): Promise<SuperAction
   return { message: `Reset link sent to ${user.email}` };
 }
 
-/** Signs in as a couple to see what they see. Super admins can't be impersonated. */
+/** Signs in as a couple to see what they see. Staff can't be impersonated. */
 export async function impersonateUser(userId: string): Promise<SuperActionResult> {
-  const admin = await requireSuperAdmin();
+  const admin = await requirePermission("user.impersonate");
   if (admin.impersonatorId) return { error: "Stop impersonating first" };
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return { error: "User not found" };
-  if (user.role === "SUPER_ADMIN") return { error: "Super admins can't be impersonated" };
+  if (isStaff(user.role)) return { error: "Staff accounts can't be impersonated" };
 
   await audit(admin.id, "user.impersonate", { meta: { userId: user.id, email: user.email } });
   await createSession(user, admin.id);
@@ -128,7 +166,7 @@ export async function stopImpersonating() {
   if (!session?.impersonatorId || !user) redirect("/login");
 
   const admin = await prisma.user.findUnique({ where: { id: session.impersonatorId } });
-  if (!admin || admin.role !== "SUPER_ADMIN") redirect("/login");
+  if (!admin || !can(admin.role, "user.impersonate")) redirect("/login");
 
   await audit(admin.id, "user.impersonate_end", { meta: { userId: user.id, email: user.email } });
   await createSession(admin);
@@ -139,7 +177,7 @@ export async function stopImpersonating() {
 
 /** Asks Paystack about a payment again, e.g. when a webhook was missed. */
 export async function reverifyPayment(reference: string): Promise<SuperActionResult> {
-  const admin = await requireSuperAdmin();
+  const admin = await requirePermission("payment.reverify");
   const payment = await prisma.payment.findUnique({ where: { reference } });
   if (!payment) return { error: "Payment not found" };
 
@@ -163,7 +201,7 @@ export type PlanFormState = { error?: string; success?: boolean } | undefined;
 const PLAN_KEY = /^[a-z0-9-]{2,30}$/;
 
 export async function savePlan(_prevState: PlanFormState, formData: FormData): Promise<PlanFormState> {
-  const admin = await requireSuperAdmin();
+  const admin = await requirePermission("plans.manage");
 
   const id = formData.get("id");
   const key = String(formData.get("key") ?? "").trim();
@@ -201,5 +239,24 @@ export async function savePlan(_prevState: PlanFormState, formData: FormData): P
   }
   await audit(admin.id, "plan.save", { meta: { key, priceKobo: data.priceKobo, active: data.active } });
   revalidatePath("/super/plans");
+  return { success: true };
+}
+
+// ─── Support notes ───────────────────────────────────────────────────────────
+
+export type NoteState = { error?: string; success?: boolean } | undefined;
+
+const MAX_NOTE_LENGTH = 2000;
+
+export async function addSupportNote(weddingId: string, _prevState: NoteState, formData: FormData): Promise<NoteState> {
+  const staff = await requirePermission("notes.write");
+  const body = String(formData.get("body") ?? "").trim();
+  if (!body) return { error: "Write a note first" };
+  if (body.length > MAX_NOTE_LENGTH) return { error: `Keep notes under ${MAX_NOTE_LENGTH} characters` };
+  const wedding = await findWedding(weddingId);
+  if (!wedding) return { error: "Wedding not found" };
+
+  await prisma.supportNote.create({ data: { weddingId: wedding.id, authorId: staff.id, body } });
+  revalidatePath(`/super/weddings/${wedding.id}`);
   return { success: true };
 }

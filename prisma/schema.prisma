@@ -169,8 +169,12 @@ model BankDetails {
 
 // ─── Tenancy, accounts and billing ──────────────────────────────────────────
 
+// USER is a couple; the rest are platform staff (see lib/permissions.ts).
 enum UserRole {
   USER
+  VIEWER
+  SUPPORT
+  ADMIN
   SUPER_ADMIN
 }
 
@@ -186,9 +190,10 @@ model User {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  memberships WeddingMember[]
-  resetTokens PasswordResetToken[]
-  auditLogs   AuditLog[]
+  memberships  WeddingMember[]
+  resetTokens  PasswordResetToken[]
+  auditLogs    AuditLog[]
+  supportNotes SupportNote[]
 }
 
 enum WeddingStatus {
@@ -232,6 +237,7 @@ model Wedding {
   storyBeats    StoryBeat[]
   payments      Payment[]
   auditLogs     AuditLog[]
+  supportNotes  SupportNote[]
 }
 
 enum WeddingRole {
@@ -365,4 +371,17 @@ model AuthAttempt {
 
   @@index([kind, key, createdAt])
   @@index([createdAt])
+}
+
+// Staff-only notes on a wedding, e.g. "Called couple 12 Oct, payment pending with bank".
+model SupportNote {
+  id        String   @id @default(cuid())
+  wedding   Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId String
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId  String?
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([weddingId, createdAt])
 }

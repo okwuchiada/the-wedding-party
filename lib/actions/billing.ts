@@ -18,7 +18,9 @@ export async function startCheckout(
   _prevState: CheckoutState,
   formData: FormData
 ): Promise<CheckoutState> {
-  const { user, wedding } = await requireWeddingAccess(weddingId, "OWNER");
+  const { user, wedding, asStaff } = await requireWeddingAccess(weddingId, "owner");
+  // Only the couple pays; staff can comp a plan from the console instead.
+  if (asStaff) return { error: "Only the couple can pay for a plan. Comp it from the staff console instead." };
   if (!paystackConfigured()) return { error: "Payments aren't available yet. Please try again later." };
 
   const planKey = formData.get("planKey");

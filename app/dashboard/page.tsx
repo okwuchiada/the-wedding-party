@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import DashboardBar from "@/components/admin/dashboard-bar";
+import { can } from "@/lib/permissions";
 import { verifySession } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { dashboardPath, guestPath, weddingTheme } from "@/lib/tenant";
@@ -26,11 +27,14 @@ export default async function DashboardIndexPage() {
   });
 
   if (weddings.length === 1) redirect(dashboardPath(weddings[0].id));
-  if (weddings.length === 0) redirect("/dashboard/new");
+  if (weddings.length === 0) {
+    // Staff usually have no weddings of their own; their home is the console.
+    redirect(can(user.role, "console.view") && !user.impersonatorId ? "/super" : "/dashboard/new");
+  }
 
   return (
     <>
-      <DashboardBar isSuperAdmin={user.role === "SUPER_ADMIN" && !user.impersonatorId} />
+      <DashboardBar showConsole={can(user.role, "console.view") && !user.impersonatorId} />
       <div className="mx-auto max-w-6xl px-5 pt-4 pb-20 sm:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>

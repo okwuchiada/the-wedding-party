@@ -10,7 +10,7 @@ export async function saveBankDetails(
   _prevState: SaveBankDetailsState,
   formData: FormData
 ): Promise<SaveBankDetailsState> {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "saveBankDetails");
 
   const name = formData.get("name");
   const bank = formData.get("bank");

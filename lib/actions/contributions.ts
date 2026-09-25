@@ -73,7 +73,7 @@ export async function submitContribution(
 }
 
 export async function confirmContribution(weddingId: string, contributionId: string) {
-  const { wedding, db } = await requireWeddingAccess(weddingId);
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "confirmContribution");
 
   await db.contribution.update({
     where: { id: contributionId, weddingId: wedding.id },

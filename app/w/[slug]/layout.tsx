@@ -28,7 +28,8 @@ export default async function WeddingLayout({ children, params }: Params & { chi
   const style = { ...themeColorVars(theme.colors), ...themeFontVars(theme.fonts) } as React.CSSProperties;
 
   return (
-    <div style={style} className="flex min-h-screen flex-col bg-background text-foreground">
+    // data-wedding-theme lets the dashboard's Design tab restyle this live in its preview.
+    <div style={style} data-wedding-theme className="flex min-h-screen flex-col bg-background text-foreground">
       {block?.kind === "unavailable" ? (
         <main className="flex min-h-screen items-center justify-center p-6 text-center">
           <div className="max-w-md">

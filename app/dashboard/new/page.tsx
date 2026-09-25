@@ -3,10 +3,12 @@ import CreateWeddingForm from "@/components/admin/create-wedding-form";
 import MarketingShell from "@/components/marketing/shell";
 import { authLinkClass } from "@/components/auth/fields";
 import { verifySession } from "@/lib/dal";
+import { getPartnerName } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 
 export default async function NewWeddingPage() {
   const user = await verifySession();
+  const partnerName = await getPartnerName();
   const hasWeddings = (await prisma.weddingMember.count({ where: { userId: user.id } })) > 0;
 
   return (
@@ -25,7 +27,7 @@ export default async function NewWeddingPage() {
           you&apos;re ready for guests.
         </p>
         <div className="mt-12">
-          <CreateWeddingForm />
+          <CreateWeddingForm initialNames={{ bride: user.name ?? "", groom: partnerName }} />
         </div>
       </div>
     </MarketingShell>
