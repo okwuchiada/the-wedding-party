@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { SESSION_COOKIE } from "@/lib/session-cookie";
+import { decryptSessionToken, signSessionToken } from "@/lib/session-token";
 
 // Keep in sync with lib/geo.ts (which can't be imported here: it is server-only).
 const GEO_BYPASS_PARAM = "access";
@@ -70,7 +71,30 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  if (PROTECTED_PATH.test(pathname)) await refreshSession(request, response);
+  return response;
+}
+
+/**
+ * Slides a valid session's 30-minute idle timeout forward on activity, capped at its
+ * original absolute expiry. A missing/invalid/expired cookie is left alone: pages and
+ * actions re-verify the session themselves and redirect to login when it's gone.
+ */
+async function refreshSession(request: NextRequest, response: NextResponse) {
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  if (!token) return;
+  const session = await decryptSessionToken(token);
+  if (!session) return;
+
+  const refreshed = await signSessionToken(session);
+  response.cookies.set(SESSION_COOKIE, refreshed.token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    expires: refreshed.exp,
+    sameSite: "lax",
+    path: "/",
+  });
 }
 
 /**
