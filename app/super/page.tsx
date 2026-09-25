@@ -50,7 +50,7 @@ export default async function SuperOverviewPage() {
     <div className="flex flex-col gap-10">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-[6px] bg-white p-4">
+          <div key={s.label} className="rounded-md bg-white p-4">
             <p className="text-xs text-foreground/55">{s.label}</p>
             <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">{s.value}</p>
           </div>

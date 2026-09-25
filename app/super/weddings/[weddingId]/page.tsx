@@ -115,7 +115,9 @@ export default async function WeddingCasePage({ params }: { params: Promise<{ we
                 confirmText={`Suspend /w/${wedding.slug}? Guests will no longer see the site.`}
               />
             ))}
-          {allowed.comp && <CompForm weddingId={wedding.id} plans={plans} comped={wedding.comped} />}
+          {allowed.comp && (
+            <CompForm weddingId={wedding.id} plans={plans} comped={wedding.comped} currentPlanKey={wedding.plan?.key ?? null} />
+          )}
         </section>
       )}
 

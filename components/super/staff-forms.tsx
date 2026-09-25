@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
+import { useConfirm } from "@/components/admin/use-confirm";
 import { addStaff, setStaffRole, type SuperActionResult } from "@/lib/actions/super";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, STAFF_ROLES, type Role, type StaffRole } from "@/lib/permissions";
 
@@ -46,11 +47,12 @@ export function AddStaffForm() {
 export function RoleSelect({ userId, role }: { userId: string; role: Role }) {
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<SuperActionResult | null>(null);
+  const { confirm, confirmDialog } = useConfirm();
 
-  const change = (next: Role) => {
-    const text =
+  const change = async (next: Role) => {
+    const title =
       next === "USER" ? "Remove this person's staff access?" : `Change their access to ${ROLE_LABELS[next]}?`;
-    if (!window.confirm(text)) return;
+    if (!(await confirm({ title, danger: next === "USER" }))) return;
     startTransition(async () => setResult(await setStaffRole(userId, next)));
   };
 
@@ -81,6 +83,7 @@ export function RoleSelect({ userId, role }: { userId: string; role: Role }) {
       </span>
       {result?.error && <span className="text-xs text-(--m-coral-deep)">{result.error}</span>}
       {result?.message && <span className="text-xs text-(--m-emerald)">{result.message}</span>}
+      {confirmDialog}
     </span>
   );
 }

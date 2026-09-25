@@ -7,12 +7,14 @@ export default function CompForm({
   weddingId,
   plans,
   comped,
+  currentPlanKey,
 }: {
   weddingId: string;
   plans: { key: string; name: string }[];
   comped: boolean;
+  currentPlanKey: string | null;
 }) {
-  const [planKey, setPlanKey] = useState(plans[0]?.key ?? "");
+  const [planKey, setPlanKey] = useState(currentPlanKey ?? plans[0]?.key ?? "");
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<SuperActionResult | null>(null);
   const run = (key: string | null) => startTransition(async () => setResult(await compWedding(weddingId, key)));

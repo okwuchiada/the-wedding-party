@@ -50,7 +50,7 @@ export default async function SuperWeddingsPage({
       include: {
         story: { select: { brideName: true, groomName: true, weddingDate: true } },
         theme: { select: { heroNames: true } },
-        plan: { select: { name: true, features: true } },
+        plan: { select: { key: true, name: true, features: true } },
         members: { where: { role: "OWNER" }, include: { user: { select: { id: true, email: true, role: true } } } },
       },
     }),
@@ -132,7 +132,9 @@ export default async function SuperWeddingsPage({
                   )}
                 </div>
                 )}
-                {allowed.comp && <CompForm weddingId={w.id} plans={plans} comped={w.comped} />}
+                {allowed.comp && (
+                  <CompForm weddingId={w.id} plans={plans} comped={w.comped} currentPlanKey={w.plan?.key ?? null} />
+                )}
                 {!allowed.status && !allowed.comp && (
                   <Link href={`/super/weddings/${w.id}`} className="text-xs underline underline-offset-4">
                     Open case
