@@ -35,18 +35,18 @@ export default function CountdownBar({ target }: { target: string }) {
   ];
 
   return (
-    <div className="flex gap-6 border border-foreground/20 bg-ivory/10 text-sm text-foreground/80 backdrop-blur-sm">
+    <div className="flex border border-foreground/20 bg-ivory/10 text-sm text-foreground/80 backdrop-blur-sm">
       {units.map((unit, i) => (
         <div
           key={unit.label}
-          className={`flex-1 bg-ivory/10 pt-4.5 px-2.5 pb-3.5 text-center ${
+          className={`min-w-0 flex-1 bg-ivory/10 px-1 pt-4 pb-3 text-center sm:px-2.5 sm:pt-4.5 sm:pb-3.5 ${
             i === 0 ? "" : "border-l border-foreground/20"
           }`}
         >
-          <div className="font-(family-name:--serif) text-[42px] leading-none text-foreground font-medium tabular-nums">
+          <div className="font-(family-name:--serif) text-[32px] leading-none font-medium text-foreground tabular-nums sm:text-[42px]">
             {unit.value === undefined ? "--" : String(unit.value).padStart(2, "0")}
           </div>
-          <div className="mt-2 font-(family-name:--sans) text-[10px] uppercase tracking-[.26em] text-burnt-orange">
+          <div className="mt-2 font-(family-name:--sans) text-[12px] tracking-[.12em] text-burnt-orange uppercase sm:tracking-[.26em]">
             {unit.label}
           </div>
         </div>

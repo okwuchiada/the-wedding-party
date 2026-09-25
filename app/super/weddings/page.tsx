@@ -15,6 +15,7 @@ import { readPagination } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { dashboardPath, guestPath } from "@/lib/tenant";
 import { hasFeature } from "@/lib/plans";
+import { inputClass } from "@/components/ui/field";
 
 const STATUSES: WeddingStatus[] = ["DRAFT", "ACTIVE", "SUSPENDED", "ARCHIVED"];
 
@@ -78,7 +79,7 @@ export default async function SuperWeddingsPage({
   return (
     <div className="flex flex-col gap-5">
       <SearchForm q={term} placeholder="Slug, couple name or owner email">
-        <select name="status" defaultValue={status ?? ""} aria-label="Status" className="border border-(--m-mist) bg-white px-3 py-2 text-sm">
+        <select name="status" defaultValue={status ?? ""} aria-label="Status" className={`${inputClass} w-auto`}>
           <option value="">All statuses</option>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -86,7 +87,7 @@ export default async function SuperWeddingsPage({
             </option>
           ))}
         </select>
-        <select name="plan" defaultValue={plan ?? ""} aria-label="Plan" className="border border-(--m-mist) bg-white px-3 py-2 text-sm">
+        <select name="plan" defaultValue={plan ?? ""} aria-label="Plan" className={`${inputClass} w-auto`}>
           <option value="">All plans</option>
           <option value="none">No plan</option>
           {plans.map((p) => (
@@ -95,7 +96,7 @@ export default async function SuperWeddingsPage({
             </option>
           ))}
         </select>
-        <select name="sort" defaultValue={sortKey} aria-label="Sort" className="border border-(--m-mist) bg-white px-3 py-2 text-sm">
+        <select name="sort" defaultValue={sortKey} aria-label="Sort" className={`${inputClass} w-auto`}>
           {Object.entries(SORTS).map(([key, { label }]) => (
             <option key={key} value={key}>
               {label}
@@ -107,17 +108,17 @@ export default async function SuperWeddingsPage({
         {weddings.map((w) => (
           <tr key={w.id}>
             <td className="px-3 py-3">
-              <Link href={`/super/weddings/${w.id}`} className="font-medium text-foreground underline decoration-(--m-ink)/20 underline-offset-4 hover:decoration-(--m-ink)">
+              <Link href={`/super/weddings/${w.id}`} className="font-medium text-ink underline decoration-ink/20 underline-offset-4 hover:decoration-ink">
                 {coupleTitle(w.story, resolveLayout(w.theme).heroNames) ?? w.slug}
               </Link>
-              <p className="text-xs text-foreground/60">
+              <p className="text-xs text-muted">
                 /w/{w.slug} · {w.story ? date(w.story.weddingDate) : "no date"} · created {date(w.createdAt)}
               </p>
               <p className="mt-1 flex gap-3 text-xs">
-                <Link href={dashboardPath(w.id)} className="text-olive underline hover:text-burnt-orange">
+                <Link href={dashboardPath(w.id)} className="text-success underline hover:text-ink hover:underline">
                   Dashboard
                 </Link>
-                <a href={guestPath(w.slug)} target="_blank" rel="noopener noreferrer" className="text-olive underline hover:text-burnt-orange">
+                <a href={guestPath(w.slug)} target="_blank" rel="noopener noreferrer" className="text-success underline hover:text-ink hover:underline">
                   Guest site
                 </a>
               </p>
@@ -125,17 +126,17 @@ export default async function SuperWeddingsPage({
             <td className="px-3 py-3">
               <StatusBadge status={w.status} />
             </td>
-            <td className="px-3 py-3 text-foreground/80">
+            <td className="px-3 py-3 text-muted">
               {w.plan?.name ?? "—"}
               {hasFeature(w.plan, "prioritySupport") && (
-                <span className="ml-1.5 rounded-full bg-(--m-gold) px-1.5 py-0.5 text-[10px] font-bold">Priority</span>
+                <span className="ml-1.5 rounded-full bg-action px-1.5 py-0.5 text-[13px] font-bold">Priority</span>
               )}
-              {w.comped && <span className="text-xs text-foreground/55"> (comped)</span>}
-              {w.paidAt && !w.comped && <span className="text-xs text-foreground/55"> (paid)</span>}
+              {w.comped && <span className="text-xs text-muted"> (comped)</span>}
+              {w.paidAt && !w.comped && <span className="text-xs text-muted"> (paid)</span>}
             </td>
             <td className="px-3 py-3">
               {w.members.map((m) => (
-                <div key={m.id} className="flex flex-wrap items-center gap-2 text-xs text-foreground/80">
+                <div key={m.id} className="flex flex-wrap items-center gap-2 text-xs text-muted">
                   {m.user.email}
                   {isStaff(m.user.role) && <RoleBadge role={m.user.role} />}
                   {allowed.impersonate && !isStaff(m.user.role) && (

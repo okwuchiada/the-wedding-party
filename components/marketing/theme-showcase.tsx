@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { THEME_PRESETS } from "@/lib/themes";
 import SitePreview from "./site-preview";
 
@@ -24,6 +24,22 @@ function stripeCloth(c: Colors, offset: number) {
 export default function ThemeShowcase({ children }: { children: React.ReactNode }) {
   const [active, setActive] = useState("blush-rose");
   const preset = THEME_PRESETS.find((p) => p.key === active) ?? THEME_PRESETS[0];
+  const stripRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Radio-group keys: arrows move the choice, Home/End jump to the ends.
+  const onKeyDown = (e: React.KeyboardEvent, index: number) => {
+    const last = THEME_PRESETS.length - 1;
+    const next =
+      e.key === "ArrowRight" || e.key === "ArrowDown" ? (index === last ? 0 : index + 1)
+      : e.key === "ArrowLeft" || e.key === "ArrowUp" ? (index === 0 ? last : index - 1)
+      : e.key === "Home" ? 0
+      : e.key === "End" ? last
+      : null;
+    if (next === null) return;
+    e.preventDefault();
+    setActive(THEME_PRESETS[next].key);
+    stripRefs.current[next]?.focus();
+  };
 
   return (
     <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-16">
@@ -35,11 +51,16 @@ export default function ThemeShowcase({ children }: { children: React.ReactNode 
             return (
               <button
                 key={p.key}
+                ref={(el) => {
+                  stripRefs.current[i] = el;
+                }}
                 type="button"
                 role="radio"
                 aria-checked={selected}
                 aria-label={p.name}
+                tabIndex={selected ? 0 : -1}
                 onClick={() => setActive(p.key)}
+                onKeyDown={(e) => onKeyDown(e, i)}
                 style={{ animationDelay: `${i * 90}ms`, ...stripeCloth(p.colors, i * -17) }}
                 className={`weave-in group relative flex flex-1 flex-col overflow-hidden rounded-[2px] outline-offset-4 transition-[flex-grow] duration-500 focus-visible:outline-2 focus-visible:outline-(--m-ink) motion-reduce:transition-none ${
                   selected ? "grow-[2.2]" : "grow"
@@ -56,7 +77,10 @@ export default function ThemeShowcase({ children }: { children: React.ReactNode 
             );
           })}
         </div>
-        <p className="mt-3 text-sm text-(--m-ink)/65">Pick a strip to dress the site. Every colour and font can be changed later.</p>
+        <p aria-live="polite" className="mt-3 text-sm text-(--m-ink)/70">
+          <span className="font-semibold text-(--m-ink)">{preset.name}</span> · Pick a strip to dress the site. Every colour and font can be changed
+          later.
+        </p>
       </div>
 
       <SitePreview preset={preset} />

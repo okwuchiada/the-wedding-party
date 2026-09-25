@@ -41,6 +41,8 @@ model Contribution {
   guestName      String
   amountCents    Int
   note           String?
+  // What the guest put on their bank transfer, e.g. "HONEY-4827".
+  reference      String?
   status         ContributionStatus @default(AWAITING_CONFIRMATION)
   createdAt      DateTime           @default(now())
   confirmedAt    DateTime?

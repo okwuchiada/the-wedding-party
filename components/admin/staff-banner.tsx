@@ -5,14 +5,14 @@ import { ROLE_LABELS, type Role } from "@/lib/permissions";
 export default function StaffBanner({ role, readOnly, consoleHref }: { role: string; readOnly: boolean; consoleHref: string }) {
   return (
     <div className="mx-auto mb-2 max-w-6xl px-5 sm:px-8">
-      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[6px] bg-(--m-gold)/20 px-4 py-2.5 text-sm">
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[6px] bg-action/20 px-4 py-2.5 text-sm">
         <span className="font-semibold">Staff access ({ROLE_LABELS[role as Role] ?? role})</span>
-        <span className="text-(--m-ink)/75">
+        <span className="text-ink/75">
           {readOnly
             ? "You can look around but not change anything."
             : "Changes you make are saved to the couple's site and logged under your name."}
         </span>
-        <Link href={consoleHref} className="font-medium underline decoration-(--m-ink)/30 underline-offset-4 hover:decoration-(--m-ink)">
+        <Link href={consoleHref} className="font-medium underline decoration-ink/30 underline-offset-4 hover:decoration-ink">
           Case notes
         </Link>
       </p>

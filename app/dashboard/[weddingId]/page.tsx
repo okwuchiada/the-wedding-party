@@ -12,11 +12,15 @@ import { getWeddingById, guestPath, moneyFormat } from "@/lib/tenant";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
 import { resolveTheme } from "@/lib/themes";
 import { getCountries } from "@/lib/countries";
+import { guestCapacity } from "@/lib/capacity";
+import { tabFromParam } from "@/lib/dashboard-tabs";
 
 export default async function WeddingDashboardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ weddingId: string }>;
+  searchParams: Promise<{ tab?: string | string[] }>;
 }) {
   const { weddingId } = await params;
   const { user, wedding, db, asStaff } = await requireWeddingAccess(weddingId, "view");
@@ -101,6 +105,7 @@ export default async function WeddingDashboardPage({
   ]);
   const paidKobo = payments.filter((p) => p.status === "SUCCESS").reduce((sum, p) => sum + p.amountKobo, 0);
   const copy = settings.copy;
+  const initialTab = tabFromParam((await searchParams).tab, isOwner);
 
   return (
     <>
@@ -142,6 +147,9 @@ export default async function WeddingDashboardPage({
         asoebiFabric: copy?.asoebiFabric ?? null,
         canCustomCredit: hasFeature(wedding.plan, "customCredit"),
         brandingRemoved: hasFeature(wedding.plan, "removeBranding"),
+        // Plans are sorted cheapest first, so these are the cheapest upgrades that unlock each.
+        brandingPlan: plans.find((p) => hasFeature(p, "removeBranding"))?.name ?? null,
+        creditPlan: plans.find((p) => hasFeature(p, "customCredit"))?.name ?? null,
       }}
       billing={{
         currentPlan: wedding.plan
@@ -203,6 +211,7 @@ export default async function WeddingDashboardPage({
         guestName: c.guestName,
         itemName: c.registryItem.name,
         amountCents: c.amountCents,
+        reference: c.reference,
         dateRequested: c.createdAt.toISOString().slice(0, 10),
       }))}
       confirmedContributions={confirmedContributions.map((c) => ({
@@ -210,6 +219,7 @@ export default async function WeddingDashboardPage({
         guestName: c.guestName,
         itemName: c.registryItem.name,
         amountCents: c.amountCents,
+        reference: c.reference,
         dateConfirmed: (c.confirmedAt ?? c.createdAt).toISOString().slice(0, 10),
       }))}
       pendingWishes={pendingWishes.map((w) => ({
@@ -222,6 +232,7 @@ export default async function WeddingDashboardPage({
         id: w.id,
         guestName: w.guestName,
         message: w.message,
+        dateSubmitted: w.createdAt.toISOString().slice(0, 10),
       }))}
       hiddenWishes={hiddenWishes.map((w) => ({
         id: w.id,
@@ -270,6 +281,8 @@ export default async function WeddingDashboardPage({
         type: m.type,
         dateUploaded: m.createdAt.toISOString().slice(0, 10),
       }))}
+      initialTab={initialTab}
+      capacity={guestCapacity(wedding.maxGuests, wedding.plan?.maxGuests)}
       rsvps={rsvps.map((r) => ({
         id: r.id,
         guestName: r.guestName,

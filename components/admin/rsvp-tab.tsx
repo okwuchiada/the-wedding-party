@@ -13,12 +13,14 @@ import {
   type ImportRsvpsResult,
 } from "@/lib/actions/rsvp";
 import { readRsvpFile, RSVP_TEMPLATE_CSV } from "@/lib/rsvp-import";
+import { guestListCsv } from "@/lib/guest-list-csv";
 import { Pagination, usePagination } from "./pagination";
 import { useConfirm } from "./use-confirm";
 import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
+import { buttonClass } from "@/components/ui/button";
+import { inputClass } from "@/components/ui/field";
 
-const inputClass = "border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none";
 
 function RsvpForm({
   action,
@@ -39,15 +41,15 @@ function RsvpForm({
   }, [state?.success]);
 
   return (
-    <form action={formAction} className="grid grid-cols-1 gap-3 bg-ivory p-4 sm:grid-cols-2">
+    <form action={formAction} className="grid grid-cols-1 gap-3 bg-surface-muted p-4 sm:grid-cols-2">
       {initialValues?.id && <input type="hidden" name="id" defaultValue={initialValues.id} />}
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
         Name
         <input name="guestName" defaultValue={initialValues?.guestName} className={inputClass} />
       </label>
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
         Email (optional)
         <input
           name="email"
@@ -57,7 +59,7 @@ function RsvpForm({
         />
       </label>
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
         Attending
         <select
           name="attending"
@@ -69,30 +71,30 @@ function RsvpForm({
         </select>
       </label>
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60 sm:col-span-2">
+      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink sm:col-span-2">
         Message (optional)
         <textarea
           rows={2}
           name="message"
           defaultValue={initialValues?.message ?? ""}
-          className={`resize-none ${inputClass}`}
+          className={`${inputClass} resize-none`}
         />
       </label>
 
-      {state?.error && <p className="text-xs text-burnt-orange sm:col-span-2">{state.error}</p>}
+      {state?.error && <p className="text-[13px] text-danger sm:col-span-2">{state.error}</p>}
 
       <div className="flex gap-2 sm:col-span-2">
         <button
           type="button"
           onClick={onCancel}
-          className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
+          className={buttonClass("secondary", "sm")}
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
+          className={buttonClass("primary", "sm")}
         >
           {pending ? "Saving…" : submitLabel}
         </button>
@@ -138,12 +140,12 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
   const templateHref = `data:text/csv;charset=utf-8,${encodeURIComponent(RSVP_TEMPLATE_CSV)}`;
 
   return (
-    <div className="flex flex-col gap-3 bg-ivory p-4">
-      <p className="text-xs text-foreground/60">
+    <div className="flex flex-col gap-3 bg-surface-muted p-4">
+      <p className="text-xs text-muted">
         Upload a .csv or .xlsx file with columns <strong>Name</strong>, <strong>Attending</strong>{" "}
         (yes/no), and optionally <strong>Email</strong> and <strong>Message</strong>. Guests already on the list (matched by email, or by name when
         there&apos;s no email) are updated instead of duplicated.{" "}
-        <a href={templateHref} download="rsvp-template.csv" className="text-burnt-orange underline">
+        <a href={templateHref} download="rsvp-template.csv" className="text-danger underline">
           Download template
         </a>
       </p>
@@ -153,20 +155,20 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
         type="file"
         accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         onChange={handleFile}
-        className={`${inputClass} file:mr-3 file:border-0 file:rounded-full file:bg-(--m-ink) file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ivory`}
+        className={`${inputClass} file:mr-3 file:border-0 file:rounded-full file:bg-ink file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-paper`}
       />
 
-      {fileError && <p className="text-xs text-burnt-orange">{fileError}</p>}
+      {fileError && <p className="text-[13px] text-danger">{fileError}</p>}
 
       {rows && (
         <div>
-          <p className="mb-2 text-xs text-foreground/70">
+          <p className="mb-2 text-xs text-muted">
             {rows.length} {rows.length === 1 ? "guest" : "guests"} found. Preview:
           </p>
-          <div className="max-h-60 overflow-auto border border-(--m-mist) rounded-[6px] bg-white">
+          <div className="max-h-60 overflow-auto border border-line rounded-[6px] bg-surface">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
+                <tr className="border-b border-line text-xs text-muted">
                   <th className="px-3 py-2 font-medium">Row</th>
                   <th className="px-3 py-2 font-medium">Name</th>
                   <th className="px-3 py-2 font-medium">Email</th>
@@ -175,11 +177,11 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
               </thead>
               <tbody>
                 {rows.map((r, i) => (
-                  <tr key={i} className="border-b border-(--m-mist) last:border-0">
-                    <td className="px-3 py-1.5 text-foreground/50">{i + 2}</td>
-                    <td className="px-3 py-1.5 text-foreground">{String(r.guestName)}</td>
-                    <td className="px-3 py-1.5 text-foreground/70">{String(r.email) || "—"}</td>
-                    <td className="px-3 py-1.5 text-foreground/70">
+                  <tr key={i} className="border-b border-line last:border-0">
+                    <td className="px-3 py-1.5 text-muted">{i + 2}</td>
+                    <td className="px-3 py-1.5 text-ink">{String(r.guestName)}</td>
+                    <td className="px-3 py-1.5 text-muted">{String(r.email) || "—"}</td>
+                    <td className="px-3 py-1.5 text-muted">
                       {r.attending === true ? "Yes" : r.attending === false ? "No" : `? (${String(r.attending)})`}
                     </td>
                   </tr>
@@ -191,7 +193,7 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
       )}
 
       {result?.error && (
-        <div className="text-xs text-burnt-orange">
+        <div className="text-[13px] text-danger">
           <p>{result.error}</p>
           {result.rowErrors && (
             <ul className="mt-1 list-disc pl-5">
@@ -206,7 +208,7 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
         </div>
       )}
       {result && !result.error && (
-        <p className="text-xs text-olive">
+        <p className="text-[13px] text-success">
           Imported: {result.created} added, {result.updated} updated.
         </p>
       )}
@@ -215,7 +217,7 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           onClick={onClose}
-          className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
+          className={buttonClass("secondary", "sm")}
         >
           {result && !result.error ? "Done" : "Cancel"}
         </button>
@@ -223,7 +225,7 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
           type="button"
           disabled={!rows || importing}
           onClick={handleImport}
-          className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
+          className={buttonClass("primary", "sm")}
         >
           {importing ? "Importing…" : "Import"}
         </button>
@@ -232,33 +234,11 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
   );
 }
 
-function csvCell(value: string) {
-  // Guest-entered text could start with a formula character; prefix it so
-  // Excel/Sheets treat it as text instead of executing it.
-  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
-  return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
-}
 
 // Attending guests only, alphabetical, with a blank column to tick at the door.
 function exportGuestList(rsvps: RsvpView[]) {
-  const guests = rsvps
-    .filter((r) => r.attending)
-    .sort((a, b) => a.guestName.localeCompare(b.guestName));
-
-  const lines = [
-    ["#", "Name", "Email", "Message", "RSVP date", "Checked in"],
-    ...guests.map((r, i) => [
-      String(i + 1),
-      r.guestName,
-      r.email,
-      r.message ?? "",
-      r.dateSubmitted,
-      "",
-    ]),
-  ].map((row) => row.map(csvCell).join(","));
-
   // BOM so Excel reads names with accents correctly.
-  const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const blob = new Blob(["﻿" + guestListCsv(rsvps)], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -267,7 +247,7 @@ function exportGuestList(rsvps: RsvpView[]) {
   URL.revokeObjectURL(url);
 }
 
-export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
+export default function RsvpTab({ rsvps, capacity }: { rsvps: RsvpView[]; capacity: number }) {
   const attendingGuests = rsvps
     .filter((r) => r.attending)
     .reduce((sum, r) => sum + r.guestCount, 0);
@@ -305,33 +285,33 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
   return (
     <div>
       <div className="mb-8 grid grid-cols-2 gap-4 sm:max-w-md">
-        <div className="rounded-[6px] bg-white p-4 border border-(--m-mist)">
-          <p className="text-xs text-foreground/55">Attending</p>
-          <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">
-            {attendingGuests} <span className="text-base text-foreground/40">/ 100</span>
+        <div className="rounded-[6px] bg-surface p-4 border border-line">
+          <p className="text-xs text-muted">Attending</p>
+          <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">
+            {attendingGuests} <span className="text-base text-muted">/ {capacity}</span>
           </p>
         </div>
-        <div className="rounded-[6px] bg-white p-4 border border-(--m-mist)">
-          <p className="text-xs text-foreground/55">Declined</p>
-          <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">{declinedCount}</p>
+        <div className="rounded-[6px] bg-surface p-4 border border-line">
+          <p className="text-xs text-muted">Declined</p>
+          <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">{declinedCount}</p>
         </div>
       </div>
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">RSVPs</h2>
+        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">RSVPs</h2>
         {!panel && (
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setPanel("import")}
-              className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
+              className={buttonClass("secondary", "sm")}
             >
               Import CSV / Excel
             </button>
             <button
               type="button"
               onClick={() => setPanel("add")}
-              className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
+              className={buttonClass("primary", "sm")}
             >
               Add RSVP
             </button>
@@ -350,20 +330,20 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
         </div>
       )}
 
-      {deleteError && <p className="mb-3 text-xs text-burnt-orange">{deleteError}</p>}
-      {sendError && <p className="mb-3 text-xs text-burnt-orange">{sendError}</p>}
+      {deleteError && <p className="mb-3 text-[13px] text-danger">{deleteError}</p>}
+      {sendError && <p className="mb-3 text-[13px] text-danger">{sendError}</p>}
 
       {rsvps.length === 0 ? (
-        <p className="text-sm text-foreground/60">No responses yet.</p>
+        <p className="text-sm text-muted">No responses yet.</p>
       ) : (
         <>
-        <div className="overflow-x-auto rounded-[6px] border border-(--m-mist) bg-white">
+        <div className="overflow-x-auto rounded-[6px] border border-line bg-surface">
           <table className="w-full min-w-150 text-left text-sm">
             <thead>
-              <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
+              <tr className="border-b border-line text-xs text-muted">
                 <th className="px-4 py-3 font-medium">Guest</th>
                 <th className="px-4 py-3 font-medium">Attending</th>
-                <th className="px-4 py-3 font-medium">Guests</th>
+                <th className="px-4 py-3 font-medium">Party</th>
                 <th className="px-4 py-3 font-medium">Message</th>
                 <th className="px-4 py-3 font-medium">Submitted</th>
                 <th className="px-4 py-3 font-medium">Confirmation</th>
@@ -373,43 +353,43 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
             <tbody>
               {pageItems.map((r) =>
                 editingId === r.id ? (
-                  <tr key={r.id} className="border-b border-(--m-mist) last:border-0">
+                  <tr key={r.id} className="border-b border-line last:border-0">
                     <td colSpan={7} className="p-0">
                       <RsvpForm
                         action={updateRsvpAdmin.bind(null, weddingId)}
                         initialValues={r}
                         onCancel={() => setEditingId(null)}
-                        submitLabel="Save Changes"
+                        submitLabel="Save changes"
                       />
                     </td>
                   </tr>
                 ) : (
-                  <tr key={r.id} className="border-b border-(--m-mist) last:border-0">
-                    <td className="px-4 py-3 text-foreground">
+                  <tr key={r.id} className="border-b border-line last:border-0">
+                    <td className="px-4 py-3 text-ink">
                       {r.guestName}
-                      {r.email && <span className="block text-xs text-foreground/50">{r.email}</span>}
+                      {r.email && <span className="block text-xs text-muted">{r.email}</span>}
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`text-xs font-medium ${r.attending ? "text-olive" : "text-burnt-orange"}`}
+                        className={`text-xs font-medium ${r.attending ? "text-success" : "text-danger"}`}
                       >
                         {r.attending ? "Yes" : "No"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-foreground/70">{r.attending ? r.guestCount : "—"}</td>
-                    <td className="px-4 py-3 text-foreground/70">{r.message || "—"}</td>
-                    <td className="px-4 py-3 text-foreground/70">{r.dateSubmitted}</td>
+                    <td className="px-4 py-3 text-muted">{r.attending ? r.guestCount : "—"}</td>
+                    <td className="px-4 py-3 text-muted">{r.message || "—"}</td>
+                    <td className="px-4 py-3 text-muted">{r.dateSubmitted}</td>
                     <td className="px-4 py-3">
                       {r.confirmationSentAt ? (
-                        <span className="text-xs text-olive">Sent {r.confirmationSentAt}</span>
+                        <span className="text-[13px] text-success">Sent {r.confirmationSentAt}</span>
                       ) : !r.email ? (
-                        <span className="text-xs text-foreground/50">No email</span>
+                        <span className="text-xs text-muted">No email</span>
                       ) : (
                         <button
                           type="button"
                           disabled={isPending(r.id)}
                           onClick={() => handleSend(r.id)}
-                          className="rounded-full bg-(--m-gold) px-3 py-1.5 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
+                          className={buttonClass("primary", "sm")}
                         >
                           {isPending(r.id, "send") ? "Sending…" : "Send confirmation"}
                         </button>
@@ -420,7 +400,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
                         type="button"
                         disabled={isPending(r.id)}
                         onClick={() => setEditingId(r.id)}
-                        className="mr-3 text-xs text-foreground/60 hover:text-burnt-orange disabled:opacity-60"
+                        className={`mr-3 ${buttonClass("text", "sm")}`}
                       >
                         Edit
                       </button>
@@ -428,7 +408,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
                         type="button"
                         disabled={isPending(r.id)}
                         onClick={() => handleDelete(r.id, r.guestName)}
-                        className="text-xs text-foreground/60 hover:text-burnt-orange disabled:opacity-60"
+                        className={buttonClass("text", "sm")}
                       >
                         {isPending(r.id, "delete") ? "Deleting…" : "Delete"}
                       </button>
@@ -448,7 +428,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
           <button
             type="button"
             onClick={() => exportGuestList(rsvps)}
-            className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
+            className={buttonClass("secondary", "sm")}
           >
             Export guest list (CSV)
           </button>

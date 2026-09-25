@@ -5,12 +5,13 @@ import { formatMoney } from "@/lib/money";
 import { fulfillPayment } from "@/lib/payments";
 import { PAYSTACK_CURRENCY, verifyTransaction } from "@/lib/paystack";
 import { prisma } from "@/lib/prisma";
-import { dashboardPath } from "@/lib/tenant";
+import { dashboardTabHref } from "@/lib/dashboard-tabs";
+import { buttonClass } from "@/components/ui/button";
 
 const MESSAGES = {
   success: { title: "Payment received", body: "Your plan is active. You can publish your site from Settings." },
   pending: { title: "Payment processing", body: "We haven't had confirmation from Paystack yet. This page will update once it arrives — you can safely leave it." },
-  failed: { title: "Payment didn't go through", body: "You haven't been charged. You can try again from the Billing tab." },
+  failed: { title: "Payment didn't go through", body: "You haven't been charged. You can try again from Billing." },
   review: { title: "We're checking your payment", body: "Something about this payment needs a manual check. We'll be in touch; you don't need to pay again." },
   unknown: { title: "Payment not found", body: "We couldn't find that payment for this wedding." },
 } as const;
@@ -49,21 +50,21 @@ export default async function BillingReturnPage({
   const message = MESSAGES[status];
   return (
     <div className="flex min-h-screen items-center justify-center px-5 py-12">
-      <div className="w-full max-w-md overflow-hidden rounded-[6px] border border-(--m-mist) bg-white shadow-[0_30px_60px_-40px_rgb(22_32_74/0.45)]">
+      <div className="w-full max-w-md overflow-hidden rounded-[6px] border border-line bg-surface shadow-[0_30px_60px_-40px_rgb(22_32_74/0.45)]">
         <WovenBand className="h-2" />
         <div className="p-8">
           <h1 className="font-(family-name:--m-display) text-3xl font-extrabold tracking-[-0.02em]">{message.title}</h1>
           {payment && (
-            <p className="mt-2 text-sm text-(--m-ink)/60">
+            <p className="mt-2 text-sm text-ink/60">
               {payment.plan.name}, {formatMoney(payment.amountKobo, { currency: PAYSTACK_CURRENCY, locale: "en-NG" })}
             </p>
           )}
-          <p className="mt-4 leading-relaxed text-(--m-ink)/80">{message.body}</p>
+          <p className="mt-4 leading-relaxed text-ink/80">{message.body}</p>
           <Link
-            href={dashboardPath(wedding.id)}
-            className="mt-7 inline-block rounded-full bg-(--m-gold) px-6 py-3 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
+            href={dashboardTabHref(wedding.id, "billing")}
+            className={`mt-7 ${buttonClass("primary", "lg")}`}
           >
-            Back to dashboard
+            Back to billing
           </Link>
         </div>
       </div>

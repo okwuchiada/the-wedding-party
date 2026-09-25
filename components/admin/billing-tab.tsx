@@ -5,6 +5,13 @@ import { startCheckout } from "@/lib/actions/billing";
 import PlanCard, { type PlanCardPlan } from "@/components/marketing/plan-card";
 import { formatMoney } from "@/lib/money";
 import { useAdminWeddingId } from "./wedding-context";
+import { StatusBadge } from "@/components/super/status-badge";
+import { Card } from "@/components/ui/card";
+import { Notice } from "@/components/ui/notice";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { TableShell, Td, Th } from "@/components/ui/table";
+import { shortDate } from "@/lib/format-date";
+import type { PaymentStatus } from "@/lib/generated/prisma/client";
 
 export type BillingView = {
   currentPlan: {
@@ -37,25 +44,40 @@ function closingNote(closesAt: string | null) {
 export default function BillingTab({ billing }: { billing: BillingView }) {
   const weddingId = useAdminWeddingId();
   const [state, formAction, pending] = useActionState(startCheckout.bind(null, weddingId), undefined);
+  const currentHighlights = billing.plans.find((p) => p.current)?.highlights.slice(0, 3) ?? [];
 
   return (
     <div className="flex flex-col gap-8">
-      <section>
-        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Your plan</h2>
-        <p className="mt-1 text-sm text-foreground/70">
+      <Card as="section" className={billing.currentPlan && !billing.currentPlan.free ? "border-action" : ""}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-(family-name:--m-display) text-2xl font-bold tracking-tight text-ink">
+            {billing.currentPlan ? billing.currentPlan.name : "Free draft"}
+          </h2>
+          <span className="rounded-full bg-success/12 px-2.5 py-1 text-[13px] font-semibold text-success">
+            {billing.currentPlan?.comped ? "Complimentary" : "Current plan"}
+          </span>
+        </div>
+        <p className="mt-2 text-sm text-muted">
           {!billing.currentPlan
-            ? "You're on a free draft. Choose a plan to publish your site for guests."
+            ? "Choose a plan to publish your site for guests."
             : billing.currentPlan.free
-              ? `You're on ${billing.currentPlan.name}. Upgrade any time; you only pay once per wedding.`
-              : `${billing.currentPlan.name}${billing.currentPlan.comped ? " (complimentary)" : ""}, a one-time payment for this wedding.`}
+              ? "Upgrade any time; you only pay once per wedding."
+              : "A one-time payment for this wedding."}{" "}
+          {billing.currentPlan && closingNote(billing.currentPlan.closesAt)}
         </p>
-        {billing.currentPlan && <p className="mt-1 text-sm text-foreground/70">{closingNote(billing.currentPlan.closesAt)}</p>}
-      </section>
+        {currentHighlights.length > 0 && (
+          <ul className="mt-3 flex flex-wrap gap-2" aria-label="Included in your plan">
+            {currentHighlights.map((h) => (
+              <li key={h} className="rounded-full bg-surface-muted px-2.5 py-1 text-[13px] text-ink">
+                {h}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
-      {!billing.paymentsEnabled && (
-        <p className="bg-cream px-3 py-2 text-xs text-foreground/70">Online payments aren&apos;t switched on yet.</p>
-      )}
-      {state?.error && <p className="text-xs text-burnt-orange">{state.error}</p>}
+      {!billing.paymentsEnabled && <Notice tone="info">Online payments aren&apos;t switched on yet.</Notice>}
+      {state?.error && <Notice tone="error">{state.error}</Notice>}
 
       <div className="grid grid-cols-1 gap-5 pt-3 md:grid-cols-2 xl:grid-cols-3">
         {billing.plans.map((plan) => (
@@ -65,9 +87,9 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
             current={plan.current}
             action={
               plan.current ? (
-                <p className={`text-sm font-semibold ${plan.popular ? "text-(--m-gold)" : "text-(--m-emerald)"}`}>Your current plan</p>
+                <p className={`text-sm font-semibold ${plan.popular ? "text-action" : "text-success"}`}>Your current plan</p>
               ) : plan.chargeKobo === null ? (
-                <p className={`text-sm ${plan.popular ? "text-(--m-paper)/70" : "text-(--m-ink)/60"}`}>
+                <p className={`text-sm ${plan.popular ? "text-paper/70" : "text-ink/60"}`}>
                   {plan.priceKobo === 0 ? "Included free" : "Included in your plan"}
                 </p>
               ) : (
@@ -78,8 +100,8 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
                     disabled={pending || !billing.paymentsEnabled}
                     className={`w-full rounded-full px-4 py-3 text-sm font-semibold disabled:opacity-50 ${
                       plan.popular
-                        ? "bg-(--m-gold) text-(--m-ink) hover:bg-(--m-paper)"
-                        : "bg-(--m-ink) text-(--m-paper) hover:bg-(--m-emerald)"
+                        ? "bg-action text-ink hover:bg-paper"
+                        : "bg-ink text-paper hover:bg-success"
                     }`}
                   >
                     {pending
@@ -97,27 +119,29 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
 
       {billing.payments.length > 0 && (
         <section>
-          <h2 className="mb-3 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Payments</h2>
-          <table className="w-full rounded-[6px] bg-white text-left text-sm">
-            <thead className="text-xs text-foreground/55">
+          <SectionHeading title="Payments" />
+          <TableShell minWidth="min-w-0">
+            <thead>
               <tr>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Plan</th>
-                <th className="px-4 py-3">Amount</th>
-                <th className="px-4 py-3">Status</th>
+                <Th>Date</Th>
+                <Th>Plan</Th>
+                <Th numeric>Amount</Th>
+                <Th>Status</Th>
               </tr>
             </thead>
             <tbody>
               {billing.payments.map((p) => (
-                <tr key={p.reference} className="border-t border-(--m-mist)">
-                  <td className="px-4 py-3 text-foreground/70">{p.date}</td>
-                  <td className="px-4 py-3">{p.planName}</td>
-                  <td className="px-4 py-3">{formatMoney(p.amountKobo, NAIRA)}</td>
-                  <td className="px-4 py-3 text-foreground/70">{p.status.toLowerCase()}</td>
+                <tr key={p.reference}>
+                  <Td className="text-muted">{shortDate(p.date)}</Td>
+                  <Td>{p.planName}</Td>
+                  <Td numeric>{formatMoney(p.amountKobo, NAIRA)}</Td>
+                  <Td>
+                    <StatusBadge status={p.status as PaymentStatus} />
+                  </Td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </TableShell>
         </section>
       )}
     </div>

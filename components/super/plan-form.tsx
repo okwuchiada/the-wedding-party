@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useState } from "react";
 import { savePlan } from "@/lib/actions/super";
 import { FEATURE_LABELS, UNLIMITED_GUESTS, type PlanFeature } from "@/lib/plans";
+import { buttonClass } from "@/components/ui/button";
 
 export type PlanView = {
   id: string;
@@ -23,17 +24,17 @@ export type PlanView = {
   weddingCount: number;
 };
 
-const field = "w-full border border-(--m-mist) bg-white px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-(--m-ink)/50 disabled:bg-(--m-paper) disabled:text-foreground/40";
-const label = "flex flex-col gap-1 text-xs text-foreground/60";
-const check = "flex items-center gap-2 text-sm text-foreground";
+const field = "w-full border border-line bg-surface px-2.5 py-1.5 text-sm text-ink outline-none focus:border-ink/50 disabled:bg-paper disabled:text-muted";
+const label = "flex flex-col gap-1 text-xs text-muted";
+const check = "flex items-center gap-2 text-sm text-ink";
 
 /** One labelled group of settings: the label on the left, the fields on the right. */
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-1 gap-3 border-t border-(--m-mist) py-4 first-of-type:border-t-0 first-of-type:pt-0 sm:grid-cols-[9rem_1fr] sm:gap-6">
+    <div className="grid grid-cols-1 gap-3 border-t border-line py-4 first-of-type:border-t-0 first-of-type:pt-0 sm:grid-cols-[9rem_1fr] sm:gap-6">
       <div>
         <h4 className="text-sm font-semibold">{title}</h4>
-        {hint && <p className="mt-0.5 text-xs text-foreground/50">{hint}</p>}
+        {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
       </div>
       <div>{children}</div>
     </div>
@@ -74,7 +75,7 @@ function LimitField({
         className={field}
       />
       <input type="hidden" name={name} value={noLimit ? noLimitValue : number} />
-      <label className="flex items-center gap-1.5 text-xs text-foreground/70">
+      <label className="flex items-center gap-1.5 text-xs text-muted">
         <input type="checkbox" checked={noLimit} onChange={(e) => setNoLimit(e.target.checked)} />
         {noLimitLabel}
       </label>
@@ -141,7 +142,7 @@ export default function PlanForm({
             Most popular
           </label>
         </div>
-        <p className="mt-2 text-xs text-foreground/50">A price of 0 makes this the free plan new weddings start on.</p>
+        <p className="mt-2 text-xs text-muted">A price of 0 makes this the free plan new weddings start on.</p>
       </Section>
 
       <Section title="Limits" hint="Months online count from the wedding date.">
@@ -185,7 +186,7 @@ export default function PlanForm({
         {/* Unticked themes aren't submitted, so "every theme" simply sends none. */}
         {!allThemes && (
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <p className="col-span-2 text-xs text-foreground/50 sm:col-span-3">Tick the themes this plan includes. None ticked means every theme.</p>
+            <p className="col-span-2 text-xs text-muted sm:col-span-3">Tick the themes this plan includes. None ticked means every theme.</p>
             {themes.map((t) => (
               <label key={t.key} className={check}>
                 <input type="checkbox" name="themes" value={t.key} defaultChecked={plan?.themes.includes(t.key) ?? false} />
@@ -209,26 +210,26 @@ export default function PlanForm({
         </div>
       </Section>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-(--m-mist) pt-4">
+      <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-(--m-ink) px-5 py-2 text-sm font-semibold text-(--m-paper) hover:bg-(--m-emerald) disabled:opacity-60"
+          className={buttonClass("inverse", "md")}
         >
           {pending ? "Saving…" : plan ? "Save plan" : "Create plan"}
         </button>
         {onCancel && (
-          <button type="button" onClick={onCancel} className="rounded-full px-4 py-2 text-sm font-medium hover:bg-(--m-mist)">
+          <button type="button" onClick={onCancel} className={buttonClass("text", "md")}>
             Cancel
           </button>
         )}
         {plan && plan.weddingCount > 0 && (
-          <span className="text-xs text-foreground/55">
+          <span className="text-xs text-muted">
             Changes apply to the {plan.weddingCount} wedding{plan.weddingCount === 1 ? "" : "s"} on this plan.
           </span>
         )}
-        {state?.error && <span className="text-sm text-burnt-orange">{state.error}</span>}
-        {state?.success && <span className="text-sm text-olive">Saved</span>}
+        {state?.error && <span className="text-sm text-danger">{state.error}</span>}
+        {state?.success && <span className="text-sm text-success">Saved</span>}
       </div>
     </form>
   );

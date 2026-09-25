@@ -1,9 +1,16 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { saveCopy } from "@/lib/actions/design";
 import { COPY_FIELDS, COPY_MAX_LENGTH, type CopyKey } from "@/lib/copy";
+import { creditUpgradeNotice } from "@/lib/credit-notice";
 import { useAdminWeddingId } from "./wedding-context";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { inputClass, TextInput } from "@/components/ui/field";
+import { Notice } from "@/components/ui/notice";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { useSuccessToast } from "@/components/ui/toast";
 
 export type CopyView = Record<CopyKey, string | null> & {
   footerCredit: string | null;
@@ -12,81 +19,112 @@ export type CopyView = Record<CopyKey, string | null> & {
   asoebiFabric: string | null;
 };
 
-const fieldClass = "border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-(--m-ink)/50";
+type CopyField = (typeof COPY_FIELDS)[number];
+
+/**
+ * One piece of site text. Empty means guests see the default, which is shown
+ * under the box as real text instead of a grey placeholder that looks filled in.
+ */
+function CopyInput({ field, initial }: { field: CopyField; initial: string }) {
+  const [value, setValue] = useState(initial);
+  const id = `copy-${field.key}`;
+  const empty = !value.trim();
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm font-medium text-ink">
+        {field.label}
+      </label>
+      <textarea
+        id={id}
+        name={field.key}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        maxLength={COPY_MAX_LENGTH}
+        rows={field.fallback.length > 120 ? 4 : 2}
+        aria-describedby={`${id}-help`}
+        className={`${inputClass} resize-y`}
+      />
+      <div id={`${id}-help`} className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 text-[13px] text-muted">
+        <span className="min-w-0 flex-1">
+          {empty ? <>Guests see: &ldquo;{field.fallback}&rdquo;</> : "Your own wording."}
+          {"hint" in field && <> {field.hint}</>}
+        </span>
+        <span className="flex shrink-0 items-center gap-3">
+          <span className="tabular-nums">
+            {value.length}/{COPY_MAX_LENGTH}
+          </span>
+          {empty ? (
+            <Button variant="text" size="sm" onClick={() => setValue(field.fallback)}>
+              Start from this
+            </Button>
+          ) : (
+            <Button variant="text" size="sm" onClick={() => setValue("")}>
+              Use the default
+            </Button>
+          )}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function WordingTab({
   copy,
   canCustomCredit,
   brandingRemoved,
+  plans,
 }: {
   copy: CopyView;
   /** The plan lets the couple write their own footer credit. */
   canCustomCredit: boolean;
   /** The plan hides Vowly's credit (with or without a credit of their own). */
   brandingRemoved: boolean;
+  /** The cheapest plans that remove the credit or allow their own, by current name. */
+  plans: { brandingPlan: string | null; creditPlan: string | null };
 }) {
   const weddingId = useAdminWeddingId();
   const [state, formAction, pending] = useActionState(saveCopy.bind(null, weddingId), undefined);
+  useSuccessToast(state, "Wording saved");
 
   return (
-    <form action={formAction} className="flex max-w-2xl flex-col gap-8">
-      <section className="flex flex-col gap-4">
-        <div>
-          <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Site text</h2>
-          <p className="mt-1 text-sm text-foreground/60">Leave a box empty to use the default wording shown in grey.</p>
+    <form action={formAction} className="flex max-w-3xl flex-col gap-5">
+      <Card as="section">
+        <SectionHeading as="h3" title="Site text" description="Leave a box empty to use the default wording." />
+        <div className="flex flex-col gap-5">
+          {COPY_FIELDS.map((field) => (
+            <CopyInput key={field.key} field={field} initial={copy[field.key] ?? ""} />
+          ))}
         </div>
-        {COPY_FIELDS.map((field) => (
-          <label key={field.key} className="flex flex-col gap-1.5 text-xs text-foreground/60">
-            {field.label}
-            <textarea
-              name={field.key}
-              defaultValue={copy[field.key] ?? ""}
-              placeholder={field.fallback}
-              maxLength={COPY_MAX_LENGTH}
-              rows={field.fallback.length > 120 ? 4 : 2}
-              className={fieldClass}
-            />
-            {"hint" in field && <span className="text-[11px] text-foreground/50">{field.hint}</span>}
-          </label>
-        ))}
-      </section>
+      </Card>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">RSVP email</h2>
-        <label className="flex items-center gap-2 text-sm text-foreground">
-          <input type="checkbox" name="asoebiEnabled" defaultChecked={copy.asoebiEnabled} />
-          Include an asoebi section with a WhatsApp order button
-        </label>
-        <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-          Asoebi fabric (optional)
-          <input
+      <Card as="section">
+        <SectionHeading as="h3" title="Asoebi" description="Show a section about the fabric, with a WhatsApp button to order it." />
+        <div className="flex flex-col gap-4">
+          <label className="flex items-center gap-2.5 text-sm text-ink">
+            <input type="checkbox" name="asoebiEnabled" defaultChecked={copy.asoebiEnabled} className="size-4 accent-[var(--success)]" />
+            Show the asoebi section
+          </label>
+          <TextInput
+            label="Fabric (optional)"
             name="asoebiFabric"
             defaultValue={copy.asoebiFabric ?? ""}
-            placeholder="e.g. Aso-oke — Burnt Orange & Olive Green"
-            className={fieldClass}
+            placeholder="e.g. Aso-oke, burnt orange and olive green"
+            hint="The WhatsApp button uses the first partner's phone number from Our story."
           />
-        </label>
-        <p className="text-[11px] text-foreground/50">The WhatsApp button uses the first partner&apos;s phone number from Our Story.</p>
-      </section>
+        </div>
+      </Card>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Footer credit</h2>
+      <Card as="section">
+        <SectionHeading as="h3" title="Footer credit" />
         {!canCustomCredit && (
-          <p className="bg-cream px-3 py-2 text-xs text-foreground/70">
-            {brandingRemoved
-              ? "Your plan leaves the footer credit off. Upgrade to Forever to credit someone of your choice."
-              : "Your plan shows \u201cMade with love by Vowly\u201d. Upgrade to remove it, or to Forever to credit someone of your choice."}
-          </p>
+          <div className="mb-4">
+            <Notice tone="info">{creditUpgradeNotice({ brandingRemoved, ...plans })}</Notice>
+          </div>
         )}
-        <fieldset disabled={!canCustomCredit} className="grid grid-cols-1 gap-3 disabled:opacity-50 sm:grid-cols-2">
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-            Made with love by…
-            <input name="footerCredit" defaultValue={copy.footerCredit ?? ""} placeholder="Leave empty to hide" maxLength={80} className={fieldClass} />
-          </label>
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-            Link (optional)
-            <input name="footerCreditUrl" type="url" defaultValue={copy.footerCreditUrl ?? ""} placeholder="https://" className={fieldClass} />
-          </label>
+        <fieldset disabled={!canCustomCredit} className="grid grid-cols-1 gap-4 disabled:opacity-60 sm:grid-cols-2">
+          <TextInput label="Made with love by…" name="footerCredit" defaultValue={copy.footerCredit ?? ""} placeholder="Leave empty to hide" maxLength={80} />
+          <TextInput label="Link (optional)" name="footerCreditUrl" type="url" defaultValue={copy.footerCreditUrl ?? ""} placeholder="https://" />
         </fieldset>
         {/* A disabled fieldset doesn't submit; keep the saved values. */}
         {!canCustomCredit && (
@@ -95,17 +133,12 @@ export default function WordingTab({
             <input type="hidden" name="footerCreditUrl" value={copy.footerCreditUrl ?? ""} />
           </>
         )}
-      </section>
+      </Card>
 
-      {state?.error && <p className="text-xs text-burnt-orange">{state.error}</p>}
-      {state?.success && <p className="text-xs text-olive">Saved.</p>}
-      <button
-        type="submit"
-        disabled={pending}
-        className="self-start rounded-full bg-(--m-gold) px-6 py-2.5 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-      >
-        {pending ? "Saving…" : "Save wording"}
-      </button>
+      {state?.error && <Notice tone="error">{state.error}</Notice>}
+      <Button type="submit" size="lg" className="self-start" pending={pending} pendingLabel="Saving…">
+        Save wording
+      </Button>
     </form>
   );
 }

@@ -7,12 +7,13 @@ import { getWeddingById, resolveGuestAction, revalidateDashboard, weddingTheme }
 import { emailPalette, sendMail, rsvpConfirmationEmail } from "@/lib/mail";
 import { coupleNames, resolveLayout } from "@/lib/layouts";
 import { getClientIp } from "@/lib/request";
+import { capacityError, guestCapacity, seatChangeError, seatsLeft } from "@/lib/capacity";
+import { parseAdminRsvp, parseGuestRsvp } from "@/lib/rsvp-rules";
 
 export type SubmitRsvpState =
   | { error?: string; success?: boolean; guestName?: string; attending?: boolean }
   | undefined;
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const RATE_LIMIT_MAX = 5;
 const BURST_WINDOW_MS = 30 * 1000;
@@ -37,17 +38,15 @@ export async function submitRsvp(
   const { wedding, db } = guest;
 
   const honeypot = formData.get("hp_rsvp_x7");
-  const firstName = formData.get("firstName");
-  const lastName = formData.get("lastName");
+  const name = formData.get("name");
   const attendingRaw = formData.get("attending");
 
   if (typeof honeypot === "string" && honeypot.trim() !== "") {
     console.warn("RSVP honeypot triggered; submission discarded", {
-      firstName,
+      name,
       honeypot: honeypot.slice(0, 50),
     });
-    const trimmedFirst =
-      typeof firstName === "string" && firstName.trim() ? firstName.trim() : "Guest";
+    const trimmedFirst = typeof name === "string" && name.trim() ? name.trim().split(/\s+/)[0] : "Guest";
     return {
       success: true,
       guestName: trimmedFirst,
@@ -72,31 +71,25 @@ export async function submitRsvp(
     }
   }
 
-  const email = formData.get("email");
-  const message = formData.get("message");
+  const parsed = parseGuestRsvp({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    attending: attendingRaw,
+    partySize: formData.get("partySize"),
+    message: formData.get("message"),
+  });
+  if ("error" in parsed) return { error: parsed.error };
+  const { guestName, email, attending, guestCount, message } = parsed.data;
 
-  if (typeof firstName !== "string" || !firstName.trim()) {
-    return { error: "Please enter your first name" };
-  }
-  if (typeof lastName !== "string" || !lastName.trim()) {
-    return { error: "Please enter your last name" };
-  }
-
-  const guestName = `${firstName.trim()} ${lastName.trim()}`;
-  if (typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
-    return { error: "Please enter a valid email" };
-  }
-  if (attendingRaw !== "yes" && attendingRaw !== "no") {
-    return { error: "Please let us know if you can make it" };
-  }
-
-  const attending = attendingRaw === "yes";
-
-  if (await findRsvpByEmail(db, email)) {
-    return {
-      error:
-        "You've already RSVPed with this email. Please contact the couple if you need to make changes.",
-    };
+  // Without an email, the guest's name is what tells two replies apart.
+  const duplicate = email
+    ? await findRsvpByEmail(db, email)
+    : await db.rsvp.findFirst({
+        where: { weddingId: wedding.id, guestName: { equals: guestName, mode: "insensitive" } },
+        select: { id: true },
+      });
+  if (duplicate) {
+    return { error: "We already have an RSVP under this name or email. Please contact the couple to change it." };
   }
 
   if (attending) {
@@ -104,31 +97,18 @@ export async function submitRsvp(
       where: { weddingId: wedding.id, attending: true },
       _sum: { guestCount: true },
     });
-    const currentTotal = _sum.guestCount ?? 0;
-    const maxGuests = Math.min(wedding.maxGuests, wedding.plan?.maxGuests ?? wedding.maxGuests);
-    if (currentTotal + 1 > maxGuests) {
-      return { error: "Sorry, we've reached full capacity and can no longer accept RSVPs." };
-    }
+    const left = seatsLeft(guestCapacity(wedding.maxGuests, wedding.plan?.maxGuests), _sum.guestCount ?? 0);
+    const full = capacityError(guestCount, left);
+    if (full) return { error: full };
   }
 
-  const trimmedEmail = email.trim();
-
   await db.rsvp.create({
-    data: {
-      weddingId: wedding.id,
-      guestName,
-      email: trimmedEmail,
-      attending,
-      guestCount: 1,
-      message: typeof message === "string" && message.trim() ? message.trim() : null,
-      ipAddress: ip,
-      userAgent,
-    },
+    data: { weddingId: wedding.id, guestName, email, attending, guestCount, message, ipAddress: ip, userAgent },
   });
 
   revalidateDashboard(wedding);
 
-  return { success: true, guestName: firstName.trim(), attending };
+  return { success: true, guestName: guestName.split(" ")[0], attending };
 }
 
 export async function deleteRsvp(weddingId: string, id: string): Promise<{ error?: string }> {
@@ -141,41 +121,30 @@ export async function deleteRsvp(weddingId: string, id: string): Promise<{ error
 
 export type AdminRsvpFormState = { error?: string; success?: boolean } | undefined;
 
-type AdminRsvpData = {
-  guestName: string;
-  email: string;
-  attending: boolean;
-  guestCount: number;
-  message: string | null;
-};
-
-// Admin entries may come from phone calls or paper lists, so email is optional
-// (stored as "" since the column is required).
-function validateAdminRsvp(input: {
-  guestName: unknown;
-  email: unknown;
-  attending: unknown;
-  message: unknown;
-}): { error: string } | { data: AdminRsvpData } {
-  const guestName = typeof input.guestName === "string" ? input.guestName.trim() : "";
-  const email = typeof input.email === "string" ? input.email.trim() : "";
-  const message = typeof input.message === "string" ? input.message.trim() : "";
-
-  if (!guestName) return { error: "Name is required" };
-  if (email && !EMAIL_REGEX.test(email)) return { error: `Invalid email "${email}"` };
-  if (typeof input.attending !== "boolean") return { error: "Attending must be yes or no" };
-
-  // Each RSVP is one guest, matching the public form.
-  return { data: { guestName, email, attending: input.attending, guestCount: 1, message: message || null } };
-}
-
 function parseAdminRsvpForm(formData: FormData) {
   const attendingRaw = formData.get("attending");
-  return validateAdminRsvp({
+  return parseAdminRsvp({
     guestName: formData.get("guestName"),
     email: formData.get("email"),
     attending: attendingRaw === "yes" ? true : attendingRaw === "no" ? false : undefined,
     message: formData.get("message"),
+  });
+}
+
+/** Whether the couple's attending total still fits with this RSVP at `partySize` seats (it held `seatsBefore`). */
+async function seatsError(
+  db: Awaited<ReturnType<typeof requireWeddingAccess>>["db"],
+  wedding: Awaited<ReturnType<typeof requireWeddingAccess>>["wedding"],
+  partySize: number,
+  seatsBefore: number
+) {
+  const { _sum } = await db.rsvp.aggregate({ where: { weddingId: wedding.id, attending: true }, _sum: { guestCount: true } });
+  return seatChangeError({
+    attending: true,
+    partySize,
+    seatsBefore,
+    taken: _sum.guestCount ?? 0,
+    capacity: guestCapacity(wedding.maxGuests, wedding.plan?.maxGuests),
   });
 }
 
@@ -200,6 +169,11 @@ export async function createRsvpAdmin(
     return {
       error: `${duplicate.guestName} has already RSVPed${email ? " with this email" : ""}. Use Edit on their row instead.`,
     };
+  }
+
+  if (parsed.data.attending) {
+    const full = await seatsError(db, wedding, 1, 0);
+    if (full) return { error: full };
   }
 
   await db.rsvp.create({ data: { ...parsed.data, weddingId: wedding.id } });
@@ -227,6 +201,12 @@ export async function updateRsvpAdmin(
   if (parsed.data.email) {
     const duplicate = await findRsvpByEmail(db, parsed.data.email, id);
     if (duplicate) return { error: `${duplicate.guestName} already uses this email` };
+  }
+
+  // Switching a declined guest to attending needs their seats to fit; their own count as free.
+  if (parsed.data.attending) {
+    const full = await seatsError(db, wedding, existing.guestCount, existing.attending ? existing.guestCount : 0);
+    if (full) return { error: full };
   }
 
   // A changed response or address makes any sent confirmation stale.
@@ -269,10 +249,10 @@ export async function importRsvps(
   if (!Array.isArray(rows) || rows.length === 0) return { error: "The file has no guest rows" };
   if (rows.length > MAX_IMPORT_ROWS) return { error: `Too many rows (max ${MAX_IMPORT_ROWS})` };
 
-  const valid: AdminRsvpData[] = [];
+  const valid: Extract<ReturnType<typeof parseAdminRsvp>, { data: unknown }>["data"][] = [];
   const rowErrors: { row: number; error: string }[] = [];
   rows.forEach((raw, i) => {
-    const parsed = validateAdminRsvp(raw);
+    const parsed = parseAdminRsvp(raw);
     // +2 so numbers match the spreadsheet: 1-based, after the header row.
     if ("error" in parsed) rowErrors.push({ row: i + 2, error: parsed.error });
     else valid.push(parsed.data);
@@ -345,7 +325,7 @@ export async function sendRsvpConfirmation(
   ]);
   if (!story) return { error: "Story details not configured" };
 
-  await sendMail({
+  const delivered = await sendMail({
     to: rsvp.email,
     ...rsvpConfirmationEmail({
       guestName: rsvp.guestName,
@@ -365,6 +345,9 @@ export async function sendRsvpConfirmation(
       palette: emailPalette(weddingTheme(settings).colors),
     }),
   });
+
+  // Only mark it sent once the email really went, so "Not confirmed" stays honest.
+  if (!delivered) return { error: "The email didn't send. Try again in a few minutes." };
 
   await db.rsvp.update({
     where: { id, weddingId: wedding.id },

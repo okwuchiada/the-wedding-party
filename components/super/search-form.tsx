@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { buttonClass } from "@/components/ui/button";
+import { inputClass } from "@/components/ui/field";
 
 const DEBOUNCE_MS = 350;
 
@@ -51,13 +53,13 @@ export function SearchForm({ q, placeholder, children }: { q?: string; placehold
         defaultValue={q}
         placeholder={placeholder}
         onChange={onTextChange}
-        className="min-w-60 flex-1 border border-(--m-mist) bg-white px-3 py-2 text-sm outline-none focus:border-(--m-ink)/50"
+        className={`${inputClass} min-w-60 flex-1`}
       />
       {/* Non-text filters (e.g. a status select) apply immediately, no debounce. */}
       <div onChange={submitNow} className="contents">
         {children}
       </div>
-      <button type="submit" className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium hover:border-(--m-ink)">
+      <button type="submit" className={buttonClass("secondary", "md")}>
         Search
       </button>
     </form>

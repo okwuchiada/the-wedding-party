@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 /lib/generated/prisma
+
+# locally installed agent skills
+/.agents/skills/
+/.claude/skills/
+/skills-lock.json

@@ -2,7 +2,7 @@ import "server-only";
 import { cookies, headers } from "next/headers";
 import { canManageWedding } from "@/lib/dal";
 
-export const GEO_BYPASS_PARAM = "access";
+export { GEO_BYPASS_PARAM } from "@/lib/geo-param";
 
 export function geoBypassCookieName(slug: string) {
   return `geo-bypass-${slug}`;

@@ -3,6 +3,7 @@
 import { requireWeddingAccess } from "@/lib/dal";
 import { createPresignedUploadUrl } from "@/lib/s3";
 import { revalidateWedding } from "@/lib/tenant";
+import { moveInList } from "@/lib/reorder";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL, weddingUploadFolder } from "@/lib/uploads";
 
 export type StoryBeatFormState = { error?: string; success?: boolean } | undefined;
@@ -121,5 +122,14 @@ export async function deleteStoryBeat(weddingId: string, id: string) {
 
   await db.storyBeat.delete({ where: { id, weddingId: wedding.id } });
 
+  revalidateWedding(wedding);
+}
+
+/** Moves a moment one place earlier or later, renumbering every moment so the order has no ties. */
+export async function moveStoryBeat(weddingId: string, id: string, direction: "up" | "down") {
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "moveStoryBeat");
+  const beats = await db.storyBeat.findMany({ where: { weddingId: wedding.id }, orderBy: [{ order: "asc" }, { id: "asc" }], select: { id: true } });
+  const ids = moveInList(beats.map((b) => b.id), id, direction);
+  await db.$transaction(ids.map((beatId, i) => db.storyBeat.update({ where: { id: beatId, weddingId: wedding.id }, data: { order: i + 1 } })));
   revalidateWedding(wedding);
 }

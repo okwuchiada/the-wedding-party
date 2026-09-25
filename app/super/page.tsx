@@ -68,9 +68,9 @@ export default async function SuperOverviewPage({
     <div className="flex flex-col gap-10">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-md bg-white p-4">
-            <p className="text-xs text-foreground/55">{s.label}</p>
-            <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">{s.value}</p>
+          <div key={s.label} className="rounded-md bg-surface p-4">
+            <p className="text-xs text-muted">{s.label}</p>
+            <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">{s.value}</p>
           </div>
         ))}
       </div>
@@ -81,16 +81,16 @@ export default async function SuperOverviewPage({
           {recentWeddings.map((w) => (
             <tr key={w.id}>
               <td className="px-3 py-2.5">
-                <Link href={`/super/weddings?q=${w.slug}`} className="hover:text-burnt-orange">
+                <Link href={`/super/weddings?q=${w.slug}`} className="hover:text-ink hover:underline">
                   {coupleTitle(w.story, resolveLayout(w.theme).heroNames) ?? "—"}
                 </Link>
               </td>
-              <td className="px-3 py-2.5 text-foreground/70">/w/{w.slug}</td>
+              <td className="px-3 py-2.5 text-muted">/w/{w.slug}</td>
               <td className="px-3 py-2.5">
                 <StatusBadge status={w.status} />
               </td>
-              <td className="px-3 py-2.5 text-foreground/70">{w.plan?.name ?? "—"}</td>
-              <td className="px-3 py-2.5 text-foreground/70">{date(w.createdAt)}</td>
+              <td className="px-3 py-2.5 text-muted">{w.plan?.name ?? "—"}</td>
+              <td className="px-3 py-2.5 text-muted">{date(w.createdAt)}</td>
             </tr>
           ))}
         </Table>
@@ -102,10 +102,10 @@ export default async function SuperOverviewPage({
         <Table head={["When", "Who", "Action", "Wedding"]}>
           {recentAudit.map((a) => (
             <tr key={a.id}>
-              <td className="px-3 py-2.5 whitespace-nowrap text-foreground/70">{a.createdAt.toISOString().slice(0, 16).replace("T", " ")}</td>
-              <td className="px-3 py-2.5 text-foreground/70">{a.actor?.email ?? "system"}</td>
+              <td className="px-3 py-2.5 whitespace-nowrap text-muted">{a.createdAt.toISOString().slice(0, 16).replace("T", " ")}</td>
+              <td className="px-3 py-2.5 text-muted">{a.actor?.email ?? "system"}</td>
               <td className="px-3 py-2.5">{a.action}</td>
-              <td className="px-3 py-2.5 text-foreground/70">{a.wedding ? `/w/${a.wedding.slug}` : "—"}</td>
+              <td className="px-3 py-2.5 text-muted">{a.wedding ? `/w/${a.wedding.slug}` : "—"}</td>
             </tr>
           ))}
         </Table>

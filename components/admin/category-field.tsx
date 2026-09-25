@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { inputClass } from "@/components/ui/field";
 
 // Common registry groupings, offered after the couple's own categories.
 const SUGGESTED = ["Home", "Kitchen", "Bedroom & bath", "Appliances", "Experiences", "Honeymoon", "Cash funds"];
 const NEW = "__new";
 
-const fieldClass = "border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none";
 
 /**
  * Pick a registry category from the couple's existing ones and common suggestions,
@@ -40,14 +40,14 @@ export default function CategoryField({
   const value = adding ? (match ?? custom.trim()) : selected;
 
   return (
-    <div className="flex flex-col gap-1.5 text-xs text-foreground/60">
+    <div className="flex flex-col gap-1.5 text-sm font-medium text-ink">
       <label htmlFor={`${name}-select`}>Category</label>
       <input type="hidden" name={name} value={value} />
       <select
         id={`${name}-select`}
         value={selected}
         onChange={(e) => setSelected(e.target.value)}
-        className={fieldClass}
+        className={inputClass}
       >
         <option value="" disabled>
           Choose a category
@@ -79,10 +79,10 @@ export default function CategoryField({
             placeholder="e.g. Garden"
             maxLength={40}
             autoFocus
-            className={fieldClass}
+            className={inputClass}
           />
           {match && custom.trim() && match !== custom.trim() && (
-            <span className="text-[11px] text-foreground/55">You already have &ldquo;{match}&rdquo;, so it will go there.</span>
+            <span className="text-[13px] text-muted">You already have &ldquo;{match}&rdquo;, so it will go there.</span>
           )}
         </>
       )}

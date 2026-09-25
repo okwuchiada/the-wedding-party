@@ -28,10 +28,10 @@ export default async function StaffPage({ searchParams }: { searchParams: Promis
           {staff.map((s) => (
             <tr key={s.id}>
               <td className="px-3 py-3">
-                <Link href={`/super/staff/${s.id}`} className="underline decoration-(--m-ink)/20 underline-offset-4 hover:decoration-(--m-ink)">
+                <Link href={`/super/staff/${s.id}`} className="underline decoration-ink/20 underline-offset-4 hover:decoration-ink">
                   {s.email}
                 </Link>
-                <p className="text-xs text-foreground/60">
+                <p className="text-xs text-muted">
                   {s.name ?? "—"}
                   {s.mustChangePassword
                     ? s.tempPasswordExpiresAt && s.tempPasswordExpiresAt < new Date()
@@ -49,7 +49,7 @@ export default async function StaffPage({ searchParams }: { searchParams: Promis
                   <RoleSelect userId={s.id} role={s.role} />
                 )}
               </td>
-              <td className="px-3 py-3 text-foreground/70">{date(s.createdAt)}</td>
+              <td className="px-3 py-3 text-muted">{date(s.createdAt)}</td>
               <td className="px-3 py-3">
                 {s.id !== admin.id && (s.mustChangePassword || !s.passwordHash) && <ResendPasswordButton userId={s.id} email={s.email} />}
               </td>
@@ -59,7 +59,7 @@ export default async function StaffPage({ searchParams }: { searchParams: Promis
         <Pagination page={page} pageSize={pageSize} total={total} />
       </section>
 
-      <section className="rounded-[6px] border border-(--m-mist) bg-white p-5">
+      <section className="rounded-[6px] border border-line bg-surface p-5">
         <h2 className="font-(family-name:--m-display) text-2xl font-bold tracking-tight">What each level can do</h2>
         <dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {STAFF_ROLES.map((r) => (
@@ -67,7 +67,7 @@ export default async function StaffPage({ searchParams }: { searchParams: Promis
               <dt>
                 <RoleBadge role={r} />
               </dt>
-              <dd className="mt-1 text-sm leading-relaxed text-(--m-ink)/75">{ROLE_DESCRIPTIONS[r]}</dd>
+              <dd className="mt-1 text-sm leading-relaxed text-ink/75">{ROLE_DESCRIPTIONS[r]}</dd>
             </div>
           ))}
         </dl>

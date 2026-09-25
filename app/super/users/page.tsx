@@ -10,6 +10,7 @@ import { can, isStaff, ROLE_LABELS } from "@/lib/permissions";
 import { readPagination } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import type { Prisma, UserRole } from "@/lib/generated/prisma/client";
+import { inputClass } from "@/components/ui/field";
 
 const ROLES = Object.keys(ROLE_LABELS) as UserRole[];
 
@@ -58,7 +59,7 @@ export default async function StaffUsersPage({
   return (
     <div className="flex flex-col gap-5">
       <SearchForm q={term} placeholder="Email or name">
-        <select name="role" defaultValue={role ?? ""} aria-label="Access level" className="border border-(--m-mist) bg-white px-3 py-2 text-sm">
+        <select name="role" defaultValue={role ?? ""} aria-label="Access level" className={`${inputClass} w-auto`}>
           <option value="">All access levels</option>
           <option value="staff">All staff</option>
           {ROLES.map((r) => (
@@ -67,7 +68,7 @@ export default async function StaffUsersPage({
             </option>
           ))}
         </select>
-        <select name="sort" defaultValue={sortKey} aria-label="Sort" className="border border-(--m-mist) bg-white px-3 py-2 text-sm">
+        <select name="sort" defaultValue={sortKey} aria-label="Sort" className={`${inputClass} w-auto`}>
           {Object.entries(SORTS).map(([key, { label }]) => (
             <option key={key} value={key}>
               {label}
@@ -80,7 +81,7 @@ export default async function StaffUsersPage({
           <tr key={u.id}>
             <td className="px-3 py-3">
               <p>{u.email}</p>
-              <p className="text-xs text-foreground/60">
+              <p className="text-xs text-muted">
                 {u.name ?? "—"}
                 {u.phone && ` · ${u.phone}`}
                 {!u.passwordHash && " · hasn't set a password"}
@@ -89,20 +90,20 @@ export default async function StaffUsersPage({
             <td className="px-3 py-3">
               <RoleBadge role={u.role} />
             </td>
-            <td className="px-3 py-3 text-xs text-foreground/80">
+            <td className="px-3 py-3 text-xs text-muted">
               {u.memberships.map((m) => (
                 <div key={m.id}>
                   <Link href={`/super/weddings/${m.wedding.id}`} className="underline underline-offset-4">
                     /w/{m.wedding.slug}
                   </Link>{" "}
-                  <span className="text-foreground/50">({m.role.toLowerCase()})</span>
+                  <span className="text-muted">({m.role.toLowerCase()})</span>
                 </div>
               ))}
             </td>
-            <td className="px-3 py-3 text-foreground/70">{date(u.createdAt)}</td>
+            <td className="px-3 py-3 text-muted">{date(u.createdAt)}</td>
             <td className="px-3 py-3">
               {u.id === staff.id ? (
-                <span className="text-xs text-foreground/50">You</span>
+                <span className="text-xs text-muted">You</span>
               ) : (
                 <div className="flex flex-wrap gap-1">
                   {allowed.impersonate && !isStaff(u.role) && (
