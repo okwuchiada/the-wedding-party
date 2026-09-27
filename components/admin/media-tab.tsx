@@ -4,6 +4,9 @@ import Image from "next/image";
 import type { ApprovedMediaView, HiddenMediaView, PendingMediaView } from "@/lib/types";
 import { useConfirm } from "./use-confirm";
 import { useActionPending } from "./use-action-pending";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export default function MediaTab({
   pending,
@@ -41,7 +44,7 @@ export default function MediaTab({
   };
   return (
     <div>
-      <div className="mb-10 flex items-center justify-between gap-4 rounded-[6px] bg-white p-4 border border-(--m-mist)">
+      <Card className="mb-10 flex-row items-center justify-between gap-4 rounded-md p-4 shadow-none">
         <div>
           <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-xl text-foreground">Gallery Wall</h2>
           <p className="mt-1 text-xs text-foreground/60">
@@ -50,23 +53,21 @@ export default function MediaTab({
               : "Hidden from guests. Turn this on when it's time (e.g. the wedding day)."}
           </p>
         </div>
-        <button
+        <Button
           type="button"
+          variant={galleryEnabled ? "outline" : "default"}
+          size="sm"
           disabled={isPending("gallery")}
           onClick={() => run("gallery", "toggle", onToggleGallery)}
-          className={`shrink-0 px-4 py-2 text-xs font-medium transition-colors disabled:opacity-60 ${
-            galleryEnabled
-              ? "border border-(--m-mist) text-foreground hover:border-burnt-orange hover:text-burnt-orange"
-              : "rounded-full bg-(--m-gold) text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
-          }`}
+          className={cn("shrink-0", galleryEnabled && "border-mist hover:border-coral-deep hover:text-coral-deep")}
         >
           {isPending("gallery", "toggle")
             ? "Saving…"
             : galleryEnabled
               ? "Disable Gallery Wall"
               : "Enable Gallery Wall"}
-        </button>
-      </div>
+        </Button>
+      </Card>
 
       <h2 className="mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Pending Uploads</h2>
 
@@ -88,22 +89,25 @@ export default function MediaTab({
                   {media.guestName} &middot; {media.dateUploaded}
                 </p>
                 <div className="mt-2 flex gap-2">
-                  <button
+                  <Button
                     type="button"
+                    size="xs"
                     disabled={isPending(media.id)}
                     onClick={() => run(media.id, "approve", () => onApprove(media))}
-                    className="flex-1 rounded-full bg-(--m-gold) px-3 py-1.5 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
+                    className="flex-1"
                   >
                     {isPending(media.id, "approve") ? "Approving…" : "Approve"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="xs"
                     disabled={isPending(media.id)}
                     onClick={() => run(media.id, "hide", () => onHide(media))}
-                    className="flex-1 border rounded-full border-(--m-ink)/25 px-3 py-1.5 text-xs font-medium text-foreground hover:border-(--m-ink) disabled:opacity-60"
+                    className="flex-1"
                   >
                     {isPending(media.id, "hide") ? "Hiding…" : "Hide"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -131,22 +135,26 @@ export default function MediaTab({
                   {media.guestName} &middot; {media.dateUploaded}
                 </p>
                 <div className="mt-2 flex gap-2">
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="xs"
                     disabled={isPending(media.id)}
                     onClick={() => run(media.id, "hide", () => onHideApproved(media))}
-                    className="flex-1 border rounded-full border-(--m-ink)/25 px-3 py-1.5 text-xs font-medium text-foreground hover:border-(--m-ink) disabled:opacity-60"
+                    className="flex-1"
                   >
                     {isPending(media.id, "hide") ? "Hiding…" : "Hide"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="xs"
                     disabled={isPending(media.id)}
                     onClick={() => handleDeleteApproved(media)}
-                    className="flex-1 border rounded-full border-(--m-ink)/25 px-3 py-1.5 text-xs font-medium text-foreground hover:border-(--m-ink) disabled:opacity-60"
+                    className="flex-1"
                   >
                     {isPending(media.id, "delete") ? "Deleting…" : "Delete"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -177,14 +185,16 @@ export default function MediaTab({
                 <p className="text-xs text-foreground/70">
                   {media.guestName} &middot; {media.dateUploaded}
                 </p>
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="xs"
                   disabled={isPending(media.id)}
                   onClick={() => run(media.id, "restore", () => onRestore(media))}
-                  className="mt-2 w-full border rounded-full border-(--m-ink)/25 px-3 py-1.5 text-xs font-medium text-foreground hover:border-(--m-ink) disabled:opacity-60"
+                  className="mt-2 w-full"
                 >
                   {isPending(media.id, "restore") ? "Restoring…" : "Restore"}
-                </button>
+                </Button>
               </div>
             </div>
           ))}

@@ -18,6 +18,13 @@ import CategoryField from "./category-field";
 import { Pagination, usePagination } from "./pagination";
 import { useAdminMoney, useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { FIELD, FIELD_LABEL, FILE_INPUT, TEXT_ACTION } from "./form-styles";
+import { cn } from "@/lib/utils";
 
 
 function sumContributions(contributions: { amountCents: number }[]) {
@@ -98,84 +105,71 @@ function RegistryItemForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 bg-ivory p-4 sm:grid-cols-2">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 bg-paper p-4 sm:grid-cols-2">
       {initialValues?.id && <input type="hidden" name="id" defaultValue={initialValues.id} />}
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      <Label className={FIELD_LABEL}>
         Name
-        <input
+        <Input
           name="name"
           defaultValue={initialValues?.name}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={FIELD}
         />
-      </label>
+      </Label>
 
       <CategoryField name="category" defaultValue={initialValues?.category} existing={categories} />
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      <Label className={FIELD_LABEL}>
         Price ({currencySymbol(money)})
-        <input
+        <Input
           name="price"
           type="number"
           min={1}
           step="0.01"
           defaultValue={initialValues?.price}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={FIELD}
         />
-      </label>
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      <Label className={FIELD_LABEL}>
         Image URL
-        <input
+        <Input
           name="image"
           defaultValue={initialValues?.image}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={FIELD}
         />
-      </label>
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60 sm:col-span-2">
+      <Label className={cn(FIELD_LABEL, "sm:col-span-2")}>
         …or upload a photo
-        <input
-          name="file"
-          type="file"
-          accept="image/*,.heic,.heif"
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none file:mr-3 file:border-0 file:rounded-full file:bg-(--m-ink) file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ivory"
-        />
+        <Input name="file" type="file" accept="image/*,.heic,.heif" className={cn(FIELD, FILE_INPUT)} />
         {initialValues?.image && (
-          <span className="mt-1 text-[11px] text-foreground/50">
+          <span className="mt-1 text-[11px] text-ink/50">
             Leave blank to keep the current image
           </span>
         )}
-      </label>
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60 sm:col-span-2">
+      <Label className={cn(FIELD_LABEL, "sm:col-span-2")}>
         Buy link (optional)
-        <input
+        <Input
           name="externalUrl"
           defaultValue={initialValues?.externalUrl ?? ""}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={FIELD}
         />
-      </label>
+      </Label>
 
       {(uploadError || state?.error) && (
-        <p className="text-xs text-burnt-orange sm:col-span-2">{uploadError || state?.error}</p>
+        <p className="text-xs text-coral-deep sm:col-span-2">{uploadError || state?.error}</p>
       )}
 
       <div className="flex gap-2 sm:col-span-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
-        >
+        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={pending || uploading}
-          className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-        >
+        </Button>
+        <Button type="submit" size="sm" disabled={pending || uploading}>
           {uploading ? "Uploading…" : pending ? "Saving…" : submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -197,65 +191,57 @@ function BankDetailsForm({
   }, [state?.success]);
 
   return (
-    <form action={formAction} className="grid grid-cols-1 gap-3 bg-ivory p-4 sm:grid-cols-2">
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+    <form action={formAction} className="grid grid-cols-1 gap-3 bg-paper p-4 sm:grid-cols-2">
+      <Label className={FIELD_LABEL}>
         Account name
-        <input
+        <Input
           name="name"
           defaultValue={bankDetails.name}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={FIELD}
         />
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      </Label>
+      <Label className={FIELD_LABEL}>
         Bank
-        <input
+        <Input
           name="bank"
           defaultValue={bankDetails.bank}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={FIELD}
         />
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      </Label>
+      <Label className={FIELD_LABEL}>
         Account number
-        <input
+        <Input
           name="account"
           defaultValue={bankDetails.account}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={FIELD}
         />
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      </Label>
+      <Label className={FIELD_LABEL}>
         Routing number (optional)
-        <input
+        <Input
           name="routing"
           defaultValue={bankDetails.routing}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={FIELD}
         />
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      </Label>
+      <Label className={FIELD_LABEL}>
         SWIFT / BIC (optional)
-        <input
+        <Input
           name="swift"
           defaultValue={bankDetails.swift ?? ""}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={FIELD}
         />
-      </label>
+      </Label>
 
-      {state?.error && <p className="text-xs text-burnt-orange sm:col-span-2">{state.error}</p>}
+      {state?.error && <p className="text-xs text-coral-deep sm:col-span-2">{state.error}</p>}
 
       <div className="flex gap-2 sm:col-span-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
-        >
+        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-        >
+        </Button>
+        <Button type="submit" size="sm" disabled={pending}>
           {pending ? "Saving…" : "Save"}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -296,15 +282,17 @@ export default function RegistryTab({
   return (
     <div>
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Bank Details</h2>
+        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">Bank Details</h2>
         {!editingBank && (
-          <button
+          <Button
             type="button"
+            variant="link"
+            size="xs"
             onClick={() => setEditingBank(true)}
-            className="text-xs text-foreground/60 hover:text-burnt-orange"
+            className={TEXT_ACTION}
           >
             Edit
-          </button>
+          </Button>
         )}
       </div>
 
@@ -313,40 +301,36 @@ export default function RegistryTab({
           <BankDetailsForm bankDetails={bankDetails} onCancel={() => setEditingBank(false)} />
         </div>
       ) : (
-        <div className="mb-10 grid grid-cols-2 gap-4 rounded-[6px] border border-(--m-mist) bg-white p-4 text-sm sm:grid-cols-4">
+        <Card className="mb-10 grid grid-cols-2 gap-4 rounded-md p-4 text-sm shadow-none sm:grid-cols-4">
           <div>
-            <p className="text-xs text-foreground/50">Account name</p>
-            <p className="mt-1 text-foreground">{bankDetails.name}</p>
+            <p className="text-xs text-ink/50">Account name</p>
+            <p className="mt-1 text-ink">{bankDetails.name}</p>
           </div>
           <div>
-            <p className="text-xs text-foreground/50">Bank</p>
-            <p className="mt-1 text-foreground">{bankDetails.bank}</p>
+            <p className="text-xs text-ink/50">Bank</p>
+            <p className="mt-1 text-ink">{bankDetails.bank}</p>
           </div>
           <div>
-            <p className="text-xs text-foreground/50">Account no.</p>
-            <p className="mt-1 text-foreground">{bankDetails.account}</p>
+            <p className="text-xs text-ink/50">Account no.</p>
+            <p className="mt-1 text-ink">{bankDetails.account}</p>
           </div>
           <div>
-            <p className="text-xs text-foreground/50">Routing</p>
-            <p className="mt-1 text-foreground">{bankDetails.routing || "—"}</p>
+            <p className="text-xs text-ink/50">Routing</p>
+            <p className="mt-1 text-ink">{bankDetails.routing || "—"}</p>
           </div>
           <div>
-            <p className="text-xs text-foreground/50">SWIFT / BIC</p>
-            <p className="mt-1 text-foreground">{bankDetails.swift ?? "—"}</p>
+            <p className="text-xs text-ink/50">SWIFT / BIC</p>
+            <p className="mt-1 text-ink">{bankDetails.swift ?? "—"}</p>
           </div>
-        </div>
+        </Card>
       )}
 
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Registry Items</h2>
+        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">Registry Items</h2>
         {!adding && (
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
-          >
+          <Button type="button" size="sm" onClick={() => setAdding(true)}>
             Add Item
-          </button>
+          </Button>
         )}
       </div>
 
@@ -361,25 +345,25 @@ export default function RegistryTab({
         </div>
       )}
 
-      {deleteError && <p className="mb-3 text-xs text-burnt-orange">{deleteError}</p>}
+      {deleteError && <p className="mb-3 text-xs text-coral-deep">{deleteError}</p>}
 
-      <div className="overflow-x-auto rounded-[6px] border border-(--m-mist) bg-white">
-        <table className="w-full min-w-150 text-left text-sm">
-          <thead>
-            <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
-              <th className="px-4 py-3 font-medium">Item</th>
-              <th className="px-4 py-3 font-medium">Category</th>
-              <th className="px-4 py-3 font-medium">Goal</th>
-              <th className="px-4 py-3 font-medium">Raised</th>
-              <th className="px-4 py-3 font-medium">Claimed by</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="overflow-hidden rounded-md border border-mist bg-white">
+        <Table className="min-w-150">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="px-4 text-ink/50">Item</TableHead>
+              <TableHead className="px-4 text-ink/50">Category</TableHead>
+              <TableHead className="px-4 text-ink/50">Goal</TableHead>
+              <TableHead className="px-4 text-ink/50">Raised</TableHead>
+              <TableHead className="px-4 text-ink/50">Claimed by</TableHead>
+              <TableHead className="px-4 text-ink/50">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {pageItems.map((item) =>
               editingId === item.id ? (
-                <tr key={item.id} className="border-b border-(--m-mist) last:border-0">
-                  <td colSpan={6} className="p-0">
+                <TableRow key={item.id} className="hover:bg-transparent">
+                  <TableCell colSpan={6} className="p-0">
                     <RegistryItemForm
                       action={updateRegistryItem.bind(null, weddingId)}
                       categories={categories}
@@ -394,40 +378,44 @@ export default function RegistryTab({
                       onCancel={() => setEditingId(null)}
                       submitLabel="Save Changes"
                     />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
-                <tr key={item.id} className="border-b border-(--m-mist) last:border-0">
-                  <td className="px-4 py-3 text-foreground">{item.name}</td>
-                  <td className="px-4 py-3 text-foreground/70">{item.category}</td>
-                  <td className="px-4 py-3 text-foreground/70">{formatMoney(item.priceCents, money)}</td>
-                  <td className="px-4 py-3 text-foreground/70">
+                <TableRow key={item.id}>
+                  <TableCell className="px-4 text-ink">{item.name}</TableCell>
+                  <TableCell className="px-4 text-ink/70">{item.category}</TableCell>
+                  <TableCell className="px-4 text-ink/70">{formatMoney(item.priceCents, money)}</TableCell>
+                  <TableCell className="px-4 text-ink/70">
                     {formatMoney(sumContributions(item.contributions), money)}
-                  </td>
-                  <td className="px-4 py-3 text-foreground/70">{item.claimedBy ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    <button
+                  </TableCell>
+                  <TableCell className="px-4 text-ink/70">{item.claimedBy ?? "—"}</TableCell>
+                  <TableCell className="px-4">
+                    <Button
                       type="button"
+                      variant="link"
+                      size="xs"
                       disabled={isPending(item.id)}
                       onClick={() => setEditingId(item.id)}
-                      className="mr-3 text-xs text-foreground/60 hover:text-burnt-orange disabled:opacity-60"
+                      className={cn(TEXT_ACTION, "mr-3")}
                     >
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="link"
+                      size="xs"
                       disabled={isPending(item.id)}
                       onClick={() => handleDelete(item.id, item.name)}
-                      className="text-xs text-foreground/60 hover:text-burnt-orange disabled:opacity-60"
+                      className={TEXT_ACTION}
                     >
                       {isPending(item.id, "delete") ? "Deleting…" : "Delete"}
-                    </button>
-                  </td>
-                </tr>
+                    </Button>
+                  </TableCell>
+                </TableRow>
               )
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
       {confirmDialog}

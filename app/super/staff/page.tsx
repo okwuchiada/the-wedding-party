@@ -1,6 +1,7 @@
 import { AddStaffForm, RoleSelect } from "@/components/super/staff-forms";
 import { Pagination } from "@/components/super/pagination";
 import { date, Table } from "@/components/super/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { requirePermission } from "@/lib/dal";
 import { readPagination } from "@/lib/pagination";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, STAFF_ROLES } from "@/lib/permissions";
@@ -24,24 +25,24 @@ export default async function StaffPage({ searchParams }: { searchParams: Promis
         <h2 className="mb-3 font-(family-name:--m-display) text-2xl font-bold tracking-tight">Team</h2>
         <Table head={["Person", "Access", "Since", ""]}>
           {staff.map((s) => (
-            <tr key={s.id}>
-              <td className="px-3 py-3">
+            <TableRow key={s.id}>
+              <TableCell>
                 <p>{s.email}</p>
                 <p className="text-xs text-foreground/60">
                   {s.name ?? "—"}
                   {!s.passwordHash && " · invite pending"}
                 </p>
-              </td>
-              <td className="px-3 py-3">
+              </TableCell>
+              <TableCell>
                 {s.id === admin.id ? (
                   <span className="text-sm">{ROLE_LABELS[s.role]} (you)</span>
                 ) : (
                   <RoleSelect userId={s.id} role={s.role} />
                 )}
-              </td>
-              <td className="px-3 py-3 text-foreground/70">{date(s.createdAt)}</td>
-              <td />
-            </tr>
+              </TableCell>
+              <TableCell className="text-foreground/70">{date(s.createdAt)}</TableCell>
+              <TableCell />
+            </TableRow>
           ))}
         </Table>
         <Pagination page={page} pageSize={pageSize} total={total} />

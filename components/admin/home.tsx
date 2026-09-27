@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import LiveRefresh from "@/components/live-refresh";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSyncedState } from "./use-synced-state";
 import type {
   ApprovedMediaView,
@@ -243,89 +246,97 @@ export default function AdminHome({
           <h1 className="font-(family-name:--m-display) text-4xl leading-none font-extrabold tracking-[-0.03em] sm:text-5xl">
             {coupleTitle ?? `${story.brideName} & ${story.groomName}`}
           </h1>
-          <a
-            href={guestUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full bg-(--m-ink) px-5 py-2.5 text-sm font-semibold text-(--m-paper) hover:bg-(--m-emerald)"
-          >
-            View guest site
-          </a>
+          <Button asChild variant="ink">
+            <a href={guestUrl} target="_blank" rel="noopener noreferrer">
+              View guest site
+            </a>
+          </Button>
         </div>
 
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {stats.map((stat) => (
-            <div key={stat.label} className="rounded-[6px] border border-(--m-mist) bg-white p-4">
-              <p className="text-sm text-(--m-ink)/60">{stat.label}</p>
+            <Card key={stat.label} className="gap-0 rounded-md p-4 shadow-none">
+              <p className="text-sm text-ink/60">{stat.label}</p>
               <p className="mt-1 font-(family-name:--m-display) text-3xl font-extrabold tracking-tight">{stat.value}</p>
-            </div>
+            </Card>
           ))}
         </div>
 
-        <div role="tablist" aria-label="Dashboard sections" className="mt-10 mb-8 flex gap-1.5 overflow-x-auto pb-1">
-          {tabs.filter((tab) => isOwner || !OWNER_TABS.includes(tab)).map((tab) => {
-            const isActive = tab === activeTab;
-            return (
-              <button
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)} className="gap-0">
+          <TabsList
+            aria-label="Dashboard sections"
+            className="mt-10 mb-8 h-auto w-full justify-start gap-1.5 overflow-x-auto rounded-none bg-transparent p-0 pb-1 group-data-[orientation=horizontal]/tabs:h-auto"
+          >
+            {tabs.filter((tab) => isOwner || !OWNER_TABS.includes(tab)).map((tab) => (
+              <TabsTrigger
                 key={tab}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => setActiveTab(tab)}
-                className={`rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
-                  isActive ? "bg-(--m-ink) text-(--m-paper)" : "text-(--m-ink)/70 hover:bg-(--m-mist) hover:text-(--m-ink)"
-                }`}
+                value={tab}
+                className="h-auto flex-none rounded-full border-0 px-4 py-2 text-ink/70 hover:bg-mist hover:text-ink focus-visible:ring-ink/40 data-[state=active]:bg-ink data-[state=active]:text-paper data-[state=active]:shadow-none"
               >
                 {tab}
-              </button>
-            );
-          })}
-        </div>
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        {/* A disabled fieldset disables every control inside it; the server refuses changes too. */}
-        <fieldset disabled={readOnly} className="min-w-0 disabled:opacity-80">
-        {activeTab === "Registry" && <RegistryTab items={registryItems} bankDetails={bankDetails} />}
-        {activeTab === "Contributions" && (
-          <ContributionsTab
-            pending={pendingContributions}
-            confirmed={confirmedContributions}
-            onConfirm={handleConfirmContribution}
-          />
-        )}
-        {activeTab === "Media" && (
-          <MediaTab
-            pending={pendingMedia}
-            approved={approvedMedia}
-            hidden={hiddenMedia}
-            galleryEnabled={galleryEnabled}
-            onApprove={handleApproveMedia}
-            onHide={handleHideMedia}
-            onHideApproved={handleHideApprovedMedia}
-            onDeleteApproved={handleDeleteApprovedMedia}
-            onRestore={handleRestoreMedia}
-            onToggleGallery={handleToggleGallery}
-          />
-        )}
-        {activeTab === "Wishes" && (
-          <WishesTab
-            pending={pendingWishes}
-            approved={approvedWishes}
-            hidden={hiddenWishes}
-            onApprove={handleApproveWish}
-            onHide={handleHideWish}
-            onRestore={handleRestoreWish}
-          />
-        )}
-        {activeTab === "RSVPs" && <RsvpTab rsvps={rsvps} />}
-        {activeTab === "Our Story" && (
-          <StoryTab story={story} photos={storyPhotos} storyBeats={storyBeats} />
-        )}
-        {activeTab === "Design" && <DesignTab {...design} guestUrl={guestUrl} names={[story.brideName, story.groomName]} />}
-        {activeTab === "Wording" && <WordingTab copy={copy} canCustomCredit={copy.canCustomCredit} brandingRemoved={copy.brandingRemoved} />}
-        {activeTab === "People" && <MembersTab members={members} isOwner={isOwner} />}
-        {activeTab === "Settings" && isOwner && <SettingsTab settings={settings} />}
-        {activeTab === "Billing" && isOwner && <BillingTab billing={billing} />}
-        </fieldset>
+          {/* A disabled fieldset disables every control inside it; the server refuses changes too. */}
+          <fieldset disabled={readOnly} className="min-w-0 disabled:opacity-80">
+            <TabsContent value="Registry">
+              <RegistryTab items={registryItems} bankDetails={bankDetails} />
+            </TabsContent>
+            <TabsContent value="Contributions">
+              <ContributionsTab pending={pendingContributions} confirmed={confirmedContributions} onConfirm={handleConfirmContribution} />
+            </TabsContent>
+            <TabsContent value="Media">
+              <MediaTab
+                pending={pendingMedia}
+                approved={approvedMedia}
+                hidden={hiddenMedia}
+                galleryEnabled={galleryEnabled}
+                onApprove={handleApproveMedia}
+                onHide={handleHideMedia}
+                onHideApproved={handleHideApprovedMedia}
+                onDeleteApproved={handleDeleteApprovedMedia}
+                onRestore={handleRestoreMedia}
+                onToggleGallery={handleToggleGallery}
+              />
+            </TabsContent>
+            <TabsContent value="Wishes">
+              <WishesTab
+                pending={pendingWishes}
+                approved={approvedWishes}
+                hidden={hiddenWishes}
+                onApprove={handleApproveWish}
+                onHide={handleHideWish}
+                onRestore={handleRestoreWish}
+              />
+            </TabsContent>
+            <TabsContent value="RSVPs">
+              <RsvpTab rsvps={rsvps} />
+            </TabsContent>
+            <TabsContent value="Our Story">
+              <StoryTab story={story} photos={storyPhotos} storyBeats={storyBeats} />
+            </TabsContent>
+            <TabsContent value="Design">
+              <DesignTab {...design} guestUrl={guestUrl} names={[story.brideName, story.groomName]} />
+            </TabsContent>
+            <TabsContent value="Wording">
+              <WordingTab copy={copy} canCustomCredit={copy.canCustomCredit} brandingRemoved={copy.brandingRemoved} />
+            </TabsContent>
+            <TabsContent value="People">
+              <MembersTab members={members} isOwner={isOwner} />
+            </TabsContent>
+            {isOwner && (
+              <>
+                <TabsContent value="Settings">
+                  <SettingsTab settings={settings} />
+                </TabsContent>
+                <TabsContent value="Billing">
+                  <BillingTab billing={billing} />
+                </TabsContent>
+              </>
+            )}
+          </fieldset>
+        </Tabs>
       </div>
     </div>
     </AdminWeddingProvider>

@@ -7,6 +7,8 @@ import SitePreview from "@/components/marketing/site-preview";
 import { checkSlugAvailable, createWedding } from "@/lib/actions/weddings";
 import { suggestWeddingSlug } from "@/lib/slug";
 import { getPreset, THEME_PRESETS } from "@/lib/themes";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type SlugCheck = { slug: string; available: boolean; reason?: string };
 
@@ -80,9 +82,9 @@ export default function CreateWeddingForm({
       <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">
         <Step number={1} title="Who's getting married?">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className="flex flex-col gap-1.5 text-sm font-medium">
+            <Label className="flex-col items-stretch gap-1.5">
               Your name
-              <input
+              <Input
                 name="brideName"
                 required
                 autoComplete="name"
@@ -90,11 +92,11 @@ export default function CreateWeddingForm({
                 onChange={(e) => updateName("bride", e.target.value)}
                 className={authInputClass}
               />
-            </label>
-            <label className="flex flex-col gap-1.5 text-sm font-medium">
+            </Label>
+            <Label className="flex-col items-stretch gap-1.5">
               Your partner&apos;s name
-              <input name="groomName" required value={names.groom} onChange={(e) => updateName("groom", e.target.value)} className={authInputClass} />
-            </label>
+              <Input name="groomName" required value={names.groom} onChange={(e) => updateName("groom", e.target.value)} className={authInputClass} />
+            </Label>
             <div className="flex flex-col gap-1.5 text-sm font-medium sm:col-span-2 sm:max-w-sm">
               <span id="wedding-date-label">Wedding date</span>
               <DatePicker name="weddingDate" value={date} onChange={setDate} labelledBy="wedding-date-label" />
@@ -106,7 +108,7 @@ export default function CreateWeddingForm({
           <p className="mb-3 text-(--m-ink)/70">This is the link you&apos;ll share with guests. You can change it later.</p>
           <div className="flex items-center rounded-[6px] border border-(--m-mist) bg-white focus-within:border-(--m-ink)/50 focus-within:ring-3 focus-within:ring-(--m-gold)/35">
             <span className="pl-3.5 text-base text-(--m-ink)/50">/w/</span>
-            <input
+            <Input
               name="slug"
               required
               aria-label="Web address"
@@ -116,7 +118,7 @@ export default function CreateWeddingForm({
                 setSlugEdited(true);
                 setSlug(e.target.value.toLowerCase());
               }}
-              className="w-full rounded-[6px] px-1 py-3 text-base outline-none"
+              className="h-auto border-0 px-1 py-3 text-base focus-visible:ring-0 md:text-base"
             />
           </div>
           <p

@@ -6,6 +6,8 @@ import { verifySession } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
 import { dashboardPath, guestPath, weddingTheme } from "@/lib/tenant";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const STATUS = {
   DRAFT: { label: "Draft", className: "bg-(--m-mist) text-(--m-ink)" },
@@ -44,12 +46,9 @@ export default async function DashboardIndexPage() {
             </h1>
             <p className="mt-3 text-(--m-ink)/65">Signed in as {user.email}</p>
           </div>
-          <Link
-            href="/dashboard/new"
-            className="rounded-full bg-(--m-gold) px-5 py-3 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
-          >
-            Create another wedding
-          </Link>
+          <Button asChild className="py-3">
+            <Link href="/dashboard/new">Create another wedding</Link>
+          </Button>
         </div>
 
         <ul className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -73,7 +72,7 @@ export default async function DashboardIndexPage() {
                     </span>
                     <span className="text-sm text-(--m-ink)/65">{guestPath(wedding.slug)}</span>
                     <span className="mt-auto flex items-center gap-2 text-xs font-medium">
-                      <span className={`rounded-full px-2.5 py-1 ${status.className}`}>{status.label}</span>
+                      <Badge className={`px-2.5 py-1 ${status.className}`}>{status.label}</Badge>
                       {wedding.plan && <span className="text-(--m-ink)/60">{wedding.plan.name}</span>}
                     </span>
                   </span>

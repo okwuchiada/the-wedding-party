@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { signup } from "@/lib/actions/auth";
 import { PRIVACY, TERMS, type LegalDocument } from "@/lib/legal";
 import { missingRequirements } from "@/lib/password-rules";
+import { Checkbox } from "@/components/ui/checkbox";
 import AuthField from "./auth-field";
 import { AuthMessage, AuthSubmit, authLinkClass } from "./fields";
 import LegalModal from "./legal-modal";
@@ -43,9 +44,9 @@ export default function SignupForm({ minPasswordLength }: { minPasswordLength: n
         minLength={minPasswordLength}
         required
       />
-      <label className="flex items-start gap-2.5 text-sm text-(--m-ink)/75">
-        <input type="checkbox" name="agreedToTerms" required className="mt-0.5" />
-        <span>
+      <div className="flex items-start gap-2.5 text-sm text-ink/75">
+        <Checkbox id="agreedToTerms" name="agreedToTerms" required className="mt-0.5" />
+        <label htmlFor="agreedToTerms">
           I agree to the{" "}
           <button type="button" onClick={() => setOpenDoc(TERMS)} className={authLinkClass}>
             Terms of Service
@@ -55,11 +56,11 @@ export default function SignupForm({ minPasswordLength }: { minPasswordLength: n
             Privacy Policy
           </button>
           .
-        </span>
-      </label>
+        </label>
+      </div>
       <AuthMessage error={clientError || state?.error} />
       <AuthSubmit pending={pending} label="Create account" pendingLabel="Creating account…" />
-      <p className="text-sm text-(--m-ink)/70">
+      <p className="text-sm text-ink/70">
         Already have an account?{" "}
         <Link href="/login" className={authLinkClass}>
           Sign in

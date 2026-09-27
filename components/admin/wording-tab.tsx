@@ -4,6 +4,14 @@ import { useActionState } from "react";
 import { saveCopy } from "@/lib/actions/design";
 import { COPY_FIELDS, COPY_MAX_LENGTH, type CopyKey } from "@/lib/copy";
 import { useAdminWeddingId } from "./wedding-context";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { FIELD, FIELD_LABEL } from "./form-styles";
+import { cn } from "@/lib/utils";
 
 export type CopyView = Record<CopyKey, string | null> & {
   footerCredit: string | null;
@@ -11,8 +19,6 @@ export type CopyView = Record<CopyKey, string | null> & {
   asoebiEnabled: boolean;
   asoebiFabric: string | null;
 };
-
-const fieldClass = "border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-(--m-ink)/50";
 
 export default function WordingTab({
   copy,
@@ -36,57 +42,59 @@ export default function WordingTab({
           <p className="mt-1 text-sm text-foreground/60">Leave a box empty to use the default wording shown in grey.</p>
         </div>
         {COPY_FIELDS.map((field) => (
-          <label key={field.key} className="flex flex-col gap-1.5 text-xs text-foreground/60">
+          <Label key={field.key} className={FIELD_LABEL}>
             {field.label}
-            <textarea
+            <Textarea
               name={field.key}
               defaultValue={copy[field.key] ?? ""}
               placeholder={field.fallback}
               maxLength={COPY_MAX_LENGTH}
               rows={field.fallback.length > 120 ? 4 : 2}
-              className={fieldClass}
+              className={cn(FIELD, "field-sizing-fixed")}
             />
-            {"hint" in field && <span className="text-[11px] text-foreground/50">{field.hint}</span>}
-          </label>
+            {"hint" in field && <span className="text-[11px] text-ink/50">{field.hint}</span>}
+          </Label>
         ))}
       </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">RSVP email</h2>
-        <label className="flex items-center gap-2 text-sm text-foreground">
-          <input type="checkbox" name="asoebiEnabled" defaultChecked={copy.asoebiEnabled} />
+        <Label className="font-normal text-ink">
+          <Checkbox name="asoebiEnabled" defaultChecked={copy.asoebiEnabled} />
           Include an asoebi section with a WhatsApp order button
-        </label>
-        <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+        </Label>
+        <Label className={FIELD_LABEL}>
           Asoebi fabric (optional)
-          <input
+          <Input
             name="asoebiFabric"
             defaultValue={copy.asoebiFabric ?? ""}
             placeholder="e.g. Aso-oke — Burnt Orange & Olive Green"
-            className={fieldClass}
+            className={FIELD}
           />
-        </label>
+        </Label>
         <p className="text-[11px] text-foreground/50">The WhatsApp button uses the first partner&apos;s phone number from Our Story.</p>
       </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Footer credit</h2>
         {!canCustomCredit && (
-          <p className="bg-cream px-3 py-2 text-xs text-foreground/70">
-            {brandingRemoved
-              ? "Your plan leaves the footer credit off. Upgrade to Forever to credit someone of your choice."
-              : "Your plan shows \u201cMade with love by Vowly\u201d. Upgrade to remove it, or to Forever to credit someone of your choice."}
-          </p>
+          <Alert className="border-transparent bg-accent">
+            <AlertDescription className="text-xs text-ink/70">
+              {brandingRemoved
+                ? "Your plan leaves the footer credit off. Upgrade to Forever to credit someone of your choice."
+                : "Your plan shows \u201cMade with love by Vowly\u201d. Upgrade to remove it, or to Forever to credit someone of your choice."}
+            </AlertDescription>
+          </Alert>
         )}
         <fieldset disabled={!canCustomCredit} className="grid grid-cols-1 gap-3 disabled:opacity-50 sm:grid-cols-2">
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+          <Label className={FIELD_LABEL}>
             Made with love by…
-            <input name="footerCredit" defaultValue={copy.footerCredit ?? ""} placeholder="Leave empty to hide" maxLength={80} className={fieldClass} />
-          </label>
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+            <Input name="footerCredit" defaultValue={copy.footerCredit ?? ""} placeholder="Leave empty to hide" maxLength={80} className={FIELD} />
+          </Label>
+          <Label className={FIELD_LABEL}>
             Link (optional)
-            <input name="footerCreditUrl" type="url" defaultValue={copy.footerCreditUrl ?? ""} placeholder="https://" className={fieldClass} />
-          </label>
+            <Input name="footerCreditUrl" type="url" defaultValue={copy.footerCreditUrl ?? ""} placeholder="https://" className={FIELD} />
+          </Label>
         </fieldset>
         {/* A disabled fieldset doesn't submit; keep the saved values. */}
         {!canCustomCredit && (
@@ -99,13 +107,9 @@ export default function WordingTab({
 
       {state?.error && <p className="text-xs text-burnt-orange">{state.error}</p>}
       {state?.success && <p className="text-xs text-olive">Saved.</p>}
-      <button
-        type="submit"
-        disabled={pending}
-        className="self-start rounded-full bg-(--m-gold) px-6 py-2.5 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-      >
+      <Button type="submit" size="lg" disabled={pending} className="self-start">
         {pending ? "Saving…" : "Save wording"}
-      </button>
+      </Button>
     </form>
   );
 }

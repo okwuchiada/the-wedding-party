@@ -4,6 +4,13 @@ import { useActionState, useState } from "react";
 import { saveSettings, setPublished } from "@/lib/actions/settings";
 import { CURRENCIES, formatMoney, LOCALES } from "@/lib/money";
 import { useAdminWeddingId } from "./wedding-context";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { FIELD, FIELD_LABEL } from "./form-styles";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 export type SettingsView = {
   slug: string;
@@ -17,8 +24,6 @@ export type SettingsView = {
   allowedCountries: string[];
   geoBypassToken: string | null;
 };
-
-const fieldClass = "border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-(--m-ink)/50";
 
 function PublishPanel({ settings }: { settings: SettingsView }) {
   const weddingId = useAdminWeddingId();
@@ -35,7 +40,7 @@ function PublishPanel({ settings }: { settings: SettingsView }) {
   };
 
   return (
-    <section className="flex flex-col gap-3 rounded-[6px] bg-white p-5">
+    <Card className="gap-3 rounded-md border-transparent p-5 shadow-none">
       <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">
         {locked ? "Suspended" : live ? "Your site is live" : "Your site is a draft"}
       </h2>
@@ -49,21 +54,19 @@ function PublishPanel({ settings }: { settings: SettingsView }) {
               : "Only you can see it. Choose a plan to publish it for guests."}
       </p>
       {!locked && (
-        <button
+        <Button
           type="button"
+          variant={live ? "outline" : "default"}
+          size="sm"
           onClick={toggle}
           disabled={pending || (!live && !settings.canPublish)}
-          className={`self-start px-5 py-2 text-xs font-medium disabled:opacity-50 ${
-            live
-              ? "border border-(--m-mist) text-foreground hover:border-burnt-orange hover:text-burnt-orange"
-              : "rounded-full bg-(--m-gold) text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
-          }`}
+          className={cn("self-start px-5 disabled:opacity-50", live && "border-mist hover:border-coral-deep hover:text-coral-deep")}
         >
           {pending ? "Saving…" : live ? "Unpublish" : "Publish site"}
-        </button>
+        </Button>
       )}
       {error && <p className="text-xs text-burnt-orange">{error}</p>}
-    </section>
+    </Card>
   );
 }
 
@@ -81,13 +84,14 @@ export default function SettingsTab({ settings }: { settings: SettingsView }) {
       <form action={formAction} className="flex flex-col gap-8">
         <section className="flex flex-col gap-3">
           <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Web address</h2>
-          <div className="flex items-center border border-(--m-mist) rounded-[6px] bg-white focus-within:border-olive">
-            <span className="pl-3 text-sm text-foreground/50">/w/</span>
-            <input
+          <div className="flex items-center rounded-md border border-mist bg-white focus-within:border-ink/50 focus-within:ring-3 focus-within:ring-gold/35">
+            <span className="pl-3 text-sm text-ink/50">/w/</span>
+            <Input
               name="slug"
+              aria-label="Web address"
               value={slug}
               onChange={(e) => setSlug(e.target.value.toLowerCase())}
-              className="w-full px-1 py-2 text-sm text-foreground outline-none"
+              className="h-auto border-0 px-1 py-2 text-ink focus-visible:ring-0"
             />
           </div>
           {slug !== settings.slug && (
@@ -97,26 +101,40 @@ export default function SettingsTab({ settings }: { settings: SettingsView }) {
 
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground sm:col-span-3">Money &amp; phone</h2>
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+          <Label className={FIELD_LABEL}>
             Currency
-            <select name="currency" value={currency} onChange={(e) => setCurrency(e.target.value)} className={fieldClass}>
-              {CURRENCIES.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+            <Select name="currency" value={currency} onValueChange={setCurrency}>
+              <SelectTrigger className={cn(FIELD, "w-full data-[size=default]:h-auto")}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCIES.map((v) => (
+                  <SelectItem key={v} value={v}>
+                    {v}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Label>
+          <Label className={FIELD_LABEL}>
             Number format
-            <select name="locale" value={locale} onChange={(e) => setLocale(e.target.value)} className={fieldClass}>
-              {LOCALES.map((l) => (
-                <option key={l}>{l}</option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+            <Select name="locale" value={locale} onValueChange={setLocale}>
+              <SelectTrigger className={cn(FIELD, "w-full data-[size=default]:h-auto")}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LOCALES.map((v) => (
+                  <SelectItem key={v} value={v}>
+                    {v}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Label>
+          <Label className={FIELD_LABEL}>
             Phone country code
-            <input name="phoneCountryCode" defaultValue={settings.phoneCountryCode} inputMode="numeric" className={fieldClass} />
-          </label>
+            <Input name="phoneCountryCode" defaultValue={settings.phoneCountryCode} inputMode="numeric" className={FIELD} />
+          </Label>
           <p className="text-xs text-foreground/60 sm:col-span-3">
             Example: {formatMoney(2_500_000, { currency, locale })}.
             {currency !== settings.currency && " Existing prices keep their amounts; only the currency label changes."}
@@ -125,40 +143,36 @@ export default function SettingsTab({ settings }: { settings: SettingsView }) {
 
         <section className="flex flex-col gap-3">
           <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Guests</h2>
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+          <Label className={FIELD_LABEL}>
             Maximum attending guests (your plan allows {settings.guestLimit.toLocaleString()})
-            <input
+            <Input
               name="maxGuests"
               type="number"
               min={1}
               max={settings.guestLimit}
               defaultValue={settings.maxGuests}
-              className={fieldClass}
+              className={FIELD}
             />
-          </label>
+          </Label>
         </section>
 
         <section className="flex flex-col gap-3">
           <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Who can view the site</h2>
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+          <Label className={FIELD_LABEL}>
             Only allow visitors from these countries (two-letter codes, e.g. NG, GH). Leave empty for everyone.
-            <input name="allowedCountries" defaultValue={settings.allowedCountries.join(", ")} className={fieldClass} />
-          </label>
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+            <Input name="allowedCountries" defaultValue={settings.allowedCountries.join(", ")} className={FIELD} />
+          </Label>
+          <Label className={FIELD_LABEL}>
             Access code for guests outside those countries
-            <input name="geoBypassToken" defaultValue={settings.geoBypassToken ?? ""} autoComplete="off" className={fieldClass} />
-          </label>
+            <Input name="geoBypassToken" defaultValue={settings.geoBypassToken ?? ""} autoComplete="off" className={FIELD} />
+          </Label>
         </section>
 
         {state?.error && <p className="text-xs text-burnt-orange">{state.error}</p>}
         {state?.success && <p className="text-xs text-olive">Saved.</p>}
-        <button
-          type="submit"
-          disabled={pending}
-          className="self-start rounded-full bg-(--m-gold) px-6 py-2.5 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-        >
+        <Button type="submit" size="lg" disabled={pending} className="self-start">
           {pending ? "Saving…" : "Save settings"}
-        </button>
+        </Button>
       </form>
     </div>
   );

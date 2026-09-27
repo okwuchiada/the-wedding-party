@@ -33,7 +33,7 @@ export const BRAND_STYLE = {
   "--sans": "var(--m-body), system-ui, sans-serif",
 } as React.CSSProperties;
 
-/** Put on the element carrying BRAND_STYLE: loads the brand fonts and scopes form styling. */
-export const BRAND_CLASS = `${display.variable} ${body.variable} brand-ui bg-(--m-paper) font-(family-name:--m-body) text-(--m-ink)`;
+/** Put on the element carrying BRAND_STYLE: loads the brand fonts. */
+export const BRAND_CLASS = `${display.variable} ${body.variable} bg-(--m-paper) font-(family-name:--m-body) text-(--m-ink)`;
 
 export const WOVEN = ["--m-gold", "--m-ink", "--m-emerald", "--m-coral"] as const;

@@ -19,6 +19,14 @@ import TimePicker from "@/components/marketing/time-picker";
 import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
 import StoryBeatsSection, { type StoryBeatView } from "./story-beats-section";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { FIELD, FIELD_LABEL, FILE_INPUT, TEXT_ACTION } from "./form-styles";
+import { Textarea } from "@/components/ui/textarea";
 
 export type StoryContentView = {
   brideName: string;
@@ -108,19 +116,14 @@ function PhotoForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 bg-ivory p-4 sm:grid-cols-3">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 bg-paper p-4 sm:grid-cols-3">
       {initialValues?.id && <input type="hidden" name="id" defaultValue={initialValues.id} />}
       {initialValues?.url && (
         <input type="hidden" name="existingUrl" defaultValue={initialValues.url} />
       )}
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      <Label className={FIELD_LABEL}>
         Photo
-        <input
-          name="file"
-          type="file"
-          accept="image/*,.heic,.heif"
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none file:mr-3 file:border-0 file:rounded-full file:bg-(--m-ink) file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ivory"
-        />
+        <Input name="file" type="file" accept="image/*,.heic,.heif" className={cn(FIELD, FILE_INPUT)} />
         {initialValues?.url && (
           <span className="mt-1 flex items-center gap-2 text-[11px] text-foreground/50">
             <Image
@@ -133,54 +136,41 @@ function PhotoForm({
             Leave blank to keep the current photo
           </span>
         )}
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      </Label>
+      <Label className={FIELD_LABEL}>
         Caption
-        <input
+        <Input
           name="caption"
           defaultValue={initialValues?.caption}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={FIELD}
         />
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      </Label>
+      <Label className={FIELD_LABEL}>
         Order
-        <input
+        <Input
           name="order"
           type="number"
           defaultValue={initialValues?.order ?? 0}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={FIELD}
         />
-      </label>
+      </Label>
 
-      <label className="flex items-center gap-2 text-xs text-foreground/60 sm:col-span-3">
-        <input
-          name="showInHero"
-          type="checkbox"
-          defaultChecked={initialValues?.showInHero ?? false}
-          className="h-4 w-4 border border-(--m-mist)"
-        />
+      <Label className="text-xs font-normal text-ink/60 sm:col-span-3">
+        <Checkbox name="showInHero" defaultChecked={initialValues?.showInHero ?? false} />
         Show in Hero section
-      </label>
+      </Label>
 
       {(uploadError || state?.error) && (
         <p className="text-xs text-burnt-orange sm:col-span-3">{uploadError || state?.error}</p>
       )}
 
       <div className="flex gap-2 sm:col-span-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
-        >
+        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={pending || uploading}
-          className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-        >
+        </Button>
+        <Button type="submit" size="sm" disabled={pending || uploading}>
           {uploading ? "Uploading…" : pending ? "Saving…" : submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -241,14 +231,15 @@ function BulkUploadButton() {
 
   return (
     <div>
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         disabled={uploading}
         onClick={() => inputRef.current?.click()}
-        className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink) disabled:opacity-60"
       >
         {uploading ? `Uploading ${progress.done}/${progress.total}…` : "Bulk Upload"}
-      </button>
+      </Button>
       <input
         ref={inputRef}
         type="file"
@@ -297,13 +288,9 @@ function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
         <div className="flex gap-2">
           <BulkUploadButton />
           {!adding && (
-            <button
-              type="button"
-              onClick={() => setAdding(true)}
-              className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
-            >
+            <Button type="button" size="sm" onClick={() => setAdding(true)}>
               Add Photo
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -324,65 +311,69 @@ function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
 
       {deleteError && <p className="mb-3 text-xs text-burnt-orange">{deleteError}</p>}
 
-      <div className="overflow-x-auto rounded-[6px] border border-(--m-mist) bg-white">
-        <table className="w-full min-w-150 text-left text-sm">
-          <thead>
-            <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
-              <th className="px-4 py-3 font-medium">Order</th>
-              <th className="px-4 py-3 font-medium">Photo URL</th>
-              <th className="px-4 py-3 font-medium">Caption</th>
-              <th className="px-4 py-3 font-medium">Hero</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="overflow-hidden rounded-md border border-mist bg-white">
+        <Table className="min-w-150">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="px-4 py-3 text-ink/50">Order</TableHead>
+              <TableHead className="px-4 py-3 text-ink/50">Photo URL</TableHead>
+              <TableHead className="px-4 py-3 text-ink/50">Caption</TableHead>
+              <TableHead className="px-4 py-3 text-ink/50">Hero</TableHead>
+              <TableHead className="px-4 py-3 text-ink/50">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {photos.map((photo) =>
               editingId === photo.id ? (
-                <tr key={photo.id} className="border-b border-(--m-mist) last:border-0">
-                  <td colSpan={5} className="p-0">
+                <TableRow key={photo.id}>
+                  <TableCell colSpan={5} className="p-0">
                     <PhotoForm
                       action={updateStoryPhoto.bind(null, weddingId)}
                       initialValues={photo}
                       onCancel={() => setEditingId(null)}
                       submitLabel="Save Changes"
                     />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
-                <tr key={photo.id} className="border-b border-(--m-mist) last:border-0">
-                  <td className="px-4 py-3 text-foreground/70">{photo.order}</td>
-                  <td className="px-4 py-3 text-foreground/70">{photo.url}</td>
-                  <td className="px-4 py-3 text-foreground">{photo.caption}</td>
-                  <td className="px-4 py-3">
+                <TableRow key={photo.id}>
+                  <TableCell className="px-4 py-3 text-ink/70">{photo.order}</TableCell>
+                  <TableCell className="px-4 py-3 text-ink/70">{photo.url}</TableCell>
+                  <TableCell className="px-4 py-3 text-ink">{photo.caption}</TableCell>
+                  <TableCell className="px-4 py-3">
                     {photo.showInHero && (
                       <span className="bg-olive/10 px-2 py-1 text-xs text-olive">
                         Hero
                       </span>
                     )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
+                    <Button
                       type="button"
+                      variant="link"
+                      size="xs"
                       disabled={isPending(photo.id)}
                       onClick={() => setEditingId(photo.id)}
-                      className="mr-3 text-xs text-foreground/60 hover:text-burnt-orange disabled:opacity-60"
+                      className={cn(TEXT_ACTION, "mr-3")}
                     >
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="link"
+                      size="xs"
                       disabled={isPending(photo.id)}
                       onClick={() => handleDelete(photo.id)}
-                      className="text-xs text-foreground/60 hover:text-burnt-orange disabled:opacity-60"
+                      className={TEXT_ACTION}
                     >
                       {isPending(photo.id, "delete") ? "Deleting…" : "Delete"}
-                    </button>
-                  </td>
-                </tr>
+                    </Button>
+                  </TableCell>
+                </TableRow>
               )
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       {confirmDialog}
     </div>
@@ -414,22 +405,22 @@ export default function StoryTab({
 
       <form action={formAction} className="grid grid-cols-1 gap-4 lg:max-w-2xl">
         <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+          <Label className={FIELD_LABEL}>
             Bride&apos;s name
-            <input
+            <Input
               name="brideName"
               defaultValue={story.brideName}
-              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+              className={FIELD}
             />
-          </label>
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+          </Label>
+          <Label className={FIELD_LABEL}>
             Groom&apos;s name
-            <input
+            <Input
               name="groomName"
               defaultValue={story.groomName}
-              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+              className={FIELD}
             />
-          </label>
+          </Label>
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -442,138 +433,134 @@ export default function StoryTab({
             <TimePicker name="weddingTime" value={weddingTime} onChange={setWeddingTime} labelledBy="story-time-label" />
           </div>
         </div>
-        <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+        <Label className={FIELD_LABEL}>
           Contact email
-          <input
+          <Input
             type="email"
             name="contactEmail"
             defaultValue={story.contactEmail ?? ""}
             placeholder="hello@example.com"
-            className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+            className={FIELD}
           />
-        </label>
+        </Label>
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+          <Label className={FIELD_LABEL}>
             Bride&apos;s RSVP number
-            <input
+            <Input
               type="tel"
               name="bridePhone"
               defaultValue={story.bridePhone ?? ""}
               placeholder="+234…"
-              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+              className={FIELD}
             />
-          </label>
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+          </Label>
+          <Label className={FIELD_LABEL}>
             Groom&apos;s RSVP number
-            <input
+            <Input
               type="tel"
               name="groomPhone"
               defaultValue={story.groomPhone ?? ""}
               placeholder="+234…"
-              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+              className={FIELD}
             />
-          </label>
+          </Label>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+          <Label className={FIELD_LABEL}>
             Tagline
-            <input
+            <Input
               name="tagline"
               defaultValue={story.tagline ?? ""}
               placeholder="A celebration of love"
-              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+              className={FIELD}
             />
-          </label>
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+          </Label>
+          <Label className={FIELD_LABEL}>
             Venue / location
-            <input
+            <Input
               name="location"
               defaultValue={story.location ?? ""}
               placeholder="The venue, city"
-              className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+              className={FIELD}
             />
-          </label>
+          </Label>
         </div>
 
-        <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+        <Label className={FIELD_LABEL}>
           Full venue address (RSVP confirmation email only)
-          <input
+          <Input
             name="venueAddress"
             defaultValue={story.venueAddress ?? ""}
             placeholder="123 Main Street, Victoria Island, Lagos"
-            className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+            className={FIELD}
           />
           <span className="text-[11px] text-foreground/45">
             Shown only to guests who RSVP as attending — the site itself keeps showing just
             &quot;Venue / location&quot; above.
           </span>
-        </label>
+        </Label>
 
-        <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+        <Label className={FIELD_LABEL}>
           How we met
-          <textarea
+          <Textarea
             rows={4}
             name="howWeMet"
             defaultValue={story.howWeMet ?? ""}
             placeholder="Tell your guests how your story began…"
-            className="resize-none border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+            className={cn(FIELD, "field-sizing-fixed resize-none")}
           />
-        </label>
+        </Label>
 
-        <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+        <Label className={FIELD_LABEL}>
           What we love about each other
-          <textarea
+          <Textarea
             rows={4}
             name="whatWeLove"
             defaultValue={story.whatWeLove ?? ""}
             placeholder="Share what makes your partner special…"
-            className="resize-none border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+            className={cn(FIELD, "field-sizing-fixed resize-none")}
           />
-        </label>
+        </Label>
 
-        <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+        <Label className={FIELD_LABEL}>
           Groom&apos;s love note (to the bride)
-          <textarea
+          <Textarea
             rows={4}
             name="groomNote"
             defaultValue={story.groomNote ?? ""}
             placeholder="A personal note from the groom…"
-            className="resize-none border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+            className={cn(FIELD, "field-sizing-fixed resize-none")}
           />
-        </label>
+        </Label>
 
-        <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+        <Label className={FIELD_LABEL}>
           Bride&apos;s love note (to the groom)
-          <textarea
+          <Textarea
             rows={4}
             name="brideNote"
             defaultValue={story.brideNote ?? ""}
             placeholder="A personal note from the bride…"
-            className="resize-none border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+            className={cn(FIELD, "field-sizing-fixed resize-none")}
           />
-        </label>
+        </Label>
 
-        <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+        <Label className={FIELD_LABEL}>
           Cover / hero photo URL
-          <input
+          <Input
             name="heroPhotoUrl"
             defaultValue={story.heroPhotoUrl ?? ""}
             placeholder="https://…"
-            className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+            className={FIELD}
           />
-        </label>
+        </Label>
 
         {state?.error && <p className="text-xs text-burnt-orange">{state.error}</p>}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="self-start rounded-full bg-(--m-gold) px-6 py-2.5 text-sm font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-        >
+        <Button type="submit" size="lg" disabled={pending} className="self-start">
           {pending ? "Saving…" : state?.success ? "Saved ✓" : "Save & Publish"}
-        </button>
+        </Button>
       </form>
 
       <StoryPhotosSection photos={photos} />

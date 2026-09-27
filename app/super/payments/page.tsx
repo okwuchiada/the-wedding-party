@@ -1,7 +1,8 @@
 import ActionButton from "@/components/super/action-button";
 import { Pagination } from "@/components/super/pagination";
-import { SearchForm } from "@/components/super/search-form";
+import { FilterSelect, SearchForm } from "@/components/super/search-form";
 import { date, Table } from "@/components/super/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { reverifyPayment } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
 import type { PaymentStatus, Prisma } from "@/lib/generated/prisma/client";
@@ -45,31 +46,29 @@ export default async function SuperPaymentsPage({
   return (
     <div className="flex flex-col gap-5">
       <SearchForm q={term} placeholder="Reference or wedding slug">
-        <select name="status" defaultValue={status ?? ""} className="border border-(--m-mist) bg-white px-3 py-2 text-sm">
-          <option value="">All statuses</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s.toLowerCase()}
-            </option>
-          ))}
-        </select>
+        <FilterSelect
+          name="status"
+          defaultValue={status ?? ""}
+          allLabel="All statuses"
+          options={STATUSES.map((s) => ({ value: s, label: s.toLowerCase() }))}
+        />
       </SearchForm>
       <Table head={["Created", "Wedding", "Plan", "Amount", "Status", "Reference", ""]}>
         {payments.map((p) => (
-          <tr key={p.id}>
-            <td className="px-3 py-3 text-foreground/70">{date(p.createdAt)}</td>
-            <td className="px-3 py-3">/w/{p.wedding.slug}</td>
-            <td className="px-3 py-3 text-foreground/80">{p.plan.name}</td>
-            <td className="px-3 py-3">{formatMoney(p.amountKobo, NAIRA)}</td>
-            <td className="px-3 py-3 text-foreground/80">
+          <TableRow key={p.id}>
+            <TableCell className="text-foreground/70">{date(p.createdAt)}</TableCell>
+            <TableCell>/w/{p.wedding.slug}</TableCell>
+            <TableCell className="text-foreground/80">{p.plan.name}</TableCell>
+            <TableCell>{formatMoney(p.amountKobo, NAIRA)}</TableCell>
+            <TableCell className="text-foreground/80">
               {p.status.toLowerCase()}
               {p.paidAt && <span className="block text-xs text-foreground/55">paid {date(p.paidAt)}</span>}
-            </td>
-            <td className="px-3 py-3 font-mono text-xs text-foreground/70">{p.reference}</td>
-            <td className="px-3 py-3">
+            </TableCell>
+            <TableCell className="font-mono text-xs text-foreground/70">{p.reference}</TableCell>
+            <TableCell>
               {canReverify && p.status !== "SUCCESS" && <ActionButton action={reverifyPayment.bind(null, p.reference)} label="Check with Paystack" />}
-            </td>
-          </tr>
+            </TableCell>
+          </TableRow>
         ))}
       </Table>
       <Pagination page={page} pageSize={pageSize} total={total} />

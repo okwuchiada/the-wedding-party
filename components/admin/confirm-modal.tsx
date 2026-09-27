@@ -1,6 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useRef } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export type ConfirmOptions = {
   title: string;
@@ -24,53 +34,29 @@ export default function ConfirmModal({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onCancel]);
-
-  if (!open) return null;
+  const confirmRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="confirm-modal-title"
-      className="fixed inset-0 z-100 flex items-center justify-center bg-foreground/40 px-4"
-      onClick={onCancel}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-[6px] bg-white p-6 border border-(--m-mist)"
+    <AlertDialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <AlertDialogContent
+        size="sm"
+        // Focus the confirm button, as before, so Enter confirms.
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          confirmRef.current?.focus();
+        }}
       >
-        <h2 id="confirm-modal-title" className="font-(family-name:--m-display) font-bold tracking-tight text-xl text-foreground">
-          {title}
-        </h2>
-        {description && <p className="mt-2 text-sm text-foreground/70">{description}</p>}
-        <div className="mt-6 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
-          >
-            {cancelLabel}
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            autoFocus
-            className={`px-4 py-2 text-xs font-medium text-ivory transition-colors ${
-              danger ? "bg-burnt-orange hover:bg-burnt-orange-dark" : "bg-olive hover:bg-olive-dark"
-            }`}
-          >
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel size="sm">{cancelLabel}</AlertDialogCancel>
+          <AlertDialogAction ref={confirmRef} size="sm" variant={danger ? "destructive" : "ink"} onClick={onConfirm}>
             {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

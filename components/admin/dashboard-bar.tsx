@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandLink } from "@/components/marketing/shell";
+import { Button } from "@/components/ui/button";
 import { logout } from "@/lib/actions/auth";
 
 const linkClass = "rounded-full px-3 py-2 hover:bg-(--m-mist)";
@@ -19,9 +20,9 @@ export default function DashboardBar({ showConsole = false }: { showConsole?: bo
           </Link>
         )} */}
         <form action={logout}>
-          <button type="submit" className="rounded-full border border-(--m-ink)/25 px-4 py-2 hover:border-(--m-ink)">
+          <Button type="submit" variant="outline" size="sm" className="text-sm">
             Sign out
-          </button>
+          </Button>
         </form>
       </nav>
     </header>

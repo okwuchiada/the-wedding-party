@@ -3,6 +3,7 @@ import ActionButton from "@/components/super/action-button";
 import { Pagination } from "@/components/super/pagination";
 import { SearchForm } from "@/components/super/search-form";
 import { date, Table } from "@/components/super/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { impersonateUser, sendUserPasswordReset } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
 import { can, isStaff, ROLE_LABELS } from "@/lib/permissions";
@@ -41,16 +42,16 @@ export default async function StaffUsersPage({
       <SearchForm q={term} placeholder="Email or name" />
       <Table head={["User", "Access", "Weddings", "Joined", "Actions"]}>
         {users.map((u) => (
-          <tr key={u.id}>
-            <td className="px-3 py-3">
+          <TableRow key={u.id}>
+            <TableCell>
               <p>{u.email}</p>
               <p className="text-xs text-foreground/60">
                 {u.name ?? "—"}
                 {!u.passwordHash && " · hasn't set a password"}
               </p>
-            </td>
-            <td className="px-3 py-3 text-foreground/80">{ROLE_LABELS[u.role]}</td>
-            <td className="px-3 py-3 text-xs text-foreground/80">
+            </TableCell>
+            <TableCell className="text-foreground/80">{ROLE_LABELS[u.role]}</TableCell>
+            <TableCell className="text-xs text-foreground/80">
               {u.memberships.map((m) => (
                 <div key={m.id}>
                   <Link href={`/super/weddings/${m.wedding.id}`} className="underline underline-offset-4">
@@ -59,9 +60,9 @@ export default async function StaffUsersPage({
                   <span className="text-foreground/50">({m.role.toLowerCase()})</span>
                 </div>
               ))}
-            </td>
-            <td className="px-3 py-3 text-foreground/70">{date(u.createdAt)}</td>
-            <td className="px-3 py-3">
+            </TableCell>
+            <TableCell className="text-foreground/70">{date(u.createdAt)}</TableCell>
+            <TableCell>
               {u.id === staff.id ? (
                 <span className="text-xs text-foreground/50">You</span>
               ) : (
@@ -78,8 +79,8 @@ export default async function StaffUsersPage({
                   )}
                 </div>
               )}
-            </td>
-          </tr>
+            </TableCell>
+          </TableRow>
         ))}
       </Table>
       <Pagination page={page} pageSize={pageSize} total={total} />

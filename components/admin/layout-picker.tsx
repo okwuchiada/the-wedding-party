@@ -15,6 +15,8 @@ import {
   type StoryStyle,
   type TemplateKey,
 } from "@/lib/layouts";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 const cardClass = (selected: boolean) =>
   `flex flex-col gap-2 rounded-[6px] bg-white p-3 text-left text-sm transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--m-ink) ${
@@ -345,38 +347,30 @@ export function SectionsEditor({
                 </span>
               </span>
               <span className="flex gap-1">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="icon-sm"
                   aria-label={`Move ${name} up`}
                   disabled={i === 0}
                   onClick={() => move(i, i - 1)}
-                  className="grid size-8 place-items-center rounded-full border border-(--m-mist) hover:border-(--m-ink) disabled:opacity-30"
+                  className="border-mist disabled:opacity-30"
                 >
-                  <ArrowUp aria-hidden size={15} />
-                </button>
-                <button
+                  <ArrowUp aria-hidden className="size-[15px]" />
+                </Button>
+                <Button
                   type="button"
+                  variant="outline"
+                  size="icon-sm"
                   aria-label={`Move ${name} down`}
                   disabled={i === value.length - 1}
                   onClick={() => move(i, i + 1)}
-                  className="grid size-8 place-items-center rounded-full border border-(--m-mist) hover:border-(--m-ink) disabled:opacity-30"
+                  className="border-mist disabled:opacity-30"
                 >
-                  <ArrowDown aria-hidden size={15} />
-                </button>
+                  <ArrowDown aria-hidden className="size-[15px]" />
+                </Button>
               </span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={s.visible}
-                aria-label={`Show ${name}`}
-                onClick={() => toggle(i)}
-                className={`relative h-6 w-11 rounded-full transition-colors motion-reduce:transition-none ${s.visible ? "bg-(--m-emerald)" : "bg-(--m-mist)"}`}
-              >
-                <span
-                  aria-hidden
-                  className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform motion-reduce:transition-none ${s.visible ? "translate-x-5" : ""}`}
-                />
-              </button>
+              <Switch size="lg" checked={s.visible} onCheckedChange={() => toggle(i)} aria-label={`Show ${name}`} />
             </li>
           );
         })}

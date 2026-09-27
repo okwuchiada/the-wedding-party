@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { ConfirmedContributionView, PendingContributionView } from "@/lib/types";
 import { formatMoney } from "@/lib/money";
 import { Pagination, usePagination } from "./pagination";
@@ -23,44 +25,39 @@ export default function ContributionsTab({
 
   return (
     <div>
-      <h2 className="mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Pending Contributions</h2>
+      <h2 className="mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">Pending Contributions</h2>
 
       {pending.length === 0 ? (
-        <p className="text-sm text-foreground/60">No pending contributions right now.</p>
+        <p className="text-sm text-ink/60">No pending contributions right now.</p>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-[6px] border border-(--m-mist) bg-white">
-            <table className="w-full min-w-150 text-left text-sm">
-              <thead>
-                <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
-                  <th className="px-4 py-3 font-medium">Guest</th>
-                  <th className="px-4 py-3 font-medium">Item</th>
-                  <th className="px-4 py-3 font-medium">Amount</th>
-                  <th className="px-4 py-3 font-medium">Requested</th>
-                  <th className="px-4 py-3 font-medium">Action</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="overflow-hidden rounded-md border border-mist bg-white">
+            <Table className="min-w-150">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="px-4 text-ink/50">Guest</TableHead>
+                  <TableHead className="px-4 text-ink/50">Item</TableHead>
+                  <TableHead className="px-4 text-ink/50">Amount</TableHead>
+                  <TableHead className="px-4 text-ink/50">Requested</TableHead>
+                  <TableHead className="px-4 text-ink/50">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {pendingPage.pageItems.map((c) => (
-                  <tr key={c.id} className="border-b border-(--m-mist) last:border-0">
-                    <td className="px-4 py-3 text-foreground">{c.guestName}</td>
-                    <td className="px-4 py-3 text-foreground/70">{c.itemName}</td>
-                    <td className="px-4 py-3 text-foreground/70">{formatMoney(c.amountCents, money)}</td>
-                    <td className="px-4 py-3 text-foreground/70">{c.dateRequested}</td>
-                    <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        disabled={isPending(c.id)}
-                        onClick={() => run(c.id, "confirm", () => onConfirm(c))}
-                        className="rounded-full bg-(--m-gold) px-3 py-1.5 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-                      >
+                  <TableRow key={c.id}>
+                    <TableCell className="px-4 text-ink">{c.guestName}</TableCell>
+                    <TableCell className="px-4 text-ink/70">{c.itemName}</TableCell>
+                    <TableCell className="px-4 text-ink/70">{formatMoney(c.amountCents, money)}</TableCell>
+                    <TableCell className="px-4 text-ink/70">{c.dateRequested}</TableCell>
+                    <TableCell className="px-4">
+                      <Button type="button" size="xs" disabled={isPending(c.id)} onClick={() => run(c.id, "confirm", () => onConfirm(c))}>
                         {isPending(c.id, "confirm") ? "Confirming…" : "Confirm"}
-                      </button>
-                    </td>
-                  </tr>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <Pagination
             page={pendingPage.page}
@@ -72,33 +69,33 @@ export default function ContributionsTab({
         </>
       )}
 
-      <h2 className="mt-10 mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Confirmed Contributions</h2>
+      <h2 className="mt-10 mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">Confirmed Contributions</h2>
 
       {confirmed.length === 0 ? (
-        <p className="text-sm text-foreground/60">No confirmed contributions yet.</p>
+        <p className="text-sm text-ink/60">No confirmed contributions yet.</p>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-[6px] border border-(--m-mist) bg-white">
-            <table className="w-full min-w-150 text-left text-sm">
-              <thead>
-                <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
-                  <th className="px-4 py-3 font-medium">Guest</th>
-                  <th className="px-4 py-3 font-medium">Item</th>
-                  <th className="px-4 py-3 font-medium">Amount</th>
-                  <th className="px-4 py-3 font-medium">Confirmed</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="overflow-hidden rounded-md border border-mist bg-white">
+            <Table className="min-w-150">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="px-4 text-ink/50">Guest</TableHead>
+                  <TableHead className="px-4 text-ink/50">Item</TableHead>
+                  <TableHead className="px-4 text-ink/50">Amount</TableHead>
+                  <TableHead className="px-4 text-ink/50">Confirmed</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {confirmedPage.pageItems.map((c) => (
-                  <tr key={c.id} className="border-b border-(--m-mist) last:border-0">
-                    <td className="px-4 py-3 text-foreground">{c.guestName}</td>
-                    <td className="px-4 py-3 text-foreground/70">{c.itemName}</td>
-                    <td className="px-4 py-3 text-foreground/70">{formatMoney(c.amountCents, money)}</td>
-                    <td className="px-4 py-3 text-foreground/70">{c.dateConfirmed}</td>
-                  </tr>
+                  <TableRow key={c.id}>
+                    <TableCell className="px-4 text-ink">{c.guestName}</TableCell>
+                    <TableCell className="px-4 text-ink/70">{c.itemName}</TableCell>
+                    <TableCell className="px-4 text-ink/70">{formatMoney(c.amountCents, money)}</TableCell>
+                    <TableCell className="px-4 text-ink/70">{c.dateConfirmed}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <Pagination
             page={confirmedPage.page}

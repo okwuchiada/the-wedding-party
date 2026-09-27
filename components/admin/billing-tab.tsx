@@ -3,7 +3,11 @@
 import { useActionState } from "react";
 import { startCheckout } from "@/lib/actions/billing";
 import PlanCard, { type PlanCardPlan } from "@/components/marketing/plan-card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatMoney } from "@/lib/money";
+import { cn } from "@/lib/utils";
 import { useAdminWeddingId } from "./wedding-context";
 
 export type BillingView = {
@@ -41,21 +45,27 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
   return (
     <div className="flex flex-col gap-8">
       <section>
-        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Your plan</h2>
-        <p className="mt-1 text-sm text-foreground/70">
+        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">Your plan</h2>
+        <p className="mt-1 text-sm text-ink/70">
           {!billing.currentPlan
             ? "You're on a free draft. Choose a plan to publish your site for guests."
             : billing.currentPlan.free
               ? `You're on ${billing.currentPlan.name}. Upgrade any time; you only pay once per wedding.`
               : `${billing.currentPlan.name}${billing.currentPlan.comped ? " (complimentary)" : ""}, a one-time payment for this wedding.`}
         </p>
-        {billing.currentPlan && <p className="mt-1 text-sm text-foreground/70">{closingNote(billing.currentPlan.closesAt)}</p>}
+        {billing.currentPlan && <p className="mt-1 text-sm text-ink/70">{closingNote(billing.currentPlan.closesAt)}</p>}
       </section>
 
       {!billing.paymentsEnabled && (
-        <p className="bg-cream px-3 py-2 text-xs text-foreground/70">Online payments aren&apos;t switched on yet.</p>
+        <Alert className="border-transparent bg-accent text-ink/70">
+          <AlertDescription className="text-xs text-ink/70">Online payments aren&apos;t switched on yet.</AlertDescription>
+        </Alert>
       )}
-      {state?.error && <p className="text-xs text-burnt-orange">{state.error}</p>}
+      {state?.error && (
+        <Alert variant="destructive">
+          <AlertDescription className="text-xs">{state.error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 gap-5 pt-3 md:grid-cols-2 xl:grid-cols-3">
         {billing.plans.map((plan) => (
@@ -65,29 +75,26 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
             current={plan.current}
             action={
               plan.current ? (
-                <p className={`text-sm font-semibold ${plan.popular ? "text-(--m-gold)" : "text-(--m-emerald)"}`}>Your current plan</p>
+                <p className={`text-sm font-semibold ${plan.popular ? "text-gold" : "text-emerald"}`}>Your current plan</p>
               ) : plan.chargeKobo === null ? (
-                <p className={`text-sm ${plan.popular ? "text-(--m-paper)/70" : "text-(--m-ink)/60"}`}>
+                <p className={`text-sm ${plan.popular ? "text-paper/70" : "text-ink/60"}`}>
                   {plan.priceKobo === 0 ? "Included free" : "Included in your plan"}
                 </p>
               ) : (
                 <form action={formAction}>
                   <input type="hidden" name="planKey" value={plan.key} />
-                  <button
+                  <Button
                     type="submit"
+                    variant={plan.popular ? "default" : "ink"}
                     disabled={pending || !billing.paymentsEnabled}
-                    className={`w-full rounded-full px-4 py-3 text-sm font-semibold disabled:opacity-50 ${
-                      plan.popular
-                        ? "bg-(--m-gold) text-(--m-ink) hover:bg-(--m-paper)"
-                        : "bg-(--m-ink) text-(--m-paper) hover:bg-(--m-emerald)"
-                    }`}
+                    className={cn("w-full px-4 py-3 disabled:opacity-50", plan.popular && "hover:bg-paper hover:text-ink")}
                   >
                     {pending
                       ? "Redirecting…"
                       : billing.currentPlan
                         ? `Upgrade, pay ${formatMoney(plan.chargeKobo, NAIRA)}`
                         : `Choose ${plan.name}`}
-                  </button>
+                  </Button>
                 </form>
               )
             }
@@ -97,27 +104,29 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
 
       {billing.payments.length > 0 && (
         <section>
-          <h2 className="mb-3 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Payments</h2>
-          <table className="w-full rounded-[6px] bg-white text-left text-sm">
-            <thead className="text-xs text-foreground/55">
-              <tr>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Plan</th>
-                <th className="px-4 py-3">Amount</th>
-                <th className="px-4 py-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {billing.payments.map((p) => (
-                <tr key={p.reference} className="border-t border-(--m-mist)">
-                  <td className="px-4 py-3 text-foreground/70">{p.date}</td>
-                  <td className="px-4 py-3">{p.planName}</td>
-                  <td className="px-4 py-3">{formatMoney(p.amountKobo, NAIRA)}</td>
-                  <td className="px-4 py-3 text-foreground/70">{p.status.toLowerCase()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <h2 className="mb-3 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">Payments</h2>
+          <div className="overflow-hidden rounded-md bg-white">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="px-4">Date</TableHead>
+                  <TableHead className="px-4">Plan</TableHead>
+                  <TableHead className="px-4">Amount</TableHead>
+                  <TableHead className="px-4">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {billing.payments.map((p) => (
+                  <TableRow key={p.reference}>
+                    <TableCell className="px-4 text-ink/70">{p.date}</TableCell>
+                    <TableCell className="px-4">{p.planName}</TableCell>
+                    <TableCell className="px-4">{formatMoney(p.amountKobo, NAIRA)}</TableCell>
+                    <TableCell className="px-4 text-ink/70">{p.status.toLowerCase()}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </section>
       )}
     </div>

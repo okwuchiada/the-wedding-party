@@ -3,6 +3,7 @@ import Link from "next/link";
 import FeatureShowcase from "@/components/marketing/feature-showcase";
 import Pricing from "@/components/marketing/pricing";
 import ThemeShowcase from "@/components/marketing/theme-showcase";
+import { Button } from "@/components/ui/button";
 
 const STEPS = [
   {
@@ -53,12 +54,12 @@ export default function LandingPage() {
             RSVPs, a registry your guests can chip into, and a photo wall for the day, on a site dressed in your colours.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/signup" className="rounded-full bg-(--m-gold) px-6 py-3.5 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)">
-              Create your site for free
-            </Link>
-            <Link href="/pricing" className="rounded-full border border-(--m-ink)/25 px-6 py-3.5 text-sm font-semibold hover:border-(--m-ink)">
-              See pricing
-            </Link>
+            <Button asChild size="lg" className="py-3.5">
+              <Link href="/signup">Create your site for free</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="py-3.5 font-semibold">
+              <Link href="/pricing">See pricing</Link>
+            </Button>
           </div>
           <p className="mt-4 text-sm text-(--m-ink)/60">Start free, no card required, and publish whenever you&apos;re ready.</p>
         </ThemeShowcase>
@@ -112,9 +113,9 @@ export default function LandingPage() {
           ))}
         </div>
         <div className="mt-10 flex flex-wrap items-center gap-4">
-          <Link href="/signup" className="rounded-full bg-(--m-gold) px-6 py-3.5 text-sm font-semibold hover:bg-(--m-ink) hover:text-(--m-paper)">
-            Create your site for free
-          </Link>
+          <Button asChild size="lg" className="py-3.5">
+            <Link href="/signup">Create your site for free</Link>
+          </Button>
           {/* <Link href="/pricing" className="text-sm font-semibold text-(--m-ink)/70 underline decoration-(--m-ink)/25 underline-offset-4 hover:text-(--m-ink)">
             Compare plans
           </Link> */}

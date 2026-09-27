@@ -14,6 +14,13 @@ import { compressImage } from "@/lib/image-compress";
 import { useConfirm } from "./use-confirm";
 import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { FIELD, FIELD_LABEL, FILE_INPUT, TEXT_ACTION } from "./form-styles";
+import { Textarea } from "@/components/ui/textarea";
 
 export type StoryBeatView = {
   id: string;
@@ -91,50 +98,50 @@ function BeatForm({
         <input type="hidden" name="existingPhotoUrl" defaultValue={initialValues.photoUrl} />
       )}
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      <Label className={FIELD_LABEL}>
         Label (e.g. &ldquo;The Drawing&rdquo;)
-        <input
+        <Input
           name="year"
           defaultValue={initialValues?.year}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={FIELD}
         />
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      </Label>
+      <Label className={FIELD_LABEL}>
         Order
-        <input
+        <Input
           name="order"
           type="number"
           defaultValue={initialValues?.order ?? 0}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={FIELD}
         />
-      </label>
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60 sm:col-span-2">
+      <Label className={cn(FIELD_LABEL, "sm:col-span-2")}>
         Title
-        <input
+        <Input
           name="title"
           defaultValue={initialValues?.title}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={FIELD}
         />
-      </label>
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60 sm:col-span-2">
+      <Label className={cn(FIELD_LABEL, "sm:col-span-2")}>
         Story text
-        <textarea
+        <Textarea
           name="text"
           rows={3}
           defaultValue={initialValues?.text}
-          className="resize-none border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className={cn(FIELD, "field-sizing-fixed resize-none")}
         />
-      </label>
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60 sm:col-span-2">
+      <Label className={cn(FIELD_LABEL, "sm:col-span-2")}>
         Photo (optional)
-        <input
+        <Input
           name="file"
           type="file"
           accept="image/*,.heic,.heif"
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none file:mr-3 file:border-0 file:rounded-full file:bg-(--m-ink) file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ivory"
+          className={cn(FIELD, FILE_INPUT)}
         />
         {initialValues?.photoUrl && (
           <span className="mt-1 flex items-center gap-2 text-[11px] text-foreground/50">
@@ -148,27 +155,19 @@ function BeatForm({
             Leave blank to keep the current photo
           </span>
         )}
-      </label>
+      </Label>
 
       {(uploadError || state?.error) && (
         <p className="text-xs text-burnt-orange sm:col-span-2">{uploadError || state?.error}</p>
       )}
 
       <div className="flex gap-2 sm:col-span-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
-        >
+        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={pending || uploading}
-          className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-        >
+        </Button>
+        <Button type="submit" size="sm" disabled={pending || uploading}>
           {uploading ? "Uploading…" : pending ? "Saving…" : submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -205,13 +204,9 @@ export default function StoryBeatsSection({ beats }: { beats: StoryBeatView[] })
           How We Met Timeline
         </h2>
         {!adding && (
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
-          >
+          <Button type="button" size="sm" onClick={() => setAdding(true)}>
             Add Beat
-          </button>
+          </Button>
         )}
       </div>
       <p className="mb-4 max-w-2xl text-sm text-foreground/60">
@@ -228,36 +223,36 @@ export default function StoryBeatsSection({ beats }: { beats: StoryBeatView[] })
 
       {deleteError && <p className="mb-3 text-xs text-burnt-orange">{deleteError}</p>}
 
-      <div className="overflow-x-auto rounded-[6px] border border-(--m-mist) bg-white">
-        <table className="w-full min-w-150 text-left text-sm">
-          <thead>
-            <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
-              <th className="px-4 py-3 font-medium">Order</th>
-              <th className="px-4 py-3 font-medium">Label</th>
-              <th className="px-4 py-3 font-medium">Title</th>
-              <th className="px-4 py-3 font-medium">Photo</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="overflow-hidden rounded-md border border-mist bg-white">
+        <Table className="min-w-150">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="px-4 py-3 text-ink/50">Order</TableHead>
+              <TableHead className="px-4 py-3 text-ink/50">Label</TableHead>
+              <TableHead className="px-4 py-3 text-ink/50">Title</TableHead>
+              <TableHead className="px-4 py-3 text-ink/50">Photo</TableHead>
+              <TableHead className="px-4 py-3 text-ink/50">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {beats.map((beat) =>
               editingId === beat.id ? (
-                <tr key={beat.id} className="border-b border-(--m-mist) last:border-0">
-                  <td colSpan={5} className="p-0">
+                <TableRow key={beat.id}>
+                  <TableCell colSpan={5} className="p-0">
                     <BeatForm
                       action={updateStoryBeat.bind(null, weddingId)}
                       initialValues={beat}
                       onCancel={() => setEditingId(null)}
                       submitLabel="Save Changes"
                     />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
-                <tr key={beat.id} className="border-b border-(--m-mist) last:border-0">
-                  <td className="px-4 py-3 text-foreground/70">{beat.order}</td>
-                  <td className="px-4 py-3 text-foreground/70">{beat.year}</td>
-                  <td className="px-4 py-3 text-foreground">{beat.title}</td>
-                  <td className="px-4 py-3">
+                <TableRow key={beat.id}>
+                  <TableCell className="px-4 py-3 text-ink/70">{beat.order}</TableCell>
+                  <TableCell className="px-4 py-3 text-ink/70">{beat.year}</TableCell>
+                  <TableCell className="px-4 py-3 text-ink">{beat.title}</TableCell>
+                  <TableCell className="px-4 py-3">
                     {beat.photoUrl ? (
                       <span className="bg-olive/10 px-2 py-1 text-xs text-olive">
                         Yes
@@ -265,30 +260,34 @@ export default function StoryBeatsSection({ beats }: { beats: StoryBeatView[] })
                     ) : (
                       <span className="text-foreground/40">—</span>
                     )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
+                    <Button
                       type="button"
+                      variant="link"
+                      size="xs"
                       disabled={isPending(beat.id)}
                       onClick={() => setEditingId(beat.id)}
-                      className="mr-3 text-xs text-foreground/60 hover:text-burnt-orange disabled:opacity-60"
+                      className={cn(TEXT_ACTION, "mr-3")}
                     >
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="link"
+                      size="xs"
                       disabled={isPending(beat.id)}
                       onClick={() => handleDelete(beat.id)}
-                      className="text-xs text-foreground/60 hover:text-burnt-orange disabled:opacity-60"
+                      className={TEXT_ACTION}
                     >
                       {isPending(beat.id, "delete") ? "Deleting…" : "Delete"}
-                    </button>
-                  </td>
-                </tr>
+                    </Button>
+                  </TableCell>
+                </TableRow>
               )
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       {confirmDialog}
     </div>

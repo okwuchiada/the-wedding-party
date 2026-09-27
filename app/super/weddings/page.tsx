@@ -2,8 +2,10 @@ import Link from "next/link";
 import ActionButton from "@/components/super/action-button";
 import CompForm from "@/components/super/comp-form";
 import { Pagination } from "@/components/super/pagination";
-import { SearchForm } from "@/components/super/search-form";
+import { FilterSelect, SearchForm } from "@/components/super/search-form";
 import { date, Table } from "@/components/super/table";
+import { Badge } from "@/components/ui/badge";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { impersonateUser, setWeddingStatus } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
@@ -66,19 +68,17 @@ export default async function SuperWeddingsPage({
   return (
     <div className="flex flex-col gap-5">
       <SearchForm q={term} placeholder="Slug, couple name or owner email">
-        <select name="status" defaultValue={status ?? ""} className="border border-(--m-mist) bg-white px-3 py-2 text-sm">
-          <option value="">All statuses</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s.toLowerCase()}
-            </option>
-          ))}
-        </select>
+        <FilterSelect
+          name="status"
+          defaultValue={status ?? ""}
+          allLabel="All statuses"
+          options={STATUSES.map((s) => ({ value: s, label: s.toLowerCase() }))}
+        />
       </SearchForm>
       <Table head={["Wedding", "Status", "Plan", "Owners", "Actions"]}>
         {weddings.map((w) => (
-          <tr key={w.id}>
-            <td className="px-3 py-3">
+          <TableRow key={w.id}>
+            <TableCell>
               <Link href={`/super/weddings/${w.id}`} className="font-medium text-foreground underline decoration-(--m-ink)/20 underline-offset-4 hover:decoration-(--m-ink)">
                 {coupleTitle(w.story, resolveLayout(w.theme).heroNames) ?? w.slug}
               </Link>
@@ -93,17 +93,19 @@ export default async function SuperWeddingsPage({
                   Guest site
                 </a>
               </p>
-            </td>
-            <td className="px-3 py-3 text-foreground/80">{w.status.toLowerCase()}</td>
-            <td className="px-3 py-3 text-foreground/80">
+            </TableCell>
+            <TableCell className="text-foreground/80">{w.status.toLowerCase()}</TableCell>
+            <TableCell className="text-foreground/80">
               {w.plan?.name ?? "—"}
               {hasFeature(w.plan, "prioritySupport") && (
-                <span className="ml-1.5 rounded-full bg-(--m-gold) px-1.5 py-0.5 text-[10px] font-bold">Priority</span>
+                <Badge variant="gold" className="ml-1.5 px-1.5 text-[10px]">
+                  Priority
+                </Badge>
               )}
               {w.comped && <span className="text-xs text-foreground/55"> (comped)</span>}
               {w.paidAt && !w.comped && <span className="text-xs text-foreground/55"> (paid)</span>}
-            </td>
-            <td className="px-3 py-3">
+            </TableCell>
+            <TableCell>
               {w.members.map((m) => (
                 <div key={m.id} className="flex flex-wrap items-center gap-2 text-xs text-foreground/80">
                   {m.user.email}
@@ -112,8 +114,8 @@ export default async function SuperWeddingsPage({
                   )}
                 </div>
               ))}
-            </td>
-            <td className="px-3 py-3">
+            </TableCell>
+            <TableCell>
               <div className="flex flex-col items-start gap-2">
                 {allowed.status && (
                 <div className="flex flex-wrap gap-1">
@@ -145,8 +147,8 @@ export default async function SuperWeddingsPage({
                   </Link>
                 )}
               </div>
-            </td>
-          </tr>
+            </TableCell>
+          </TableRow>
         ))}
       </Table>
       <Pagination page={page} pageSize={pageSize} total={total} />

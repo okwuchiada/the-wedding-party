@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Common registry groupings, offered after the couple's own categories.
 const SUGGESTED = ["Home", "Kitchen", "Bedroom & bath", "Appliances", "Experiences", "Honeymoon", "Cash funds"];
 const NEW = "__new";
 
-const fieldClass = "border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none";
+const fieldClass = "h-auto py-2 text-ink data-[size=default]:h-auto";
 
 /**
  * Pick a registry category from the couple's existing ones and common suggestions,
@@ -40,39 +43,41 @@ export default function CategoryField({
   const value = adding ? (match ?? custom.trim()) : selected;
 
   return (
-    <div className="flex flex-col gap-1.5 text-xs text-foreground/60">
-      <label htmlFor={`${name}-select`}>Category</label>
+    <div className="flex flex-col gap-1.5 text-xs text-ink/60">
+      <Label htmlFor={`${name}-select`} className="text-xs font-normal">
+        Category
+      </Label>
       <input type="hidden" name={name} value={value} />
-      <select
-        id={`${name}-select`}
-        value={selected}
-        onChange={(e) => setSelected(e.target.value)}
-        className={fieldClass}
-      >
-        <option value="" disabled>
-          Choose a category
-        </option>
-        {options.some((o) => own.has(o.toLowerCase())) && (
-          <optgroup label="Your categories">
-            {options.filter((o) => own.has(o.toLowerCase())).map((o) => (
-              <option key={o} value={o}>
+      <Select value={selected} onValueChange={setSelected}>
+        <SelectTrigger id={`${name}-select`} className={`w-full ${fieldClass}`}>
+          <SelectValue placeholder="Choose a category" />
+        </SelectTrigger>
+        <SelectContent>
+          {options.some((o) => own.has(o.toLowerCase())) && (
+            <SelectGroup>
+              <SelectLabel>Your categories</SelectLabel>
+              {options.filter((o) => own.has(o.toLowerCase())).map((o) => (
+                <SelectItem key={o} value={o}>
+                  {o}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          )}
+          <SelectGroup>
+            <SelectLabel>Suggestions</SelectLabel>
+            {options.filter((o) => !own.has(o.toLowerCase())).map((o) => (
+              <SelectItem key={o} value={o}>
                 {o}
-              </option>
+              </SelectItem>
             ))}
-          </optgroup>
-        )}
-        <optgroup label="Suggestions">
-          {options.filter((o) => !own.has(o.toLowerCase())).map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
-        </optgroup>
-        <option value={NEW}>Add a new category…</option>
-      </select>
+          </SelectGroup>
+          <SelectSeparator />
+          <SelectItem value={NEW}>Add a new category…</SelectItem>
+        </SelectContent>
+      </Select>
       {adding && (
         <>
-          <input
+          <Input
             aria-label="New category name"
             value={custom}
             onChange={(e) => setCustom(e.target.value)}
@@ -82,7 +87,7 @@ export default function CategoryField({
             className={fieldClass}
           />
           {match && custom.trim() && match !== custom.trim() && (
-            <span className="text-[11px] text-foreground/55">You already have &ldquo;{match}&rdquo;, so it will go there.</span>
+            <span className="text-[11px] text-ink/55">You already have &ldquo;{match}&rdquo;, so it will go there.</span>
           )}
         </>
       )}

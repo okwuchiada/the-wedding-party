@@ -1,7 +1,12 @@
 "use client";
 
 import { Clock } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { PICKER_FIELD_CLASS, PICKER_PANEL_CLASS } from "./picker-styles";
 
 // Common start times for a ceremony or reception, offered as one-tap choices.
 const QUICK_TIMES = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
@@ -36,8 +41,6 @@ export default function TimePicker({
   placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const fieldRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const id = useId();
 
@@ -48,131 +51,123 @@ export default function TimePicker({
   // Keep an unusual saved minute (e.g. :10) selectable.
   const minutes = MINUTES.includes(m) ? MINUTES : [...MINUTES, m].sort();
 
-  const close = (refocus = true) => {
-    setOpen(false);
-    if (refocus) fieldRef.current?.focus();
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    // Start on the selected quick time, or the first one.
-    (panelRef.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]') ??
-      panelRef.current?.querySelector<HTMLButtonElement>("button"))?.focus();
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [open]);
-
-  const selectClass = "min-w-0 flex-1 border border-(--m-mist) bg-white px-2 py-1.5 text-sm font-semibold";
+  // Radix closes the popover on Escape or an outside click and returns focus to the field.
+  const close = () => setOpen(false);
 
   return (
-    <div ref={rootRef} className="relative">
+    <div>
       <input type="hidden" name={name} value={value} />
-      <button
-        ref={fieldRef}
-        type="button"
-        id={id}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-labelledby={labelledBy ? `${labelledBy} ${id}` : undefined}
-        onClick={() => (open ? close(false) : setOpen(true))}
-        className={`flex w-full items-center justify-between gap-3 rounded-[6px] border bg-white px-3.5 py-3 text-left text-base transition-shadow ${
-          open ? "border-(--m-ink)/50 ring-3 ring-(--m-gold)/35" : "border-(--m-mist) hover:border-(--m-ink)/40"
-        }`}
-      >
-        <span className={value ? "" : "text-(--m-ink)/50"}>{value ? formatTime(value) : placeholder}</span>
-        <Clock aria-hidden size={19} className="shrink-0 text-(--m-ink)/60" />
-      </button>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button type="button" id={id} aria-labelledby={labelledBy ? `${labelledBy} ${id}` : undefined} className={PICKER_FIELD_CLASS}>
+            <span className={value ? "" : "text-ink/50"}>{value ? formatTime(value) : placeholder}</span>
+            <Clock aria-hidden className="size-[19px] shrink-0 text-ink/60" />
+          </button>
+        </PopoverTrigger>
 
-      {open && (
-        <div
+        <PopoverContent
           ref={panelRef}
-          role="dialog"
+          align="start"
           aria-label="Choose the wedding time"
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              e.stopPropagation();
-              close();
-            }
+          // Start on the selected quick time, or the first one.
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+            (panelRef.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]') ??
+              panelRef.current?.querySelector<HTMLButtonElement>("button"))?.focus();
           }}
-          className="absolute top-[calc(100%+8px)] left-0 z-30 grid w-[min(100%,20rem)] min-w-[17rem] gap-3 rounded-[8px] border border-(--m-mist) bg-white p-3.5 shadow-[0_24px_48px_-28px_rgb(22_32_74/0.55)]"
+          className={`${PICKER_PANEL_CLASS} w-[min(var(--radix-popover-trigger-width),20rem)] min-w-[17rem]`}
         >
-          <p className="text-xs font-semibold text-(--m-ink)/60">Common times</p>
+          <p className="text-xs font-semibold text-ink/60">Common times</p>
           <div className="grid grid-cols-3 gap-1.5">
             {QUICK_TIMES.map((t) => {
               const selected = t === value;
               return (
-                <button
+                <Button
                   key={t}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   aria-pressed={selected}
                   onClick={() => {
                     onChange(t);
                     close();
                   }}
-                  className={`rounded-full px-2 py-2 text-sm font-medium tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--m-ink) motion-reduce:transition-none ${
-                    selected ? "bg-(--m-gold) font-bold text-(--m-ink)" : "bg-(--m-paper) hover:bg-(--m-mist)"
-                  }`}
+                  className={cn(
+                    "px-2 text-sm tabular-nums",
+                    selected ? "bg-gold font-bold text-ink hover:bg-gold" : "bg-paper hover:bg-mist"
+                  )}
                 >
                   {formatTime(t)}
-                </button>
+                </Button>
               );
             })}
           </div>
 
-          <p className="border-t border-(--m-mist) pt-3 text-xs font-semibold text-(--m-ink)/60">Exact time</p>
+          <p className="border-t border-mist pt-3 text-xs font-semibold text-ink/60">Exact time</p>
           <div className="flex items-center gap-1.5">
-            <select aria-label="Hour" value={hour12} onChange={(e) => onChange(to24(Number(e.target.value), m, pm))} className={selectClass}>
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((hr) => (
-                <option key={hr} value={hr}>
-                  {hr}
-                </option>
-              ))}
-            </select>
+            <Select value={String(hour12)} onValueChange={(v) => onChange(to24(Number(v), m, pm))}>
+              <SelectTrigger size="sm" aria-label="Hour" className="min-w-0 flex-1 font-semibold">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((hr) => (
+                  <SelectItem key={hr} value={String(hr)}>
+                    {hr}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <span aria-hidden className="font-semibold">
               :
             </span>
-            <select aria-label="Minute" value={m} onChange={(e) => onChange(to24(hour12, e.target.value, pm))} className={selectClass}>
-              {minutes.map((min) => (
-                <option key={min} value={min}>
-                  {min}
-                </option>
-              ))}
-            </select>
-            <div role="group" aria-label="AM or PM" className="flex overflow-hidden rounded-full border border-(--m-mist)">
+            <Select value={m} onValueChange={(v) => onChange(to24(hour12, v, pm))}>
+              <SelectTrigger size="sm" aria-label="Minute" className="min-w-0 flex-1 font-semibold">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {minutes.map((min) => (
+                  <SelectItem key={min} value={min}>
+                    {min}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div role="group" aria-label="AM or PM" className="flex overflow-hidden rounded-full border border-mist">
               {(["AM", "PM"] as const).map((half) => {
                 const active = (half === "PM") === pm;
                 return (
-                  <button
+                  <Button
                     key={half}
                     type="button"
+                    variant="ghost"
+                    size="xs"
                     aria-pressed={active}
                     onClick={() => onChange(to24(hour12, m, half === "PM"))}
-                    className={`px-2.5 py-1.5 text-xs font-semibold ${active ? "bg-(--m-ink) text-(--m-paper)" : "hover:bg-(--m-paper)"}`}
+                    className={cn("rounded-none px-2.5 font-semibold", active ? "bg-ink text-paper hover:bg-ink" : "hover:bg-paper")}
                   >
                     {half}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
           </div>
 
-          <div className="flex justify-end border-t border-(--m-mist) pt-3">
-            <button
+          <div className="flex justify-end border-t border-mist pt-3">
+            <Button
               type="button"
+              variant="ink"
+              size="xs"
               onClick={() => {
                 if (!value) onChange(to24(hour12, m, pm));
                 close();
               }}
-              className="rounded-full bg-(--m-ink) px-3.5 py-1.5 text-sm font-medium text-(--m-paper) hover:bg-(--m-emerald)"
+              className="px-3.5 text-sm font-medium"
             >
               Done
-            </button>
+            </Button>
           </div>
-        </div>
-      )}
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

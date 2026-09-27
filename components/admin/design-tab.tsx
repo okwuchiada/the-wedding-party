@@ -32,6 +32,13 @@ import {
 import { AccordionItem } from "./accordion";
 import { HeroNamesPicker, HeroPicker, SectionsEditor, StoryStylePicker, TemplatePicker } from "./layout-picker";
 import { useAdminWeddingId } from "./wedding-context";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FIELD, FIELD_LABEL } from "./form-styles";
+import { cn } from "@/lib/utils";
 
 
 const ROLE_LABELS: Record<FontRole, string> = {
@@ -241,11 +248,13 @@ export default function DesignTab({
           <AccordionItem title="Theme" summary={getPreset(presetKey).name} open={openPanel === "theme"} onToggle={() => togglePanel("theme")}>
             <p className="mb-4 text-sm text-foreground/60">Start from a palette, then fine-tune it in Colours &amp; fonts.</p>
             {lockedThemes && (
-              <p className="mb-4 bg-cream px-3 py-2 text-xs text-foreground/70">
-                {isDraft
-                  ? `${planName} includes ${allowedThemes.length} themes. You can preview the others; upgrade in Billing to publish with one.`
-                  : `${planName} includes ${allowedThemes.length} themes. Upgrade in Billing to use the others.`}
-              </p>
+              <Alert className="mb-4 border-transparent bg-accent">
+                <AlertDescription className="text-xs text-ink/70">
+                  {isDraft
+                    ? `${planName} includes ${allowedThemes.length} themes. You can preview the others; upgrade in Billing to publish with one.`
+                    : `${planName} includes ${allowedThemes.length} themes. Upgrade in Billing to use the others.`}
+                </AlertDescription>
+              </Alert>
             )}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {THEME_PRESETS.map((preset) => {
@@ -265,7 +274,11 @@ export default function DesignTab({
                   <Swatches colors={preset.colors} />
                   <span className="flex items-center justify-between gap-2">
                     {preset.name}
-                    {!included && <span className="rounded-full bg-(--m-gold)/30 px-1.5 py-0.5 text-[10px] font-semibold">Upgrade</span>}
+                    {!included && (
+                      <Badge variant="gold" className="bg-gold/30 px-1.5 text-[10px] font-semibold">
+                        Upgrade
+                      </Badge>
+                    )}
                   </span>
                 </button>
               );
@@ -281,19 +294,21 @@ export default function DesignTab({
             onToggle={() => togglePanel("colors")}
           >
           {!allowCustom && (
-            <p className="mt-2 bg-cream px-3 py-2 text-xs text-foreground/70">
-              {isDraft
-                ? "Custom colors and fonts are shown in your preview. Choose a plan with custom themes to keep them when you publish."
-                : "Your plan uses the theme's own colors and fonts. Upgrade to customize them."}
-            </p>
+            <Alert className="mt-2 border-transparent bg-accent">
+              <AlertDescription className="text-xs text-ink/70">
+                {isDraft
+                  ? "Custom colors and fonts are shown in your preview. Choose a plan with custom themes to keep them when you publish."
+                  : "Your plan uses the theme's own colors and fonts. Upgrade to customize them."}
+              </AlertDescription>
+            </Alert>
           )}
 
           <fieldset disabled={!customEditable} className="mt-4 flex flex-col gap-5 disabled:opacity-50">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {COLOR_FIELDS.map(({ key, label }) => (
-                <label key={key} className="flex flex-col gap-1.5 text-xs text-foreground/60">
+                <Label key={key} className={FIELD_LABEL}>
                   {label}
-                  <span className="flex items-center gap-2 border border-(--m-mist) bg-white px-2 py-1.5">
+                  <span className="flex items-center gap-2 rounded-md border border-mist bg-white px-2 py-1.5">
                     <input
                       type="color"
                       name={`color_${key}`}
@@ -301,9 +316,9 @@ export default function DesignTab({
                       onChange={(e) => setColors((prev) => ({ ...prev, [key]: e.target.value }))}
                       className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
                     />
-                    <span className="font-mono text-[11px] text-foreground/70">{colors[key]}</span>
+                    <span className="font-mono text-[11px] text-ink/70">{colors[key]}</span>
                   </span>
-                </label>
+                </Label>
               ))}
             </div>
 
@@ -319,27 +334,33 @@ export default function DesignTab({
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {(Object.keys(FONT_OPTIONS) as FontRole[]).map((role) => (
-                <label key={role} className="flex flex-col gap-1.5 text-xs text-foreground/60">
-                  {ROLE_LABELS[role]}
-                  <select
+                <div key={role} className="flex flex-col gap-1.5 text-xs text-ink/60">
+                  <span id={`font-${role}-label`}>{ROLE_LABELS[role]}</span>
+                  {/* Radix Select ignores the disabled fieldset around it, so it's disabled directly. */}
+                  <Select
                     name={`font_${role}`}
                     value={fonts[role]}
-                    onChange={(e) => setFonts((prev) => ({ ...prev, [role]: e.target.value }))}
-                    className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground"
+                    disabled={!customEditable}
+                    onValueChange={(v) => setFonts((prev) => ({ ...prev, [role]: v }))}
                   >
-                    {FONT_OPTIONS[role].map((option) => (
-                      <option key={option.key} value={option.key}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger aria-labelledby={`font-${role}-label`} className={cn(FIELD, "w-full data-[size=default]:h-auto")}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_OPTIONS[role].map((option) => (
+                        <SelectItem key={option.key} value={option.key}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <span
                     style={{ fontFamily: `var(${fontCssVar(fonts[role])})` }}
                     className="text-xl text-foreground"
                   >
                     {sample}
                   </span>
-                </label>
+                </div>
               ))}
             </div>
           </fieldset>
@@ -352,13 +373,9 @@ export default function DesignTab({
         ) : (
           state?.success && <p className="text-xs text-olive">Saved.</p>
         )}
-        <button
-          type="submit"
-          disabled={pending}
-          className="self-start rounded-full bg-(--m-gold) px-6 py-2.5 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-        >
+        <Button type="submit" size="lg" disabled={pending} className="self-start">
           {pending ? "Saving…" : "Save design"}
-        </button>
+        </Button>
       </form>
 
       <section className="flex flex-col gap-2">

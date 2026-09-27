@@ -5,33 +5,36 @@ import ConfirmModal, { type ConfirmOptions } from "./confirm-modal";
 
 export function useConfirm() {
   const [options, setOptions] = useState<ConfirmOptions | null>(null);
+  // The dialog animates out after closing; keep showing what it asked meanwhile.
+  const [shown, setShown] = useState<ConfirmOptions | null>(null);
   const resolverRef = useRef<(value: boolean) => void>(null);
 
   const confirm = useCallback((opts: ConfirmOptions) => {
     setOptions(opts);
+    setShown(opts);
     return new Promise<boolean>((resolve) => {
       resolverRef.current = resolve;
     });
   }, []);
 
-  const handleConfirm = () => {
-    resolverRef.current?.(true);
+  const settle = (value: boolean) => {
+    resolverRef.current?.(value);
+    // Closing the dialog after a confirm also reports a cancel; only the first answer counts.
+    resolverRef.current = null;
     setOptions(null);
   };
 
-  const handleCancel = () => {
-    resolverRef.current?.(false);
-    setOptions(null);
-  };
+  const handleConfirm = () => settle(true);
+  const handleCancel = () => settle(false);
 
   const confirmDialog = (
     <ConfirmModal
       open={options !== null}
-      title={options?.title ?? ""}
-      description={options?.description}
-      confirmLabel={options?.confirmLabel}
-      cancelLabel={options?.cancelLabel}
-      danger={options?.danger}
+      title={shown?.title ?? ""}
+      description={shown?.description}
+      confirmLabel={shown?.confirmLabel}
+      cancelLabel={shown?.cancelLabel}
+      danger={shown?.danger}
       onConfirm={handleConfirm}
       onCancel={handleCancel}
     />

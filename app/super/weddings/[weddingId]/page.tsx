@@ -6,6 +6,9 @@ import DomainForm from "@/components/super/domain-form";
 import NoteForm from "@/components/super/note-form";
 import { Pagination } from "@/components/super/pagination";
 import { date, Table } from "@/components/super/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { impersonateUser, reverifyPayment, sendUserPasswordReset, setWeddingStatus } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
@@ -92,7 +95,9 @@ export default async function WeddingCasePage({
             {wedding.story && ` · wedding ${date(wedding.story.weddingDate)}`}
           </p>
           {hasFeature(wedding.plan, "prioritySupport") && (
-            <p className="mt-2 inline-block rounded-full bg-(--m-gold) px-2.5 py-0.5 text-xs font-bold">Priority support</p>
+            <Badge variant="gold" className="mt-2">
+              Priority support
+            </Badge>
           )}
           <p className="mt-1 text-sm text-(--m-ink)/60">
             {closes ? `Site ${closes <= new Date() ? "closed" : "open until"} ${date(closes)}` : "Site stays online"}
@@ -103,20 +108,14 @@ export default async function WeddingCasePage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link
-            href={dashboardPath(wedding.id)}
-            className="rounded-full bg-(--m-ink) px-5 py-2.5 text-sm font-semibold text-(--m-paper) hover:bg-(--m-emerald)"
-          >
-            {allowed.edit ? "Open their dashboard" : "View their dashboard"}
-          </Link>
-          <a
-            href={guestPath(wedding.slug)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full border border-(--m-ink)/25 px-5 py-2.5 text-sm font-semibold hover:border-(--m-ink)"
-          >
-            Guest site
-          </a>
+          <Button asChild variant="ink">
+            <Link href={dashboardPath(wedding.id)}>{allowed.edit ? "Open their dashboard" : "View their dashboard"}</Link>
+          </Button>
+          <Button asChild variant="outline" className="font-semibold">
+            <a href={guestPath(wedding.slug)} target="_blank" rel="noopener noreferrer">
+              Guest site
+            </a>
+          </Button>
         </div>
       </section>
 
@@ -207,17 +206,17 @@ export default async function WeddingCasePage({
             <>
               <Table head={["Date", "Plan", "Amount", "Status", ""]}>
                 {wedding.payments.map((p) => (
-                  <tr key={p.id}>
-                    <td className="px-3 py-2.5 text-foreground/70">{date(p.createdAt)}</td>
-                    <td className="px-3 py-2.5">{p.plan.name}</td>
-                    <td className="px-3 py-2.5">{formatMoney(p.amountKobo, NAIRA)}</td>
-                    <td className="px-3 py-2.5">{p.status.toLowerCase()}</td>
-                    <td className="px-3 py-2.5">
+                  <TableRow key={p.id}>
+                    <TableCell className="py-2.5 text-foreground/70">{date(p.createdAt)}</TableCell>
+                    <TableCell className="py-2.5">{p.plan.name}</TableCell>
+                    <TableCell className="py-2.5">{formatMoney(p.amountKobo, NAIRA)}</TableCell>
+                    <TableCell className="py-2.5">{p.status.toLowerCase()}</TableCell>
+                    <TableCell className="py-2.5">
                       {allowed.reverify && p.status !== "SUCCESS" && (
                         <ActionButton action={reverifyPayment.bind(null, p.reference)} label="Check" />
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
               </Table>
               <Pagination
@@ -241,14 +240,14 @@ export default async function WeddingCasePage({
               {activity.map((a) => {
                 const meta = (a.meta ?? {}) as { role?: keyof typeof ROLE_LABELS };
                 return (
-                  <tr key={a.id}>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-foreground/70">{when(a.createdAt)}</td>
-                    <td className="px-3 py-2.5 text-foreground/80">
+                  <TableRow key={a.id}>
+                    <TableCell className="py-2.5 whitespace-nowrap text-foreground/70">{when(a.createdAt)}</TableCell>
+                    <TableCell className="py-2.5 text-foreground/80">
                       {a.actor?.email ?? "system"}
                       {meta.role && <span className="text-foreground/50"> ({ROLE_LABELS[meta.role]})</span>}
-                    </td>
-                    <td className="px-3 py-2.5">{a.action}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="py-2.5">{a.action}</TableCell>
+                  </TableRow>
                 );
               })}
             </Table>

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { authInputClass } from "./fields";
 
 /**
@@ -16,12 +18,16 @@ export default function AuthField({
   ...input
 }: { label: string; hint?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   const [value, setValue] = useState(typeof defaultValue === "string" ? defaultValue : "");
+  const id = useId();
+  const hintId = hint ? `${id}-hint` : undefined;
 
   return (
-    <label className="flex flex-col gap-1.5 text-sm font-medium">
-      {label}
-      <input
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
         {...input}
+        id={id}
+        aria-describedby={hintId}
         value={value}
         onChange={(e) => {
           setValue(e.target.value);
@@ -29,7 +35,11 @@ export default function AuthField({
         }}
         className={authInputClass}
       />
-      {hint && <span className="text-xs font-normal text-(--m-ink)/55">{hint}</span>}
-    </label>
+      {hint && (
+        <span id={hintId} className="text-xs text-ink/55">
+          {hint}
+        </span>
+      )}
+    </div>
   );
 }
