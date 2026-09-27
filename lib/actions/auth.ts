@@ -66,6 +66,9 @@ export async function signup(_prevState: AuthFormState, formData: FormData): Pro
   if (!EMAIL_REGEX.test(email)) return { error: "Please enter a valid email" };
   const passwordError = validatePassword(password);
   if (passwordError) return { error: passwordError };
+  if (formData.get("agreedToTerms") !== "on") {
+    return { error: "Please agree to the Terms of Service and Privacy Policy to continue." };
+  }
 
   if (!(await takeRateLimit("signup:ip", await getClientIp(), 5, HOUR))) {
     return { error: "Too many sign-ups from your network. Please try again later." };

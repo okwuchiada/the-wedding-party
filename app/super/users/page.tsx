@@ -1,27 +1,40 @@
 import Link from "next/link";
 import ActionButton from "@/components/super/action-button";
-import { date, SearchForm, Table } from "@/components/super/table";
+import { Pagination } from "@/components/super/pagination";
+import { SearchForm } from "@/components/super/search-form";
+import { date, Table } from "@/components/super/table";
 import { impersonateUser, sendUserPasswordReset } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
 import { can, isStaff, ROLE_LABELS } from "@/lib/permissions";
+import { readPagination } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/lib/generated/prisma/client";
 
-const LIMIT = 100;
-
-export default async function StaffUsersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function StaffUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string; pageSize?: string }>;
+}) {
   const staff = await requirePermission("console.view");
   const allowed = { reset: can(staff.role, "user.reset"), impersonate: can(staff.role, "user.impersonate") };
-  const { q = "" } = await searchParams;
+  const sp = await searchParams;
+  const { q = "" } = sp;
   const term = q.trim();
+  const { page, pageSize, skip, take } = readPagination(sp);
 
-  const users = await prisma.user.findMany({
-    where: term
-      ? { OR: [{ email: { contains: term, mode: "insensitive" } }, { name: { contains: term, mode: "insensitive" } }] }
-      : {},
-    orderBy: { createdAt: "desc" },
-    take: LIMIT,
-    include: { memberships: { include: { wedding: { select: { id: true, slug: true } } } } },
-  });
+  const where: Prisma.UserWhereInput = term
+    ? { OR: [{ email: { contains: term, mode: "insensitive" } }, { name: { contains: term, mode: "insensitive" } }] }
+    : {};
+  const [total, users] = await Promise.all([
+    prisma.user.count({ where }),
+    prisma.user.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take,
+      include: { memberships: { include: { wedding: { select: { id: true, slug: true } } } } },
+    }),
+  ]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -69,6 +82,7 @@ export default async function StaffUsersPage({ searchParams }: { searchParams: P
           </tr>
         ))}
       </Table>
+      <Pagination page={page} pageSize={pageSize} total={total} />
     </div>
   );
 }

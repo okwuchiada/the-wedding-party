@@ -1,15 +1,20 @@
 import { AddStaffForm, RoleSelect } from "@/components/super/staff-forms";
+import { Pagination } from "@/components/super/pagination";
 import { date, Table } from "@/components/super/table";
 import { requirePermission } from "@/lib/dal";
+import { readPagination } from "@/lib/pagination";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, STAFF_ROLES } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
-export default async function StaffPage() {
+export default async function StaffPage({ searchParams }: { searchParams: Promise<{ page?: string; pageSize?: string }> }) {
   const admin = await requirePermission("staff.manage");
-  const staff = await prisma.user.findMany({
-    where: { role: { in: [...STAFF_ROLES] } },
-    orderBy: [{ role: "desc" }, { email: "asc" }],
-  });
+  const sp = await searchParams;
+  const { page, pageSize, skip, take } = readPagination(sp);
+  const where = { role: { in: [...STAFF_ROLES] } };
+  const [total, staff] = await Promise.all([
+    prisma.user.count({ where }),
+    prisma.user.findMany({ where, orderBy: [{ role: "desc" }, { email: "asc" }], skip, take }),
+  ]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -39,6 +44,7 @@ export default async function StaffPage() {
             </tr>
           ))}
         </Table>
+        <Pagination page={page} pageSize={pageSize} total={total} />
       </section>
 
       <section className="rounded-[6px] border border-(--m-mist) bg-white p-5">

@@ -4,11 +4,13 @@ import ActionButton from "@/components/super/action-button";
 import CompForm from "@/components/super/comp-form";
 import DomainForm from "@/components/super/domain-form";
 import NoteForm from "@/components/super/note-form";
+import { Pagination } from "@/components/super/pagination";
 import { date, Table } from "@/components/super/table";
 import { impersonateUser, reverifyPayment, sendUserPasswordReset, setWeddingStatus } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
 import { formatMoney } from "@/lib/money";
+import { readPagination } from "@/lib/pagination";
 import { hasFeature, siteClosesAt } from "@/lib/plans";
 import { can, isStaff, ROLE_LABELS } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -18,9 +20,18 @@ const NAIRA = { currency: "NGN", locale: "en-NG" };
 const when = (d: Date) => d.toISOString().slice(0, 16).replace("T", " ");
 
 /** A wedding's case file: who, what state it's in, what's been paid, and what staff have done. */
-export default async function WeddingCasePage({ params }: { params: Promise<{ weddingId: string }> }) {
+export default async function WeddingCasePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ weddingId: string }>;
+  searchParams: Promise<{ paymentsPage?: string; paymentsPageSize?: string; activityPage?: string; activityPageSize?: string }>;
+}) {
   const staff = await requirePermission("console.view");
   const { weddingId } = await params;
+  const sp = await searchParams;
+  const paymentsPagination = readPagination(sp, { prefix: "payments", defaultPageSize: 10 });
+  const activityPagination = readPagination(sp, { prefix: "activity", defaultPageSize: 10 });
 
   const wedding = await prisma.wedding.findUnique({
     where: { id: weddingId },
@@ -29,18 +40,25 @@ export default async function WeddingCasePage({ params }: { params: Promise<{ we
       theme: { select: { heroNames: true } },
       plan: true,
       members: { include: { user: true }, orderBy: { createdAt: "asc" } },
-      payments: { include: { plan: true }, orderBy: { createdAt: "desc" } },
+      payments: {
+        include: { plan: true },
+        orderBy: { createdAt: "desc" },
+        skip: paymentsPagination.skip,
+        take: paymentsPagination.take,
+      },
       supportNotes: { include: { author: { select: { email: true, name: true } } }, orderBy: { createdAt: "desc" } },
-      _count: { select: { rsvps: true, registryItems: true, contributions: true } },
+      _count: { select: { rsvps: true, registryItems: true, contributions: true, payments: true } },
     },
   });
   if (!wedding) notFound();
 
-  const [activity, plans] = await Promise.all([
+  const [activityTotal, activity, plans] = await Promise.all([
+    prisma.auditLog.count({ where: { weddingId: wedding.id } }),
     prisma.auditLog.findMany({
       where: { weddingId: wedding.id },
       orderBy: { createdAt: "desc" },
-      take: 50,
+      skip: activityPagination.skip,
+      take: activityPagination.take,
       include: { actor: { select: { email: true } } },
     }),
     prisma.plan.findMany({ orderBy: [{ sortOrder: "asc" }, { priceKobo: "asc" }], select: { key: true, name: true } }),
@@ -183,48 +201,59 @@ export default async function WeddingCasePage({ params }: { params: Promise<{ we
           </ul>
 
           <h3 className="mt-4 font-(family-name:--m-display) text-2xl font-bold tracking-tight">Payments</h3>
-          {wedding.payments.length === 0 ? (
+          {wedding._count.payments === 0 ? (
             <p className="text-sm text-(--m-ink)/60">No payments.</p>
           ) : (
-            <Table head={["Date", "Plan", "Amount", "Status", ""]}>
-              {wedding.payments.map((p) => (
-                <tr key={p.id}>
-                  <td className="px-3 py-2.5 text-foreground/70">{date(p.createdAt)}</td>
-                  <td className="px-3 py-2.5">{p.plan.name}</td>
-                  <td className="px-3 py-2.5">{formatMoney(p.amountKobo, NAIRA)}</td>
-                  <td className="px-3 py-2.5">{p.status.toLowerCase()}</td>
-                  <td className="px-3 py-2.5">
-                    {allowed.reverify && p.status !== "SUCCESS" && (
-                      <ActionButton action={reverifyPayment.bind(null, p.reference)} label="Check" />
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </Table>
+            <>
+              <Table head={["Date", "Plan", "Amount", "Status", ""]}>
+                {wedding.payments.map((p) => (
+                  <tr key={p.id}>
+                    <td className="px-3 py-2.5 text-foreground/70">{date(p.createdAt)}</td>
+                    <td className="px-3 py-2.5">{p.plan.name}</td>
+                    <td className="px-3 py-2.5">{formatMoney(p.amountKobo, NAIRA)}</td>
+                    <td className="px-3 py-2.5">{p.status.toLowerCase()}</td>
+                    <td className="px-3 py-2.5">
+                      {allowed.reverify && p.status !== "SUCCESS" && (
+                        <ActionButton action={reverifyPayment.bind(null, p.reference)} label="Check" />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </Table>
+              <Pagination
+                prefix="payments"
+                page={paymentsPagination.page}
+                pageSize={paymentsPagination.pageSize}
+                total={wedding._count.payments}
+              />
+            </>
           )}
         </section>
       </div>
 
       <section>
         <h3 className="mb-3 font-(family-name:--m-display) text-2xl font-bold tracking-tight">Activity</h3>
-        {activity.length === 0 ? (
+        {activityTotal === 0 ? (
           <p className="text-sm text-(--m-ink)/60">Nothing recorded yet.</p>
         ) : (
-          <Table head={["When", "Who", "What"]}>
-            {activity.map((a) => {
-              const meta = (a.meta ?? {}) as { role?: keyof typeof ROLE_LABELS };
-              return (
-                <tr key={a.id}>
-                  <td className="px-3 py-2.5 whitespace-nowrap text-foreground/70">{when(a.createdAt)}</td>
-                  <td className="px-3 py-2.5 text-foreground/80">
-                    {a.actor?.email ?? "system"}
-                    {meta.role && <span className="text-foreground/50"> ({ROLE_LABELS[meta.role]})</span>}
-                  </td>
-                  <td className="px-3 py-2.5">{a.action}</td>
-                </tr>
-              );
-            })}
-          </Table>
+          <>
+            <Table head={["When", "Who", "What"]}>
+              {activity.map((a) => {
+                const meta = (a.meta ?? {}) as { role?: keyof typeof ROLE_LABELS };
+                return (
+                  <tr key={a.id}>
+                    <td className="px-3 py-2.5 whitespace-nowrap text-foreground/70">{when(a.createdAt)}</td>
+                    <td className="px-3 py-2.5 text-foreground/80">
+                      {a.actor?.email ?? "system"}
+                      {meta.role && <span className="text-foreground/50"> ({ROLE_LABELS[meta.role]})</span>}
+                    </td>
+                    <td className="px-3 py-2.5">{a.action}</td>
+                  </tr>
+                );
+              })}
+            </Table>
+            <Pagination prefix="activity" page={activityPagination.page} pageSize={activityPagination.pageSize} total={activityTotal} />
+          </>
         )}
       </section>
     </div>

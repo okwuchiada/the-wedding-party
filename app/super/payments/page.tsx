@@ -1,9 +1,12 @@
 import ActionButton from "@/components/super/action-button";
-import { date, SearchForm, Table } from "@/components/super/table";
+import { Pagination } from "@/components/super/pagination";
+import { SearchForm } from "@/components/super/search-form";
+import { date, Table } from "@/components/super/table";
 import { reverifyPayment } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
 import type { PaymentStatus, Prisma } from "@/lib/generated/prisma/client";
 import { formatMoney } from "@/lib/money";
+import { readPagination } from "@/lib/pagination";
 import { can } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -13,12 +16,14 @@ const NAIRA = { currency: "NGN", locale: "en-NG" };
 export default async function SuperPaymentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; page?: string; pageSize?: string }>;
 }) {
   const staff = await requirePermission("console.view");
   const canReverify = can(staff.role, "payment.reverify");
-  const { q = "", status } = await searchParams;
+  const sp = await searchParams;
+  const { q = "", status } = sp;
   const term = q.trim();
+  const { page, pageSize, skip, take } = readPagination(sp);
 
   const where: Prisma.PaymentWhereInput = {
     ...(STATUSES.includes(status as PaymentStatus) ? { status: status as PaymentStatus } : {}),
@@ -26,12 +31,16 @@ export default async function SuperPaymentsPage({
       ? { OR: [{ reference: { contains: term } }, { wedding: { slug: { contains: term, mode: "insensitive" } } }] }
       : {}),
   };
-  const payments = await prisma.payment.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    take: 200,
-    include: { plan: { select: { name: true } }, wedding: { select: { slug: true } } },
-  });
+  const [total, payments] = await Promise.all([
+    prisma.payment.count({ where }),
+    prisma.payment.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take,
+      include: { plan: { select: { name: true } }, wedding: { select: { slug: true } } },
+    }),
+  ]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -63,6 +72,7 @@ export default async function SuperPaymentsPage({
           </tr>
         ))}
       </Table>
+      <Pagination page={page} pageSize={pageSize} total={total} />
     </div>
   );
 }

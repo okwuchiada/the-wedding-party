@@ -15,6 +15,7 @@ import { compressImage } from "@/lib/image-compress";
 import { useConfirm } from "./use-confirm";
 import { currencySymbol, formatMoney } from "@/lib/money";
 import CategoryField from "./category-field";
+import { Pagination, usePagination } from "./pagination";
 import { useAdminMoney, useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
 
@@ -277,6 +278,7 @@ export default function RegistryTab({
   const [deleteError, setDeleteError] = useState("");
   const { confirm, confirmDialog } = useConfirm();
   const { run, isPending } = useActionPending();
+  const { page, pageSize, pageItems, total, setPage, setPageSize } = usePagination(items);
 
   const handleDelete = async (id: string, name: string) => {
     const ok = await confirm({
@@ -374,7 +376,7 @@ export default function RegistryTab({
             </tr>
           </thead>
           <tbody>
-            {items.map((item) =>
+            {pageItems.map((item) =>
               editingId === item.id ? (
                 <tr key={item.id} className="border-b border-(--m-mist) last:border-0">
                   <td colSpan={6} className="p-0">
@@ -427,6 +429,7 @@ export default function RegistryTab({
           </tbody>
         </table>
       </div>
+      <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
       {confirmDialog}
     </div>
   );

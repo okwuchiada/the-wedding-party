@@ -3,14 +3,17 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { signup } from "@/lib/actions/auth";
+import { PRIVACY, TERMS, type LegalDocument } from "@/lib/legal";
 import { missingRequirements } from "@/lib/password-rules";
 import AuthField from "./auth-field";
 import { AuthMessage, AuthSubmit, authLinkClass } from "./fields";
+import LegalModal from "./legal-modal";
 import PasswordField from "./password-field";
 
 export default function SignupForm({ minPasswordLength }: { minPasswordLength: number }) {
   const [state, action, pending] = useActionState(signup, undefined);
   const [clientError, setClientError] = useState("");
+  const [openDoc, setOpenDoc] = useState<LegalDocument | null>(null);
 
   // Catch an unfinished password here, so nothing is sent and nothing is cleared.
   const checkBeforeSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -40,6 +43,20 @@ export default function SignupForm({ minPasswordLength }: { minPasswordLength: n
         minLength={minPasswordLength}
         required
       />
+      <label className="flex items-start gap-2.5 text-sm text-(--m-ink)/75">
+        <input type="checkbox" name="agreedToTerms" required className="mt-0.5" />
+        <span>
+          I agree to the{" "}
+          <button type="button" onClick={() => setOpenDoc(TERMS)} className={authLinkClass}>
+            Terms of Service
+          </button>{" "}
+          and{" "}
+          <button type="button" onClick={() => setOpenDoc(PRIVACY)} className={authLinkClass}>
+            Privacy Policy
+          </button>
+          .
+        </span>
+      </label>
       <AuthMessage error={clientError || state?.error} />
       <AuthSubmit pending={pending} label="Create account" pendingLabel="Creating account…" />
       <p className="text-sm text-(--m-ink)/70">
@@ -48,6 +65,7 @@ export default function SignupForm({ minPasswordLength }: { minPasswordLength: n
           Sign in
         </Link>
       </p>
+      <LegalModal doc={openDoc} onClose={() => setOpenDoc(null)} />
     </form>
   );
 }
