@@ -1,7 +1,11 @@
 "use server";
 
 import { requireWeddingAccess } from "@/lib/dal";
+import { takeGuestRateLimit } from "@/lib/rate-limit";
 import { resolveGuestAction, revalidateDashboard, revalidateWedding } from "@/lib/tenant";
+
+// Per guest IP per wedding and hour.
+const WISHES_PER_HOUR = 20;
 
 export type SubmitWishState =
   | { error?: string; success?: boolean; guestName?: string; message?: string }
@@ -27,6 +31,9 @@ export async function submitWish(
   }
   if (message.trim().length > 500) {
     return { error: "Message is too long" };
+  }
+  if (!(await takeGuestRateLimit("wish", wedding.id, WISHES_PER_HOUR, 60 * 60 * 1000))) {
+    return { error: "Too many wishes sent at once. Please try again in a little while." };
   }
 
   await db.wish.create({

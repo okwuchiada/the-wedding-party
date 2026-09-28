@@ -2,11 +2,18 @@
 
 import { requireWeddingAccess } from "@/lib/dal";
 import { hasFeature, uploadsLeft } from "@/lib/plans";
+import { takeGuestRateLimit } from "@/lib/rate-limit";
 import { createPresignedUploadUrl, publicUrlForKey } from "@/lib/s3";
+import { deleteUnusedUploads } from "@/lib/upload-cleanup";
 import { resolveGuestAction, revalidateDashboard, revalidateWedding } from "@/lib/tenant";
-import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL, weddingUploadFolder } from "@/lib/uploads";
+import { uploadSizeError, weddingUploadFolder } from "@/lib/uploads";
 
 const GUEST_UPLOAD_FOLDER = "uploads";
+const HOUR_MS = 60 * 60 * 1000;
+// Per guest IP per wedding and hour. A venue's shared Wi-Fi can put a whole
+// room behind one IP, so these sit well above what one guest would use.
+const UPLOAD_URLS_PER_HOUR = 300;
+const MEDIA_RECORDS_PER_HOUR = 300;
 
 export type CreateUploadUrlState =
   | { error?: string; uploadUrl?: string; publicUrl?: string }
@@ -38,16 +45,19 @@ export async function createMediaUploadUrl(
     return { error: allowVideo ? "Only photos and videos are allowed" : "Only photos are allowed" };
   }
   if (isVideo && !allowVideo) return { error: "This gallery takes photos only" };
+  const sizeError = uploadSizeError(fileSize);
+  if (sizeError) return { error: sizeError };
   const limitError = await uploadLimitError(guest);
   if (limitError) return { error: limitError };
-  if (fileSize > MAX_UPLOAD_BYTES) {
-    return { error: `File is over the ${MAX_UPLOAD_LABEL} limit` };
+  if (!(await takeGuestRateLimit("upload-url", guest.wedding.id, UPLOAD_URLS_PER_HOUR, HOUR_MS))) {
+    return { error: "Too many uploads at once. Please try again in a little while." };
   }
 
   const { uploadUrl, publicUrl } = await createPresignedUploadUrl(
     weddingUploadFolder(guest.wedding.id, GUEST_UPLOAD_FOLDER),
     fileName,
-    fileType
+    fileType,
+    fileSize
   );
   return { uploadUrl, publicUrl };
 }
@@ -80,6 +90,9 @@ export async function createMediaRecord(
   const allowedPrefix = publicUrlForKey(`${weddingUploadFolder(wedding.id, GUEST_UPLOAD_FOLDER)}/`);
   if (typeof url !== "string" || !url.startsWith(allowedPrefix)) {
     return { error: "Missing upload URL" };
+  }
+  if (!(await takeGuestRateLimit("media", wedding.id, MEDIA_RECORDS_PER_HOUR, HOUR_MS))) {
+    return { error: "Too many uploads at once. Please try again in a little while." };
   }
 
   const media = await db.media.create({
@@ -118,6 +131,7 @@ export async function hideMedia(weddingId: string, id: string) {
 
 export async function deleteMedia(weddingId: string, id: string) {
   const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "deleteMedia");
-  await db.media.delete({ where: { id, weddingId: wedding.id } });
+  const media = await db.media.delete({ where: { id, weddingId: wedding.id } });
+  await deleteUnusedUploads(db, wedding.id, [media.url]);
   revalidateWedding(wedding);
 }

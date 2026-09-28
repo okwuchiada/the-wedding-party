@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-src";
 import type { ApprovedMediaView, HiddenMediaView, PendingMediaView } from "@/lib/types";
 import { useConfirm } from "./use-confirm";
 import { useActionPending } from "./use-action-pending";
@@ -80,7 +81,7 @@ export default function MediaTab({
                 {media.type === "VIDEO" ? (
                   <video src={media.url} muted playsInline controls className="h-full w-full object-cover" />
                 ) : (
-                  <Image src={media.url} alt={`Upload from ${media.guestName}`} fill sizes="25vw" className="object-cover" />
+                  <Image src={media.url} unoptimized={!canOptimizeImage(media.url)} alt={`Upload from ${media.guestName}`} fill sizes="25vw" className="object-cover" />
                 )}
               </div>
               <div className="p-3">
@@ -123,7 +124,7 @@ export default function MediaTab({
                 {media.type === "VIDEO" ? (
                   <video src={media.url} muted playsInline controls className="h-full w-full object-cover" />
                 ) : (
-                  <Image src={media.url} alt={`Photo from ${media.guestName}`} fill sizes="25vw" className="object-cover" />
+                  <Image src={media.url} unoptimized={!canOptimizeImage(media.url)} alt={`Photo from ${media.guestName}`} fill sizes="25vw" className="object-cover" />
                 )}
               </div>
               <div className="p-3">
@@ -170,7 +171,7 @@ export default function MediaTab({
                 {media.type === "VIDEO" ? (
                   <video src={media.url} muted playsInline controls className="h-full w-full object-cover" />
                 ) : (
-                  <Image src={media.url} alt={`Upload from ${media.guestName}`} fill sizes="25vw" className="object-cover" />
+                  <Image src={media.url} unoptimized={!canOptimizeImage(media.url)} alt={`Upload from ${media.guestName}`} fill sizes="25vw" className="object-cover" />
                 )}
               </div>
               <div className="p-3">

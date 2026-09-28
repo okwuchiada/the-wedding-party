@@ -2,8 +2,9 @@
 
 import { requireWeddingAccess } from "@/lib/dal";
 import { createPresignedUploadUrl } from "@/lib/s3";
+import { deleteUnusedUploads } from "@/lib/upload-cleanup";
 import { revalidateWedding } from "@/lib/tenant";
-import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL, weddingUploadFolder } from "@/lib/uploads";
+import { uploadSizeError, weddingUploadFolder } from "@/lib/uploads";
 
 export type StoryPhotoFormState = { error?: string; success?: boolean } | undefined;
 
@@ -22,14 +23,14 @@ export async function createStoryPhotoUploadUrl(
   if (!fileType.startsWith("image/")) {
     return { error: "Only image files are allowed" };
   }
-  if (fileSize > MAX_UPLOAD_BYTES) {
-    return { error: `Image is over the ${MAX_UPLOAD_LABEL} limit` };
-  }
+  const sizeError = uploadSizeError(fileSize, "Image");
+  if (sizeError) return { error: sizeError };
 
   const { uploadUrl, publicUrl } = await createPresignedUploadUrl(
     weddingUploadFolder(wedding.id, "story-photos"),
     fileName,
-    fileType
+    fileType,
+    fileSize
   );
   return { uploadUrl, publicUrl };
 }
@@ -105,10 +106,12 @@ export async function updateStoryPhoto(
   );
   if ("error" in resolved) return { error: resolved.error };
 
+  const previous = await db.storyPhoto.findUniqueOrThrow({ where: { id, weddingId: wedding.id }, select: { url: true } });
   await db.storyPhoto.update({
     where: { id, weddingId: wedding.id },
     data: { ...meta.data, url: resolved.url },
   });
+  if (previous.url !== resolved.url) await deleteUnusedUploads(db, wedding.id, [previous.url]);
 
   revalidateWedding(wedding);
 
@@ -118,7 +121,8 @@ export async function updateStoryPhoto(
 export async function deleteStoryPhoto(weddingId: string, id: string) {
   const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "deleteStoryPhoto");
 
-  await db.storyPhoto.delete({ where: { id, weddingId: wedding.id } });
+  const photo = await db.storyPhoto.delete({ where: { id, weddingId: wedding.id } });
+  await deleteUnusedUploads(db, wedding.id, [photo.url]);
 
   revalidateWedding(wedding);
 }

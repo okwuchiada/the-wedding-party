@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-src";
 import { heroName, type HeroNameStyle, type TemplateKey } from "@/lib/layouts";
 import CountdownBar from "../countdown-bar";
 import StripeBand from "../layout/stripe-band";
@@ -77,7 +78,7 @@ export default async function HeroType({
       {/* Editorial follows the names with the cover photo, like a feature spread. */}
       {template === "editorial" && h.heroPhotoUrl && (
         <div className="relative aspect-[21/9] w-full overflow-hidden bg-olive/10">
-          <Image src={h.heroPhotoUrl} alt="" fill sizes="100vw" className="object-cover" />
+          <Image src={h.heroPhotoUrl} unoptimized={!canOptimizeImage(h.heroPhotoUrl)} alt="" fill sizes="100vw" className="object-cover" />
         </div>
       )}
     </>

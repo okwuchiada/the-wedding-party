@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-src";
 import { useState } from "react";
 import type { BankDetailsView } from "@/lib/types";
 import type { RegistryItemWithContributions } from "@/lib/types";
@@ -119,7 +120,7 @@ export default function GiftCard({
     >
       <div className={`relative w-full overflow-hidden bg-olive/10 ${variant === "row" ? "h-full min-h-24" : "h-45"}`}>
         <Image
-          src={gift.image}
+          src={gift.image} unoptimized={!canOptimizeImage(gift.image)}
           alt={gift.name}
           fill
           sizes={variant === "row" ? "10rem" : "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"}

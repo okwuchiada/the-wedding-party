@@ -1,8 +1,12 @@
 "use server";
 
 import { requireWeddingAccess } from "@/lib/dal";
+import { takeGuestRateLimit } from "@/lib/rate-limit";
 import { moneyFormat, resolveGuestAction, revalidateDashboard, revalidateWedding, weddingTheme } from "@/lib/tenant";
 import { contributionNotificationEmail, emailPalette, sendMail } from "@/lib/mail";
+
+// Each one emails the couple; per guest IP per wedding and hour.
+const CONTRIBUTIONS_PER_HOUR = 20;
 
 export type SubmitContributionState = { error?: string; success?: boolean } | undefined;
 
@@ -36,6 +40,9 @@ export async function submitContribution(
     select: { id: true },
   });
   if (!item) return { error: "That item is no longer on the registry" };
+  if (!(await takeGuestRateLimit("contribution", wedding.id, CONTRIBUTIONS_PER_HOUR, 60 * 60 * 1000))) {
+    return { error: "Too many gifts sent at once. Please try again in a little while." };
+  }
 
   const contribution = await db.contribution.create({
     data: {

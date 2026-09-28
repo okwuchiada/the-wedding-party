@@ -4,6 +4,16 @@ import type { NextConfig } from "next";
 // to the original wedding's new home under /w/<slug>.
 const legacySlug = process.env.LEGACY_WEDDING_SLUG;
 
+// Hosts next/image may fetch and resize: our upload bucket plus the stock photo
+// host used in seed data. Anything else (a link a couple pastes) is shown as-is
+// with `unoptimized` (lib/image-src.ts), so the optimizer can't be used to fetch
+// arbitrary URLs at our expense.
+const uploadsHost =
+  process.env.AWS_S3_BUCKET_NAME && process.env.AWS_REGION
+    ? `${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com`
+    : null;
+const optimizedImageHosts = [uploadsHost, "images.unsplash.com"].filter((host): host is string => !!host);
+
 const nextConfig: NextConfig = {
   async redirects() {
     const redirects = [
@@ -24,17 +34,11 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "30mb",
     },
   },
+  env: {
+    NEXT_PUBLIC_OPTIMIZED_IMAGE_HOSTS: optimizedImageHosts.join(","),
+  },
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**",
-      },
-      {
-        protocol: "http",
-        hostname: "**",
-      },
-    ],
+    remotePatterns: optimizedImageHosts.map((hostname) => ({ protocol: "https" as const, hostname })),
   },
 };
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-src";
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { saveStory } from "@/lib/actions/story";
 import {
@@ -124,7 +125,7 @@ function PhotoForm({
         {initialValues?.url && (
           <span className="mt-1 flex items-center gap-2 text-[11px] text-foreground/50">
             <Image
-              src={initialValues.url}
+              src={initialValues.url} unoptimized={!canOptimizeImage(initialValues.url)}
               alt=""
               width={32}
               height={32}

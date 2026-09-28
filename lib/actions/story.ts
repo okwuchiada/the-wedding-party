@@ -2,6 +2,7 @@
 
 import { requireWeddingAccess } from "@/lib/dal";
 import { revalidateWedding } from "@/lib/tenant";
+import { deleteUnusedUploads } from "@/lib/upload-cleanup";
 
 export type SaveStoryState = { error?: string; success?: boolean } | undefined;
 
@@ -68,11 +69,15 @@ export async function saveStory(
     groomPhone: typeof groomPhone === "string" && groomPhone.trim() ? groomPhone.trim() : null,
   };
 
+  const previous = await db.storyContent.findUnique({ where: { weddingId: wedding.id }, select: { heroPhotoUrl: true } });
   await db.storyContent.upsert({
     where: { weddingId: wedding.id },
     update: data,
     create: { ...data, weddingId: wedding.id },
   });
+  if (previous?.heroPhotoUrl && previous.heroPhotoUrl !== data.heroPhotoUrl) {
+    await deleteUnusedUploads(db, wedding.id, [previous.heroPhotoUrl]);
+  }
 
   revalidateWedding(wedding);
 

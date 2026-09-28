@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-src";
 import { startTransition, useActionState, useEffect, useState } from "react";
 import {
   addStoryBeat,
@@ -139,7 +140,7 @@ function BeatForm({
         {initialValues?.photoUrl && (
           <span className="mt-1 flex items-center gap-2 text-[11px] text-foreground/50">
             <Image
-              src={initialValues.photoUrl}
+              src={initialValues.photoUrl} unoptimized={!canOptimizeImage(initialValues.photoUrl)}
               alt=""
               width={32}
               height={32}

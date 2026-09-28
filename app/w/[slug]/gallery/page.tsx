@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-src";
 import LiveRefresh from "@/components/live-refresh";
 import GuestNav from "@/components/guest/nav";
 import NavSkeleton from "@/components/guest/nav-skeleton";
@@ -30,7 +31,7 @@ async function GalleryGrid({ weddingId }: { weddingId: string }) {
             <video src={item.url} muted playsInline controls className="h-full w-full object-cover" />
           ) : (
             <Image
-              src={item.url}
+              src={item.url} unoptimized={!canOptimizeImage(item.url)}
               alt={`Photo from ${item.guestName}`}
               fill
               sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"

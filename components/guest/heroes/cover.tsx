@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-src";
 import { heroName, type HeroNameStyle, type TemplateKey } from "@/lib/layouts";
 import StripeBand from "../layout/stripe-band";
 import { getHeroData } from "./hero-data";
@@ -26,7 +27,7 @@ export default async function HeroCover({
     <>
       <header id="top" className="relative flex min-h-[88svh] items-end overflow-hidden bg-olive-dark">
         {h.heroPhotoUrl ? (
-          <Image src={h.heroPhotoUrl} alt="" fill sizes="100vw" priority className="object-cover" />
+          <Image src={h.heroPhotoUrl} unoptimized={!canOptimizeImage(h.heroPhotoUrl)} alt="" fill sizes="100vw" priority className="object-cover" />
         ) : (
           // No photo yet: a wash of the wedding's own colours.
           <div aria-hidden className="absolute inset-0 bg-linear-to-br from-olive via-olive-dark to-burnt-orange" />

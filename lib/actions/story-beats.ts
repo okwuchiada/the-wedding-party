@@ -2,8 +2,9 @@
 
 import { requireWeddingAccess } from "@/lib/dal";
 import { createPresignedUploadUrl } from "@/lib/s3";
+import { deleteUnusedUploads } from "@/lib/upload-cleanup";
 import { revalidateWedding } from "@/lib/tenant";
-import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL, weddingUploadFolder } from "@/lib/uploads";
+import { uploadSizeError, weddingUploadFolder } from "@/lib/uploads";
 
 export type StoryBeatFormState = { error?: string; success?: boolean } | undefined;
 
@@ -22,14 +23,14 @@ export async function createStoryBeatUploadUrl(
   if (!fileType.startsWith("image/")) {
     return { error: "Only image files are allowed" };
   }
-  if (fileSize > MAX_UPLOAD_BYTES) {
-    return { error: `Image is over the ${MAX_UPLOAD_LABEL} limit` };
-  }
+  const sizeError = uploadSizeError(fileSize, "Image");
+  if (sizeError) return { error: sizeError };
 
   const { uploadUrl, publicUrl } = await createPresignedUploadUrl(
     weddingUploadFolder(wedding.id, "story-beats"),
     fileName,
-    fileType
+    fileType,
+    fileSize
   );
   return { uploadUrl, publicUrl };
 }
@@ -106,10 +107,12 @@ export async function updateStoryBeat(
     typeof existingPhotoUrl === "string" ? existingPhotoUrl : null
   );
 
+  const previous = await db.storyBeat.findUniqueOrThrow({ where: { id, weddingId: wedding.id }, select: { photoUrl: true } });
   await db.storyBeat.update({
     where: { id, weddingId: wedding.id },
     data: { ...meta.data, photoUrl },
   });
+  if (previous.photoUrl !== photoUrl) await deleteUnusedUploads(db, wedding.id, [previous.photoUrl]);
 
   revalidateWedding(wedding);
 
@@ -119,7 +122,8 @@ export async function updateStoryBeat(
 export async function deleteStoryBeat(weddingId: string, id: string) {
   const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "deleteStoryBeat");
 
-  await db.storyBeat.delete({ where: { id, weddingId: wedding.id } });
+  const beat = await db.storyBeat.delete({ where: { id, weddingId: wedding.id } });
+  await deleteUnusedUploads(db, wedding.id, [beat.photoUrl]);
 
   revalidateWedding(wedding);
 }
