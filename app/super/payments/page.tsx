@@ -1,4 +1,5 @@
 import ActionButton from "@/components/super/action-button";
+import MarkPaidButton from "@/components/super/mark-paid-button";
 import { Pagination } from "@/components/super/pagination";
 import { SearchForm } from "@/components/super/search-form";
 import { date, Table } from "@/components/super/table";
@@ -20,6 +21,7 @@ export default async function SuperPaymentsPage({
 }) {
   const staff = await requirePermission("console.view");
   const canReverify = can(staff.role, "payment.reverify");
+  const canResolve = can(staff.role, "payment.resolve");
   const sp = await searchParams;
   const { q = "", status } = sp;
   const term = q.trim();
@@ -67,7 +69,12 @@ export default async function SuperPaymentsPage({
             </td>
             <td className="px-3 py-3 font-mono text-xs text-foreground/70">{p.reference}</td>
             <td className="px-3 py-3">
-              {canReverify && p.status !== "SUCCESS" && <ActionButton action={reverifyPayment.bind(null, p.reference)} label="Check with Paystack" />}
+              {p.status !== "SUCCESS" && (
+                <div className="flex flex-col items-start gap-1.5">
+                  {canReverify && <ActionButton action={reverifyPayment.bind(null, p.reference)} label="Check with Paystack" />}
+                  {canResolve && <MarkPaidButton reference={p.reference} amountLabel={formatMoney(p.amountKobo, NAIRA)} />}
+                </div>
+              )}
             </td>
           </tr>
         ))}

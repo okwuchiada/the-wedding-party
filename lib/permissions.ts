@@ -34,6 +34,7 @@ export const PERMISSIONS = {
   "user.reset": HELPERS, // email a password reset link
   "user.impersonate": OPERATORS, // "view as" a couple
   "payment.reverify": HELPERS, // ask Paystack about a payment again
+  "payment.resolve": OPERATORS, // mark a payment paid by hand when Paystack's record can't be applied
   "notes.write": HELPERS, // internal notes on a wedding
   "staff.manage": SUPER, // add staff and change their roles
   "plans.manage": SUPER, // create and edit plans
