@@ -11,6 +11,7 @@ import { hasFeature, siteClosesAt } from "@/lib/plans";
 import { getWeddingById, guestPath, moneyFormat } from "@/lib/tenant";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
 import { resolveTheme } from "@/lib/themes";
+import { getCountries } from "@/lib/countries";
 
 export default async function WeddingDashboardPage({
   params,
@@ -186,6 +187,7 @@ export default async function WeddingDashboardPage({
         guestLimit: wedding.plan?.maxGuests ?? 10_000,
         allowedCountries: wedding.allowedCountries,
         geoBypassToken: isOwner ? wedding.geoBypassToken : null,
+        countries: isOwner ? await getCountries() : [],
       }}
       members={members.map((m) => ({
         id: m.id,

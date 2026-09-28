@@ -3,6 +3,8 @@
 import { useActionState, useState } from "react";
 import { saveSettings, setPublished } from "@/lib/actions/settings";
 import { CURRENCIES, formatMoney, LOCALES } from "@/lib/money";
+import type { CountryOption } from "@/lib/countries";
+import CountryPicker from "./country-picker";
 import { useAdminWeddingId } from "./wedding-context";
 
 export type SettingsView = {
@@ -16,6 +18,8 @@ export type SettingsView = {
   guestLimit: number;
   allowedCountries: string[];
   geoBypassToken: string | null;
+  /** Every country, from the Country table, for the "Who can view the site" picker. */
+  countries: CountryOption[];
 };
 
 const fieldClass = "border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-(--m-ink)/50";
@@ -140,10 +144,7 @@ export default function SettingsTab({ settings }: { settings: SettingsView }) {
 
         <section className="flex flex-col gap-3">
           <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Who can view the site</h2>
-          <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-            Only allow visitors from these countries (two-letter codes, e.g. NG, GH). Leave empty for everyone.
-            <input name="allowedCountries" defaultValue={settings.allowedCountries.join(", ")} className={fieldClass} />
-          </label>
+          <CountryPicker name="allowedCountries" countries={settings.countries} defaultValue={settings.allowedCountries} />
           <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
             Access code for guests outside those countries
             <input name="geoBypassToken" defaultValue={settings.geoBypassToken ?? ""} autoComplete="off" className={fieldClass} />
