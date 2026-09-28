@@ -301,26 +301,26 @@ model WeddingCopy {
 }
 
 model Plan {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  name      String
-  priceKobo Int
-  maxGuests Int
+  id                 String   @id @default(cuid())
+  key                String   @unique
+  name               String
+  priceKobo          Int
+  maxGuests          Int
   // On/off features (lib/plans.ts PlanFeature): { gallery, video, customTheme, ... }
-  features  Json     @default("{}")
-  active    Boolean  @default(true)
-  sortOrder Int      @default(0)
+  features           Json     @default("{}")
+  active             Boolean  @default(true)
+  sortOrder          Int      @default(0)
   // Shown on the pricing page and in Billing; edited in the staff console.
-  tagline     String?
-  popular     Boolean  @default(false)
-  highlights  String[] @default([])
-  limitations String[] @default([])
+  tagline            String?
+  popular            Boolean  @default(false)
+  highlights         String[] @default([])
+  limitations        String[] @default([])
   // Limits; null means unlimited (uploads), permanent (availability) or every theme (empty list).
   maxUploads         Int?
   availabilityMonths Int?
   themes             String[] @default([])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   weddings Wedding[]
   payments Payment[]
@@ -404,4 +404,20 @@ model SupportNote {
   createdAt DateTime @default(now())
 
   @@index([weddingId, createdAt])
+}
+
+// Countries a wedding can limit its guest site to (Settings → Who can view the
+// site). Filled by the migration that creates it; `code` is ISO 3166-1 alpha-2,
+// matching the visitor country the host reports (lib/geo.ts).
+model Country {
+  code      String   @id
+  name      String
+  // Africa, Asia, Europe, North America, South America, Australia/Oceania or Antarctica.
+  continent String
+  // Other names people search by, e.g. "UK" for the United Kingdom.
+  aliases   String[] @default([])
+  // Not a sovereign state: a dependency of another country, or disputed (e.g. Western Sahara).
+  territory Boolean  @default(false)
+
+  @@index([continent])
 }
