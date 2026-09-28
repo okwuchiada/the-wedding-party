@@ -258,7 +258,7 @@ export default function DesignTab({
                   aria-pressed={preset.key === presetKey}
                   // Live sites can only switch to themes their plan includes; drafts may preview any.
                   disabled={!included && !isDraft}
-                  className={`flex flex-col gap-2 rounded-[6px] bg-white p-3 text-left text-xs text-foreground transition-shadow disabled:cursor-not-allowed disabled:opacity-45 ${
+                  className={`flex flex-col gap-2 rounded-md bg-white p-3 text-left text-xs text-foreground transition-shadow disabled:cursor-not-allowed disabled:opacity-45 ${
                     preset.key === presetKey ? "ring-2 ring-burnt-orange" : "ring-1 ring-olive/15 hover:ring-olive/40"
                   }`}
                 >
@@ -383,7 +383,7 @@ export default function DesignTab({
           }}
           src={previewUrl}
           title="Guest site preview"
-          className="h-[640px] w-full border border-(--m-mist) rounded-[6px] bg-white"
+          className="h-160 w-full border border-(--m-mist) rounded-md bg-white"
         />
       </section>
     </div>

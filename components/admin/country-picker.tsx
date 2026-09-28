@@ -114,7 +114,7 @@ export default function CountryPicker({ name, countries, defaultValue }: { name:
       </div>
 
       {open && (
-        <div className="flex flex-col rounded-[6px] border border-(--m-mist) bg-white">
+        <div className="flex flex-col rounded-md border border-(--m-mist) bg-white">
           <label className="flex items-center gap-2 border-b border-(--m-mist) px-3 py-2.5">
             <Search aria-hidden size={16} className="text-foreground/45" />
             <span className="sr-only">Search countries</span>
@@ -123,7 +123,7 @@ export default function CountryPicker({ name, countries, defaultValue }: { name:
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search countries, e.g. Ghana or UK"
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+              className="min-w-0 flex-1 bg-transparent text-sm outline-none p-0.5 "
             />
           </label>
           <ul className="max-h-96 overflow-y-auto">
