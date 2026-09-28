@@ -6,7 +6,7 @@ const matrix: Record<string, Permission[]> = {
   SUPPORT: ["console.view", "wedding.view", "wedding.edit", "user.reset", "payment.reverify", "notes.write"],
   ADMIN: [
     "console.view", "wedding.view", "wedding.edit", "wedding.manage", "wedding.status", "wedding.comp",
-    "user.reset", "user.impersonate", "payment.reverify", "notes.write",
+    "user.reset", "user.impersonate", "payment.reverify", "payment.resolve", "notes.write",
   ],
   SUPER_ADMIN: Object.keys(PERMISSIONS) as Permission[],
 };

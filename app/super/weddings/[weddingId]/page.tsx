@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import ActionButton from "@/components/super/action-button";
 import CompForm from "@/components/super/comp-form";
 import DomainForm from "@/components/super/domain-form";
+import MarkPaidButton from "@/components/super/mark-paid-button";
 import NoteForm from "@/components/super/note-form";
 import { Pagination } from "@/components/super/pagination";
 import { date, Table } from "@/components/super/table";
@@ -71,6 +72,7 @@ export default async function WeddingCasePage({
     reset: can(staff.role, "user.reset"),
     impersonate: can(staff.role, "user.impersonate"),
     reverify: can(staff.role, "payment.reverify"),
+    resolve: can(staff.role, "payment.resolve"),
     notes: can(staff.role, "notes.write"),
     domain: can(staff.role, "wedding.manage"),
   };
@@ -213,8 +215,11 @@ export default async function WeddingCasePage({
                     <td className="px-3 py-2.5">{formatMoney(p.amountKobo, NAIRA)}</td>
                     <td className="px-3 py-2.5">{p.status.toLowerCase()}</td>
                     <td className="px-3 py-2.5">
-                      {allowed.reverify && p.status !== "SUCCESS" && (
-                        <ActionButton action={reverifyPayment.bind(null, p.reference)} label="Check" />
+                      {p.status !== "SUCCESS" && (
+                        <div className="flex flex-col items-start gap-1.5">
+                          {allowed.reverify && <ActionButton action={reverifyPayment.bind(null, p.reference)} label="Check" />}
+                          {allowed.resolve && <MarkPaidButton reference={p.reference} amountLabel={formatMoney(p.amountKobo, NAIRA)} />}
+                        </div>
                       )}
                     </td>
                   </tr>
