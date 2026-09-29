@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Pagination } from "@/components/super/pagination";
+import { StatusBadge } from "@/components/super/status-badge";
 import { date, Table } from "@/components/super/table";
 import { requirePermission } from "@/lib/dal";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
@@ -85,7 +86,9 @@ export default async function SuperOverviewPage({
                 </Link>
               </td>
               <td className="px-3 py-2.5 text-foreground/70">/w/{w.slug}</td>
-              <td className="px-3 py-2.5 text-foreground/70">{w.status.toLowerCase()}</td>
+              <td className="px-3 py-2.5">
+                <StatusBadge status={w.status} />
+              </td>
               <td className="px-3 py-2.5 text-foreground/70">{w.plan?.name ?? "—"}</td>
               <td className="px-3 py-2.5 text-foreground/70">{date(w.createdAt)}</td>
             </tr>

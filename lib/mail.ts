@@ -22,20 +22,23 @@ export async function sendMail({
   to: string;
   subject: string;
   html: string;
-}) {
+}): Promise<boolean> {
   const resend = getClient();
   if (!resend) {
     console.warn(`[mail] RESEND_API_KEY not set — skipped email "${subject}" to ${to}`);
-    return;
+    return false;
   }
 
   try {
     const { error } = await resend.emails.send({ from: FROM, to, subject, html });
     if (error) {
       console.error(`[mail] Failed to send "${subject}" to ${to}:`, error);
+      return false;
     }
+    return true;
   } catch (err) {
     console.error(`[mail] Failed to send "${subject}" to ${to}:`, err);
+    return false;
   }
 }
 
@@ -285,6 +288,45 @@ export function inviteEmail({ token, weddingName }: { token: string; weddingName
         "Set your password",
         url,
         "This link works once and expires in 7 days."
+      ),
+    }),
+  };
+}
+
+/** New staff: their access level and a temporary password they must change on first sign-in. */
+export function staffWelcomeEmail({ role, email, tempPassword, expiresAt }: { role: string; email: string; tempPassword: string; expiresAt: Date }) {
+  const url = `${SITE_URL}/login`;
+  const expires = expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  return {
+    subject: `You've been added to the Vowly team as ${role}`,
+    html: editorialBand({
+      eyebrow: "Staff access",
+      headline: "Welcome to the team",
+      subline: `${escapeHtml(role)} access`,
+      bodyHtml: `<p style="margin:0 0 16px;font-size:15.5px;line-height:1.7;color:#252a1a;">You now have ${escapeHtml(role)} access to the Vowly staff console. Sign in with this email and the temporary password below; you'll be asked to choose your own password straight away.</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;border:1px solid #e4dccb;background:#fdf6ec;">
+        <tr><td style="padding:12px 16px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7a44;">Email</td><td style="padding:12px 16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#252a1a;">${escapeHtml(email)}</td></tr>
+        <tr><td style="padding:12px 16px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7a44;">Temporary password</td><td style="padding:12px 16px;font-family:'Courier New',Courier,monospace;font-size:16px;font-weight:bold;letter-spacing:0.5px;white-space:nowrap;color:#252a1a;">${escapeHtml(tempPassword)}</td></tr>
+      </table>
+      <p style="margin:0 0 24px;"><a href="${url}" style="display:inline-block;background:#c1440e;color:#fdf6ec;padding:12px 22px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;text-decoration:none;">Sign in</a></p>
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#6b7a44;">The temporary password works until ${expires}. Don't share it; if it expires, ask an admin to send a new one.</p>`,
+    }),
+  };
+}
+
+/** Existing account given staff access (or a different level): just let them know. */
+export function staffAccessEmail({ role }: { role: string }) {
+  return {
+    subject: `Your Vowly access is now ${role}`,
+    html: editorialBand({
+      eyebrow: "Staff access",
+      headline: "Your access has changed",
+      subline: `${escapeHtml(role)} access`,
+      bodyHtml: accountActionBody(
+        `You now have ${escapeHtml(role)} access to the Vowly staff console. Sign in with your usual password to use it.`,
+        "Open the staff console",
+        `${SITE_URL}/super`,
+        "If you weren't expecting this, contact your Vowly admin."
       ),
     }),
   };
