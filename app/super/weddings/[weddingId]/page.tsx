@@ -6,6 +6,8 @@ import DomainForm from "@/components/super/domain-form";
 import MarkPaidButton from "@/components/super/mark-paid-button";
 import NoteForm from "@/components/super/note-form";
 import { Pagination } from "@/components/super/pagination";
+import { RoleBadge } from "@/components/super/role-badge";
+import { StatusBadge } from "@/components/super/status-badge";
 import { date, Table } from "@/components/super/table";
 import { impersonateUser, reverifyPayment, sendUserPasswordReset, setWeddingStatus } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
@@ -88,8 +90,8 @@ export default async function WeddingCasePage({
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="font-(family-name:--m-display) text-3xl font-extrabold tracking-tight">{names}</h2>
-          <p className="mt-2 text-sm text-(--m-ink)/70">
-            /w/{wedding.slug} · {wedding.status.toLowerCase()} · {wedding.plan?.name ?? "no plan"}
+          <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm text-(--m-ink)/70">
+            /w/{wedding.slug} · <StatusBadge status={wedding.status} /> · {wedding.plan?.name ?? "no plan"}
             {wedding.comped ? " (comped)" : wedding.paidAt ? " (paid)" : ""}
             {wedding.story && ` · wedding ${date(wedding.story.weddingDate)}`}
           </p>
@@ -182,8 +184,9 @@ export default async function WeddingCasePage({
           <ul className="flex flex-col divide-y divide-(--m-mist) rounded-[6px] border border-(--m-mist) bg-white">
             {wedding.members.map((m) => (
               <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
-                <span>
-                  {m.user.email} <span className="text-(--m-ink)/55">({m.role.toLowerCase()})</span>
+                <span className="flex flex-wrap items-center gap-x-1.5">
+                  {m.user.email} {isStaff(m.user.role) && <RoleBadge role={m.user.role} />}
+                  <span className="text-(--m-ink)/55">({m.role.toLowerCase()})</span>
                   {!m.user.passwordHash && <span className="text-(--m-ink)/55"> · invite pending</span>}
                 </span>
                 <span className="flex gap-1">
@@ -213,7 +216,9 @@ export default async function WeddingCasePage({
                     <td className="px-3 py-2.5 text-foreground/70">{date(p.createdAt)}</td>
                     <td className="px-3 py-2.5">{p.plan.name}</td>
                     <td className="px-3 py-2.5">{formatMoney(p.amountKobo, NAIRA)}</td>
-                    <td className="px-3 py-2.5">{p.status.toLowerCase()}</td>
+                    <td className="px-3 py-2.5">
+                      <StatusBadge status={p.status} />
+                    </td>
                     <td className="px-3 py-2.5">
                       {p.status !== "SUCCESS" && (
                         <div className="flex flex-col items-start gap-1.5">

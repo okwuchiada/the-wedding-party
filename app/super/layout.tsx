@@ -14,6 +14,7 @@ export default async function StaffConsoleLayout({ children }: { children: React
     { href: "/super/payments", label: "Payments" },
     ...(can(staff.role, "plans.manage") ? [{ href: "/super/plans", label: "Plans" }] : []),
     ...(can(staff.role, "staff.manage") ? [{ href: "/super/staff", label: "Staff" }] : []),
+    { href: "/super/profile", label: "My profile" },
   ];
 
   return (

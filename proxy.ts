@@ -10,7 +10,7 @@ const GEO_BYPASS_MAX_AGE = 60 * 60 * 24 * 90; // 90 days
 const WEDDING_PATH = /^\/w\/([a-z0-9-]+)(?:\/|$)/;
 const PROTECTED_PATH = /^\/(dashboard|super)(?:\/|$)/;
 // Pages that belong to Vowly itself, never to a couple's domain.
-const PLATFORM_PATH = /^\/(dashboard|super|login|signup|forgot-password|reset-password|pricing|api)(?:\/|$)/;
+const PLATFORM_PATH = /^\/(dashboard|super|login|signup|forgot-password|reset-password|change-password|pricing|api)(?:\/|$)/;
 
 // ─── Custom domains: a couple's own domain serves their guest site. ──────────
 

@@ -18,6 +18,10 @@ export default function DashboardBar({ showConsole = false }: { showConsole?: bo
             Staff console
           </Link>
         )} */}
+        {/* Staff keep their details in the console; couples on their account page. */}
+        <Link href={showConsole ? "/super/profile" : "/dashboard/account"} className={linkClass}>
+          {showConsole ? "My profile" : "Account"}
+        </Link>
         <form action={logout}>
           <button type="submit" className="rounded-full border border-(--m-ink)/25 px-4 py-2 hover:border-(--m-ink)">
             Sign out
