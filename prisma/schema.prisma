@@ -179,21 +179,28 @@ enum UserRole {
 }
 
 model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  name           String?
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  name                  String?
+  // The couple's contact number (Your account). Staff keep theirs on StaffProfile.
+  phone                 String?
   // Null until the user sets a password (invited partners, migrated couples).
-  passwordHash   String?
-  role           UserRole @default(USER)
+  passwordHash          String?
+  role                  UserRole  @default(USER)
   // Bumped on password change; sessions carrying an older value are rejected.
-  sessionVersion Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  sessionVersion        Int       @default(0)
+  // Set while the user holds a temporary password (e.g. new staff); they must
+  // choose their own before doing anything else. The temporary one expires.
+  mustChangePassword    Boolean   @default(false)
+  tempPasswordExpiresAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   memberships  WeddingMember[]
   resetTokens  PasswordResetToken[]
   auditLogs    AuditLog[]
   supportNotes SupportNote[]
+  staffProfile StaffProfile?        @relation("StaffProfileOwner")
 }
 
 enum WeddingStatus {
@@ -301,26 +308,26 @@ model WeddingCopy {
 }
 
 model Plan {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  name      String
-  priceKobo Int
-  maxGuests Int
+  id                 String   @id @default(cuid())
+  key                String   @unique
+  name               String
+  priceKobo          Int
+  maxGuests          Int
   // On/off features (lib/plans.ts PlanFeature): { gallery, video, customTheme, ... }
-  features  Json     @default("{}")
-  active    Boolean  @default(true)
-  sortOrder Int      @default(0)
+  features           Json     @default("{}")
+  active             Boolean  @default(true)
+  sortOrder          Int      @default(0)
   // Shown on the pricing page and in Billing; edited in the staff console.
-  tagline     String?
-  popular     Boolean  @default(false)
-  highlights  String[] @default([])
-  limitations String[] @default([])
+  tagline            String?
+  popular            Boolean  @default(false)
+  highlights         String[] @default([])
+  limitations        String[] @default([])
   // Limits; null means unlimited (uploads), permanent (availability) or every theme (empty list).
   maxUploads         Int?
   availabilityMonths Int?
   themes             String[] @default([])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   weddings Wedding[]
   payments Payment[]
@@ -404,4 +411,45 @@ model SupportNote {
   createdAt DateTime @default(now())
 
   @@index([weddingId, createdAt])
+}
+
+// Countries a wedding can limit its guest site to (Settings → Who can view the
+// site). Filled by the migration that creates it; `code` is ISO 3166-1 alpha-2,
+// matching the visitor country the host reports (lib/geo.ts).
+model Country {
+  code      String   @id
+  name      String
+  // Africa, Asia, Europe, North America, South America, Australia/Oceania or Antarctica.
+  continent String
+  // Other names people search by, e.g. "UK" for the United Kingdom.
+  aliases   String[] @default([])
+  // Not a sovereign state: a dependency of another country, or disputed (e.g. Western Sahara).
+  territory Boolean  @default(false)
+
+  @@index([continent])
+}
+
+// A staff member's details (their full name stays on User.name). Edited by the
+// person themselves (Staff console → My profile) or by a super admin.
+model StaffProfile {
+  userId                String    @id
+  user                  User      @relation("StaffProfileOwner", fields: [userId], references: [id], onDelete: Cascade)
+  preferredName         String?
+  jobTitle              String?
+  phone                 String?
+  dateOfBirth           DateTime? @db.Date
+  // "female", "male", "other" or "prefer_not_to_say"
+  gender                String?
+  // Country codes from the Country table.
+  nationality           String?
+  addressLine           String?
+  city                  String?
+  state                 String?
+  country               String?
+  emergencyName         String?
+  emergencyRelationship String?
+  emergencyPhone        String?
+  updatedAt             DateTime  @updatedAt
+  // Who last saved it (the person themselves or a super admin).
+  updatedById           String?
 }

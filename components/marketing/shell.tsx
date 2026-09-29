@@ -42,9 +42,9 @@ export default async function MarketingShell({ children }: { children: React.Rea
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-5 sm:px-8">
         <BrandLink href="/" />
         <nav className="flex items-center gap-1 text-sm font-medium whitespace-nowrap sm:gap-3">
-          <Link href="/pricing" className="rounded-full px-3 py-2 hover:bg-(--m-mist)">
+          {/* <Link href="/pricing" className="rounded-full px-3 py-2 hover:bg-(--m-mist)">
             Pricing
-          </Link>
+          </Link> */}
           {user ? (
             <Link href="/dashboard" className="rounded-full bg-(--m-ink) px-4 py-2 text-(--m-paper) hover:bg-(--m-emerald)">
               Dashboard
@@ -68,6 +68,12 @@ export default async function MarketingShell({ children }: { children: React.Rea
           <div className="flex gap-5">
             <Link href="/pricing" className="hover:text-(--m-ink)">
               Pricing
+            </Link>
+            <Link href="/terms" className="hover:text-(--m-ink)">
+              Terms
+            </Link>
+            <Link href="/privacy" className="hover:text-(--m-ink)">
+              Privacy
             </Link>
             <Link href="/login" className="hover:text-(--m-ink)">
               Sign in

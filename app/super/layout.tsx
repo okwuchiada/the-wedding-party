@@ -14,6 +14,7 @@ export default async function StaffConsoleLayout({ children }: { children: React
     { href: "/super/payments", label: "Payments" },
     ...(can(staff.role, "plans.manage") ? [{ href: "/super/plans", label: "Plans" }] : []),
     ...(can(staff.role, "staff.manage") ? [{ href: "/super/staff", label: "Staff" }] : []),
+    { href: "/super/profile", label: "My profile" },
   ];
 
   return (
@@ -25,9 +26,9 @@ export default async function StaffConsoleLayout({ children }: { children: React
         </h1>
         <p className="mt-3 text-(--m-ink)/65">
           Signed in as {staff.email} ({ROLE_LABELS[staff.role]}).{" "}
-          <Link href="/dashboard" className="underline decoration-(--m-ink)/25 underline-offset-4 hover:decoration-(--m-ink)">
+          {/* <Link href="/dashboard" className="underline decoration-(--m-ink)/25 underline-offset-4 hover:decoration-(--m-ink)">
             Your weddings
-          </Link>
+          </Link> */}
         </p>
         <div className="mt-8">
           <SuperNav links={links} />

@@ -49,7 +49,25 @@ export async function fulfillPayment(reference: string, reported: Reported, sour
     ? new Date(reported.paid_at)
     : new Date();
 
-  const applied = await prisma.$transaction(async (tx) => {
+  const applied = await applySuccessfulPayment(payment, paidAt, payload, { reference, amountKobo: payment.amountKobo, plan: payment.plan.key, source });
+
+  return { outcome: applied ? "fulfilled" : "already", wedding: payment.wedding };
+}
+
+type PaymentWithPlan = { id: string; weddingId: string; planId: string; plan: { priceKobo: number; maxGuests: number } };
+
+/**
+ * Marks a payment SUCCESS and gives the wedding what it paid for, once. Only the
+ * call that flips the payment applies it, so repeats (webhook + callback, or a
+ * manual resolution racing Paystack) are harmless.
+ */
+async function applySuccessfulPayment(
+  payment: PaymentWithPlan,
+  paidAt: Date,
+  payload: Prisma.InputJsonValue,
+  auditMeta: Prisma.InputJsonValue
+) {
+  return prisma.$transaction(async (tx) => {
     // FAILED is included: if Paystack later confirms the charge, the money was taken.
     const { count } = await tx.payment.updateMany({
       where: { id: payment.id, status: { in: ["PENDING", "FAILED"] } },
@@ -70,15 +88,40 @@ export async function fulfillPayment(reference: string, reported: Reported, sour
         ...(upgrade && wedding.maxGuests === oldCap ? { maxGuests: payment.plan.maxGuests } : {}),
       },
     });
-    await tx.auditLog.create({
-      data: {
-        weddingId: wedding.id,
-        action: "payment.succeeded",
-        meta: { reference, amountKobo: payment.amountKobo, plan: payment.plan.key, source },
-      },
-    });
+    await tx.auditLog.create({ data: { weddingId: wedding.id, action: "payment.succeeded", meta: auditMeta } });
     return true;
   });
+}
 
+export type ManualResolution = { staffId: string; note: string; paidAt: Date };
+
+/**
+ * For a charge Paystack took but we never recorded (e.g. the webhook and the
+ * re-check both failed): staff mark it paid by hand, with a note saying how they
+ * know. Applies exactly what a verified payment would, and says it was manual.
+ */
+export async function resolvePaymentManually(reference: string, resolution: ManualResolution): Promise<FulfillResult> {
+  const payment = await prisma.payment.findUnique({
+    where: { reference },
+    include: { plan: true, wedding: { select: { id: true, slug: true } } },
+  });
+  if (!payment) return { outcome: "unknown" };
+  if (payment.status === "SUCCESS") return { outcome: "already", wedding: payment.wedding };
+
+  const payload = {
+    manual: true,
+    resolvedBy: resolution.staffId,
+    note: resolution.note,
+    previousStatus: payment.status,
+    previousPayload: payment.paystackPayload ?? null,
+  } as Prisma.InputJsonValue;
+  const applied = await applySuccessfulPayment(payment, resolution.paidAt, payload, {
+    reference,
+    amountKobo: payment.amountKobo,
+    plan: payment.plan.key,
+    source: "manual",
+    actorId: resolution.staffId,
+    note: resolution.note,
+  });
   return { outcome: applied ? "fulfilled" : "already", wedding: payment.wedding };
 }

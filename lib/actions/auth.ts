@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { LOGIN_PATH } from "@/lib/dal";
+import { CHANGE_PASSWORD_PATH, getCurrentUser, LOGIN_PATH } from "@/lib/dal";
 import { can } from "@/lib/permissions";
 import { passwordResetEmail, sendMail } from "@/lib/mail";
 import { hashPassword, validatePassword, verifyPassword } from "@/lib/password";
@@ -10,6 +10,7 @@ import { takeRateLimit } from "@/lib/rate-limit";
 import { rememberPartnerName } from "@/lib/onboarding";
 import { getClientIp } from "@/lib/request";
 import { createSession, deleteSession } from "@/lib/session";
+import { looksLikeTempPassword } from "@/lib/temp-password";
 import { createUserToken, findValidToken } from "@/lib/tokens";
 
 export type AuthFormState = { error?: string; message?: string } | undefined;
@@ -49,9 +50,50 @@ export async function login(_prevState: AuthFormState, formData: FormData): Prom
     return { error: "Incorrect email or password" };
   }
 
-  await createSession(user);
   // Staff start in the console; couples in their dashboard.
-  redirect(safeNextPath(formData.get("next"), can(user.role, "console.view") ? "/super" : "/dashboard"));
+  const next = safeNextPath(formData.get("next"), can(user.role, "console.view") ? "/super" : "/dashboard");
+
+  if (user.mustChangePassword) {
+    if (user.tempPasswordExpiresAt && user.tempPasswordExpiresAt < new Date()) {
+      return { error: "Your temporary password has expired. Ask your Vowly admin to send a new one." };
+    }
+    await createSession(user);
+    redirect(`${CHANGE_PASSWORD_PATH}?next=${encodeURIComponent(next)}`);
+  }
+
+  await createSession(user);
+  redirect(next);
+}
+
+/**
+ * Replaces a temporary password with the person's own, after they signed in
+ * with it. Signs out other sessions and signs this one back in.
+ */
+export async function changeTemporaryPassword(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  const current = await getCurrentUser();
+  if (!current) redirect(LOGIN_PATH);
+  const user = await prisma.user.findUnique({ where: { id: current.id } });
+  if (!user?.mustChangePassword) redirect(safeNextPath(formData.get("next"), "/dashboard"));
+
+  const password = formData.get("password");
+  const passwordError = validatePassword(password);
+  if (passwordError) return { error: passwordError };
+  if (password !== formData.get("confirm")) return { error: "The two passwords don't match" };
+  if (looksLikeTempPassword(password as string) || (await verifyPassword(user.passwordHash, password as string))) {
+    return { error: "Choose a new password of your own, not the temporary one" };
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash: await hashPassword(password as string),
+      mustChangePassword: false,
+      tempPasswordExpiresAt: null,
+      sessionVersion: { increment: 1 },
+    },
+  });
+  await createSession(updated);
+  redirect(safeNextPath(formData.get("next"), can(updated.role, "console.view") ? "/super" : "/dashboard"));
 }
 
 export async function signup(_prevState: AuthFormState, formData: FormData): Promise<AuthFormState> {
@@ -66,6 +108,9 @@ export async function signup(_prevState: AuthFormState, formData: FormData): Pro
   if (!EMAIL_REGEX.test(email)) return { error: "Please enter a valid email" };
   const passwordError = validatePassword(password);
   if (passwordError) return { error: passwordError };
+  if (formData.get("agreedToTerms") !== "on") {
+    return { error: "Please agree to the Terms of Service and Privacy Policy to continue." };
+  }
 
   if (!(await takeRateLimit("signup:ip", await getClientIp(), 5, HOUR))) {
     return { error: "Too many sign-ups from your network. Please try again later." };
@@ -134,7 +179,8 @@ export async function resetPassword(
     // Bumping sessionVersion signs out every other session.
     prisma.user.update({
       where: { id: record.userId },
-      data: { passwordHash, sessionVersion: { increment: 1 } },
+      // A reset also replaces any temporary password.
+      data: { passwordHash, mustChangePassword: false, tempPasswordExpiresAt: null, sessionVersion: { increment: 1 } },
     }),
     prisma.passwordResetToken.updateMany({
       where: { userId: record.userId, usedAt: null },

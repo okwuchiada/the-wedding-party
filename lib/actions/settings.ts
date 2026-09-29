@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getCountries } from "@/lib/countries";
 import { requireWeddingAccess } from "@/lib/dal";
 import { CURRENCIES, LOCALES } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
@@ -55,8 +56,10 @@ export async function saveSettings(
         .filter(Boolean)
     ),
   ];
-  if (allowedCountries.some((code) => !/^[A-Z]{2}$/.test(code))) {
-    return { error: "Countries should be two-letter codes like NG, GH, GB" };
+  // Only codes from the Country table, so a typo can't lock every guest out.
+  const known = new Set((await getCountries()).map((c) => c.code));
+  if (allowedCountries.some((code) => !known.has(code))) {
+    return { error: "Choose countries from the list" };
   }
   const geoBypassToken = text(formData, "geoBypassToken");
   if (geoBypassToken && (geoBypassToken.length < 4 || geoBypassToken.length > 100)) {

@@ -115,9 +115,9 @@ export default function LandingPage() {
           <Link href="/signup" className="rounded-full bg-(--m-gold) px-6 py-3.5 text-sm font-semibold hover:bg-(--m-ink) hover:text-(--m-paper)">
             Create your site for free
           </Link>
-          <Link href="/pricing" className="text-sm font-semibold text-(--m-ink)/70 underline decoration-(--m-ink)/25 underline-offset-4 hover:text-(--m-ink)">
+          {/* <Link href="/pricing" className="text-sm font-semibold text-(--m-ink)/70 underline decoration-(--m-ink)/25 underline-offset-4 hover:text-(--m-ink)">
             Compare plans
-          </Link>
+          </Link> */}
         </div>
         <p className="mt-4 text-sm text-(--m-ink)/60">Start free, no card required, and publish whenever you&apos;re ready.</p>
       </section>

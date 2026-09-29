@@ -1,40 +1,58 @@
 import Link from "next/link";
+import { Pagination } from "@/components/super/pagination";
+import { StatusBadge } from "@/components/super/status-badge";
 import { date, Table } from "@/components/super/table";
 import { requirePermission } from "@/lib/dal";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
 import { formatMoney } from "@/lib/money";
+import { readPagination } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 
 const NAIRA = { currency: "NGN", locale: "en-NG" };
 const DAY = 24 * 60 * 60 * 1000;
 
-async function loadOverview() {
+async function loadOverview(weddings: ReturnType<typeof readPagination>, activity: ReturnType<typeof readPagination>) {
   const since = new Date(Date.now() - 30 * DAY);
   return Promise.all([
     prisma.wedding.groupBy({ by: ["status"], _count: true }),
     prisma.payment.aggregate({ where: { status: "SUCCESS" }, _sum: { amountKobo: true }, _count: true }),
     prisma.payment.aggregate({ where: { status: "SUCCESS", paidAt: { gte: since } }, _sum: { amountKobo: true } }),
     prisma.user.count({ where: { createdAt: { gte: since } } }),
+    prisma.wedding.count(),
     prisma.wedding.findMany({
       orderBy: { createdAt: "desc" },
-      take: 8,
+      skip: weddings.skip,
+      take: weddings.take,
       include: {
         story: { select: { brideName: true, groomName: true } },
         theme: { select: { heroNames: true } },
         plan: { select: { name: true } },
       },
     }),
+    prisma.auditLog.count(),
     prisma.auditLog.findMany({
       orderBy: { createdAt: "desc" },
-      take: 12,
+      skip: activity.skip,
+      take: activity.take,
       include: { actor: { select: { email: true } }, wedding: { select: { slug: true } } },
     }),
   ]);
 }
 
-export default async function SuperOverviewPage() {
+export default async function SuperOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ weddingsPage?: string; weddingsPageSize?: string; activityPage?: string; activityPageSize?: string }>;
+}) {
   await requirePermission("console.view");
-  const [byStatus, revenue, revenue30, signups30, recentWeddings, recentAudit] = await loadOverview();
+  const sp = await searchParams;
+  const weddings = readPagination(sp, { prefix: "weddings", defaultPageSize: 10 });
+  const activity = readPagination(sp, { prefix: "activity", defaultPageSize: 10 });
+
+  const [byStatus, revenue, revenue30, signups30, weddingsTotal, recentWeddings, activityTotal, recentAudit] = await loadOverview(
+    weddings,
+    activity
+  );
   const count = (status: string) => byStatus.find((s) => s.status === status)?._count ?? 0;
 
   const stats = [
@@ -68,12 +86,15 @@ export default async function SuperOverviewPage() {
                 </Link>
               </td>
               <td className="px-3 py-2.5 text-foreground/70">/w/{w.slug}</td>
-              <td className="px-3 py-2.5 text-foreground/70">{w.status.toLowerCase()}</td>
+              <td className="px-3 py-2.5">
+                <StatusBadge status={w.status} />
+              </td>
               <td className="px-3 py-2.5 text-foreground/70">{w.plan?.name ?? "—"}</td>
               <td className="px-3 py-2.5 text-foreground/70">{date(w.createdAt)}</td>
             </tr>
           ))}
         </Table>
+        <Pagination prefix="weddings" page={weddings.page} pageSize={weddings.pageSize} total={weddingsTotal} />
       </section>
 
       <section>
@@ -88,6 +109,7 @@ export default async function SuperOverviewPage() {
             </tr>
           ))}
         </Table>
+        <Pagination prefix="activity" page={activity.page} pageSize={activity.pageSize} total={activityTotal} />
       </section>
     </div>
   );

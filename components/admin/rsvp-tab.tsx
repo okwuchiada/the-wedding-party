@@ -13,6 +13,7 @@ import {
   type ImportRsvpsResult,
 } from "@/lib/actions/rsvp";
 import { readRsvpFile, RSVP_TEMPLATE_CSV } from "@/lib/rsvp-import";
+import { Pagination, usePagination } from "./pagination";
 import { useConfirm } from "./use-confirm";
 import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
@@ -271,6 +272,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
     .filter((r) => r.attending)
     .reduce((sum, r) => sum + r.guestCount, 0);
   const declinedCount = rsvps.filter((r) => !r.attending).length;
+  const { page, pageSize, pageItems, total, setPage, setPageSize } = usePagination(rsvps);
   const weddingId = useAdminWeddingId();
   const [panel, setPanel] = useState<"add" | "import" | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -354,6 +356,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
       {rsvps.length === 0 ? (
         <p className="text-sm text-foreground/60">No responses yet.</p>
       ) : (
+        <>
         <div className="overflow-x-auto rounded-[6px] border border-(--m-mist) bg-white">
           <table className="w-full min-w-150 text-left text-sm">
             <thead>
@@ -368,7 +371,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
               </tr>
             </thead>
             <tbody>
-              {rsvps.map((r) =>
+              {pageItems.map((r) =>
                 editingId === r.id ? (
                   <tr key={r.id} className="border-b border-(--m-mist) last:border-0">
                     <td colSpan={7} className="p-0">
@@ -436,6 +439,8 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
             </tbody>
           </table>
         </div>
+        <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
+        </>
       )}
 
       {rsvps.some((r) => r.attending) && (
