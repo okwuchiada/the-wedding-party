@@ -111,18 +111,22 @@ export default function GalleryUpload({ allowVideo }: { allowVideo: boolean }) {
   return (
     <div>
       <div className="mx-auto max-w-xl">
+        <label htmlFor="upload-name" className="guest-label">
+          Your name
+        </label>
         <input
-          placeholder="Your name"
+          id="upload-name"
+          autoComplete="name"
           value={guestName}
           onChange={(e) => setGuestName(e.target.value)}
-          className="w-full border border-olive/20 bg-white px-4 py-3 text-sm outline-none"
+          className="guest-input"
         />
 
-        <label className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-2 border border-dashed border-olive/30 bg-ivory px-4 py-8 text-center transition-colors hover:border-burnt-orange">
+        <label className="mt-4 flex cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-burnt-orange flex-col items-center justify-center gap-2 border border-dashed border-olive/30 bg-ivory px-4 py-8 text-center transition-colors hover:border-burnt-orange">
           <span className="text-sm font-medium text-foreground">
             {allowVideo ? "Tap to share a photo or video" : "Tap to share a photo"}
           </span>
-          <span className="text-xs text-foreground/60">JPG, PNG, MP4 up to {MAX_UPLOAD_LABEL}</span>
+          <span className="text-[13px] text-foreground/65">JPG, PNG, MP4 up to {MAX_UPLOAD_LABEL}</span>
           <input
             type="file"
             accept={allowVideo ? "image/*,video/*,.heic,.heif" : "image/*,.heic,.heif"}
@@ -130,16 +134,20 @@ export default function GalleryUpload({ allowVideo }: { allowVideo: boolean }) {
             onChange={(e) => {
               void handleFiles(e.target.files);
             }}
-            className="hidden"
+            className="sr-only"
           />
         </label>
 
-        {error && <p className="mt-2 text-xs text-burnt-orange">{error}</p>}
+        {error && (
+          <p role="alert" className="mt-2 text-[15px] text-burnt-orange-dark">
+            {error}
+          </p>
+        )}
       </div>
 
       {uploads.length > 0 && (
         <div className="mx-auto mt-10 max-w-5xl">
-          <p className="mb-4 text-xs uppercase tracking-[0.2em] text-olive">
+          <p className="mb-4 text-[13px] tracking-[0.2em] text-olive uppercase">
             Your uploads
           </p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -151,7 +159,7 @@ export default function GalleryUpload({ allowVideo }: { allowVideo: boolean }) {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={upload.previewUrl} alt={upload.fileName} className="h-full w-full object-cover" />
                 )}
-                <span className="absolute bottom-2 left-2 bg-ivory px-2 py-1 text-[10px] tracking-widest text-burnt-orange-dark uppercase">
+                <span className="absolute bottom-2 left-2 bg-ivory px-2 py-1 text-[12px] tracking-wider text-burnt-orange-dark uppercase">
                   {upload.status === "uploading"
                     ? "Uploading…"
                     : upload.status === "error"

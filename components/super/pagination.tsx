@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { PAGE_SIZE_OPTIONS, pageWindow } from "@/lib/pagination";
+import { inputClass } from "@/components/ui/field";
 
 /**
  * A total count, page-size picker and numbered pager for one staff-console table.
@@ -47,7 +48,7 @@ export function Pagination({
   if (total === 0) return null;
 
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-foreground/70">
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-muted">
       <p>
         Showing {from}–{to} of {total}
       </p>
@@ -57,7 +58,7 @@ export function Pagination({
           <select
             value={pageSize}
             onChange={onPageSizeChange}
-            className="border border-(--m-mist) bg-white px-1.5 py-1 text-xs"
+            className={`${inputClass} w-auto py-1.5 text-[13px]`}
           >
             {PAGE_SIZE_OPTIONS.map((n) => (
               <option key={n} value={n}>
@@ -68,7 +69,7 @@ export function Pagination({
         </label>
         <nav aria-label="Pagination" className="flex items-center gap-2">
           {page > 1 ? (
-            <Link href={hrefForPage(page - 1)} className="hover:text-burnt-orange">
+            <Link href={hrefForPage(page - 1)} className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-full px-2 text-[13px] hover:bg-surface-muted aria-[current=page]:bg-ink aria-[current=page]:text-paper">
               Previous
             </Link>
           ) : (
@@ -76,7 +77,7 @@ export function Pagination({
           )}
           {pageWindow(page, totalPages).map((p, i) =>
             p === "…" ? (
-              <span key={`gap-${i}`} className="text-foreground/40">
+              <span key={`gap-${i}`} className="text-muted">
                 …
               </span>
             ) : (
@@ -84,14 +85,14 @@ export function Pagination({
                 key={p}
                 href={hrefForPage(p)}
                 aria-current={p === page ? "page" : undefined}
-                className={p === page ? "font-semibold text-foreground" : "hover:text-burnt-orange"}
+                className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-full px-2 text-[13px] hover:bg-surface-muted aria-[current=page]:bg-ink aria-[current=page]:text-paper"
               >
                 {p}
               </Link>
             )
           )}
           {page < totalPages ? (
-            <Link href={hrefForPage(page + 1)} className="hover:text-burnt-orange">
+            <Link href={hrefForPage(page + 1)} className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-full px-2 text-[13px] hover:bg-surface-muted aria-[current=page]:bg-ink aria-[current=page]:text-paper">
               Next
             </Link>
           ) : (

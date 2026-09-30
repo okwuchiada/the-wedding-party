@@ -23,12 +23,12 @@ export default function CopyRow({
 
   return (
     <div
-      className={`flex items-baseline justify-between gap-3 border-b py-2 ${
+      className={`flex items-center justify-between gap-3 border-b py-1 ${
         isDark ? "border-ivory/20" : "border-olive/20"
       }`}
     >
       <span
-        className={`text-[10.5px] uppercase tracking-[.16em] ${
+        className={`text-[12px] uppercase tracking-[.14em] ${
           isDark ? "text-ivory/50" : "text-foreground/55"
         }`}
       >
@@ -37,18 +37,18 @@ export default function CopyRow({
       <button
         type="button"
         onClick={copy}
-        title="Copy"
-        className={`flex items-center gap-1.5 p-0 text-right text-[13.5px] ${
+        aria-label={`Copy ${label.toLowerCase()}: ${value}`}
+        className={`flex min-h-11 items-center gap-1.5 p-0 text-right text-[15px] ${
           isDark ? "text-ivory" : "text-foreground"
         }`}
       >
         {value}
         {copied ? (
-          <span className="text-[10.5px] tracking-widest text-burnt-orange">
+          <span aria-live="polite" className="text-[12px] tracking-widest text-burnt-orange">
             COPIED
           </span>
         ) : (
-          <Copy className="h-3.5 w-3.5 shrink-0 text-burnt-orange" />
+          <Copy aria-hidden className="h-4 w-4 shrink-0 text-burnt-orange" />
         )}
       </button>
     </div>

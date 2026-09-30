@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { inputClass } from "@/components/ui/field";
 import { PAGE_SIZE_OPTIONS, pageWindow } from "@/lib/pagination";
 
 /**
@@ -51,7 +52,7 @@ export function Pagination({
   if (total === 0) return null;
 
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-foreground/70">
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-[13px] text-muted">
       <p>
         Showing {from}–{to} of {total}
       </p>
@@ -61,7 +62,8 @@ export function Pagination({
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value) as (typeof PAGE_SIZE_OPTIONS)[number])}
-            className="border border-(--m-mist) bg-white px-1.5 py-1 text-xs"
+            aria-label="Rows per page"
+            className={`${inputClass} w-auto py-1.5 text-[13px]`}
           >
             {PAGE_SIZE_OPTIONS.map((n) => (
               <option key={n} value={n}>
@@ -70,18 +72,18 @@ export function Pagination({
             ))}
           </select>
         </label>
-        <nav aria-label="Pagination" className="flex items-center gap-2">
+        <nav aria-label="Pagination" className="flex items-center gap-1">
           <button
             type="button"
             disabled={page <= 1}
             onClick={() => onPageChange(page - 1)}
-            className="disabled:opacity-40 enabled:hover:text-burnt-orange"
+            className="min-h-9 min-w-9 rounded-full px-2 text-[13px] hover:bg-surface-muted aria-[current=page]:bg-ink aria-[current=page]:text-paper disabled:opacity-40 disabled:hover:bg-transparent"
           >
             Previous
           </button>
           {pageWindow(page, totalPages).map((p, i) =>
             p === "…" ? (
-              <span key={`gap-${i}`} className="text-foreground/40">
+              <span key={`gap-${i}`} className="px-1 text-muted">
                 …
               </span>
             ) : (
@@ -90,7 +92,7 @@ export function Pagination({
                 type="button"
                 aria-current={p === page ? "page" : undefined}
                 onClick={() => onPageChange(p)}
-                className={p === page ? "font-semibold text-foreground" : "hover:text-burnt-orange"}
+                className="min-h-9 min-w-9 rounded-full px-2 text-[13px] hover:bg-surface-muted aria-[current=page]:bg-ink aria-[current=page]:text-paper disabled:opacity-40 disabled:hover:bg-transparent"
               >
                 {p}
               </button>
@@ -100,7 +102,7 @@ export function Pagination({
             type="button"
             disabled={page >= totalPages}
             onClick={() => onPageChange(page + 1)}
-            className="disabled:opacity-40 enabled:hover:text-burnt-orange"
+            className="min-h-9 min-w-9 rounded-full px-2 text-[13px] hover:bg-surface-muted aria-[current=page]:bg-ink aria-[current=page]:text-paper disabled:opacity-40 disabled:hover:bg-transparent"
           >
             Next
           </button>

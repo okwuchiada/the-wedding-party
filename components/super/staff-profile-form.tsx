@@ -4,14 +4,15 @@ import { startTransition, useActionState } from "react";
 import { saveStaffProfile } from "@/lib/actions/staff-profile";
 import { GENDERS } from "@/lib/staff-profile";
 import type { StaffProfileView } from "@/lib/staff-profiles";
+import { buttonClass } from "@/components/ui/button";
 
-const field = "w-full border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-(--m-ink)/50";
+const field = "w-full border border-line bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-ink/50";
 const label = "flex flex-col gap-1.5 text-sm font-medium";
-const hint = "text-xs font-normal text-foreground/55";
+const hint = "text-xs font-normal text-muted";
 
 function Section({ title, hint: note, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <fieldset className="grid grid-cols-1 gap-4 border-t border-(--m-mist) pt-5 first-of-type:border-t-0 first-of-type:pt-0 sm:grid-cols-[10rem_1fr] sm:gap-8">
+    <fieldset className="grid grid-cols-1 gap-4 border-t border-line pt-5 first-of-type:border-t-0 first-of-type:pt-0 sm:grid-cols-[10rem_1fr] sm:gap-8">
       <legend className="contents">
         <span className="flex flex-col gap-1">
           <span className="text-base font-semibold">{title}</span>
@@ -61,7 +62,7 @@ export default function StaffProfileForm({
         const formData = new FormData(e.currentTarget);
         startTransition(() => formAction(formData));
       }}
-      className="flex flex-col gap-6 rounded-[6px] border border-(--m-mist) bg-white p-5 sm:p-6"
+      className="flex flex-col gap-6 rounded-[6px] border border-line bg-surface p-5 sm:p-6"
     >
       <Section title="Basics">
         <label className={label}>
@@ -136,17 +137,17 @@ export default function StaffProfileForm({
         </label>
       </Section>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-(--m-mist) pt-5">
+      <div className="flex flex-wrap items-center gap-3 border-t border-line pt-5">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-(--m-ink) px-5 py-2.5 text-sm font-semibold text-(--m-paper) hover:bg-(--m-emerald) disabled:opacity-60"
+          className={buttonClass("inverse", "md")}
         >
           {pending ? "Saving…" : "Save details"}
         </button>
         <span aria-live="polite" className="text-sm">
-          {state?.error && <span className="text-(--m-coral-deep)">{state.error}</span>}
-          {state?.message && <span className="text-(--m-emerald)">{state.message}</span>}
+          {state?.error && <span className="text-danger">{state.error}</span>}
+          {state?.message && <span className="text-success">{state.message}</span>}
         </span>
       </div>
     </form>

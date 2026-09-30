@@ -11,6 +11,7 @@ import { formatMoney } from "@/lib/money";
 import { readPagination } from "@/lib/pagination";
 import { can } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { inputClass } from "@/components/ui/field";
 
 const STATUSES: PaymentStatus[] = ["PENDING", "SUCCESS", "FAILED"];
 const NAIRA = { currency: "NGN", locale: "en-NG" };
@@ -59,7 +60,7 @@ export default async function SuperPaymentsPage({
   return (
     <div className="flex flex-col gap-5">
       <SearchForm q={term} placeholder="Reference or wedding slug">
-        <select name="status" defaultValue={status ?? ""} aria-label="Status" className="border border-(--m-mist) bg-white px-3 py-2 text-sm">
+        <select name="status" defaultValue={status ?? ""} aria-label="Status" className={`${inputClass} w-auto`}>
           <option value="">All statuses</option>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -67,7 +68,7 @@ export default async function SuperPaymentsPage({
             </option>
           ))}
         </select>
-        <select name="plan" defaultValue={plan ?? ""} aria-label="Plan" className="border border-(--m-mist) bg-white px-3 py-2 text-sm">
+        <select name="plan" defaultValue={plan ?? ""} aria-label="Plan" className={`${inputClass} w-auto`}>
           <option value="">All plans</option>
           {plans.map((p) => (
             <option key={p.key} value={p.key}>
@@ -75,7 +76,7 @@ export default async function SuperPaymentsPage({
             </option>
           ))}
         </select>
-        <select name="sort" defaultValue={sortKey} aria-label="Sort" className="border border-(--m-mist) bg-white px-3 py-2 text-sm">
+        <select name="sort" defaultValue={sortKey} aria-label="Sort" className={`${inputClass} w-auto`}>
           {Object.entries(SORTS).map(([key, { label }]) => (
             <option key={key} value={key}>
               {label}
@@ -86,15 +87,15 @@ export default async function SuperPaymentsPage({
       <Table head={["Created", "Wedding", "Plan", "Amount", "Status", "Reference", ""]}>
         {payments.map((p) => (
           <tr key={p.id}>
-            <td className="px-3 py-3 text-foreground/70">{date(p.createdAt)}</td>
+            <td className="px-3 py-3 text-muted">{date(p.createdAt)}</td>
             <td className="px-3 py-3">/w/{p.wedding.slug}</td>
-            <td className="px-3 py-3 text-foreground/80">{p.plan.name}</td>
+            <td className="px-3 py-3 text-muted">{p.plan.name}</td>
             <td className="px-3 py-3">{formatMoney(p.amountKobo, NAIRA)}</td>
-            <td className="px-3 py-3 text-foreground/80">
+            <td className="px-3 py-3 text-muted">
               <StatusBadge status={p.status} />
-              {p.paidAt && <span className="mt-1 block text-xs text-foreground/55">paid {date(p.paidAt)}</span>}
+              {p.paidAt && <span className="mt-1 block text-xs text-muted">paid {date(p.paidAt)}</span>}
             </td>
-            <td className="px-3 py-3 font-mono text-xs text-foreground/70">{p.reference}</td>
+            <td className="px-3 py-3 font-mono text-xs text-muted">{p.reference}</td>
             <td className="px-3 py-3">
               {p.status !== "SUCCESS" && (
                 <div className="flex flex-col items-start gap-1.5">

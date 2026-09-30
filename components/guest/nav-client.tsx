@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-function navLinks(basePath: string, show: { rsvp: boolean; registry: boolean }) {
+function navLinks(basePath: string, show: { rsvp: boolean; registry: boolean; gallery: boolean }) {
   return [
     show.rsvp && { label: "RSVP", href: `${basePath}#rsvp` },
     show.registry && { label: "Registry", href: `${basePath}#registry` },
-    { label: "Gallery Wall", href: `${basePath}/gallery` },
-    { label: "Wall of Wishes", href: `${basePath}/wishes` },
+    show.gallery && { label: "Photos", href: `${basePath}/gallery` },
+    { label: "Wishes", href: `${basePath}/wishes` },
   ].filter((link): link is { label: string; href: string } => Boolean(link));
 }
 
@@ -20,8 +20,8 @@ export default function GuestNavClient({
   groomInitial,
 }: {
   basePath: string;
-  /** Links to sections the couple has switched off are left out. */
-  show: { rsvp: boolean; registry: boolean };
+  /** Links to sections the couple has switched off (or a photo wall that isn't open) are left out. */
+  show: { rsvp: boolean; registry: boolean; gallery: boolean };
   dateLabel: string;
   brideInitial: string;
   groomInitial: string;
@@ -39,35 +39,18 @@ export default function GuestNavClient({
 
   return (
     <nav
-      className={`fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow] duration-300 ${
+      className={`fixed inset-x-0 top-0 z-nav transition-[background-color,box-shadow] duration-300 ${
         scrolled ? "bg-ivory/90 shadow-sm backdrop-blur-sm" : "bg-transparent"
       }`}
     >
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
         <div className="font-semibold tracking-tight text-foreground  flex items-baseline gap-10">
-          <Link
-            href={basePath}
-            className="transition-opacity hover:opacity-80"
-            style={{
-              fontFamily: "var(--serif)",
-              fontWeight: 600,
-              fontSize: 26,
-              letterSpacing: ".02em",
-            }}
-          >
+          <Link href={basePath} className="font-(family-name:--serif) text-[26px] font-semibold tracking-[.02em] transition-opacity hover:opacity-80">
             {brideInitial}
-            <span style={{ color: "var(--burnt-orange)" }}>&amp;</span>
+            <span className="text-burnt-orange">&amp;</span>
             {groomInitial}
           </Link>
-          <span
-            style={{
-              fontFamily: "var(--sans)",
-              fontSize: 10,
-              letterSpacing: ".3em",
-              textTransform: "uppercase",
-              opacity: 0.6,
-            }}
-          >
+          <span className="font-(family-name:--sans) text-[12px] tracking-[.3em] uppercase opacity-70">
             {dateLabel}
           </span>
         </div>
@@ -77,7 +60,11 @@ export default function GuestNavClient({
             <a
               key={link.href}
               href={link.href}
-              className={`text-sm font-sans font-medium text-foreground transition-colors hover:text-burnt-orange ${link.label.toLowerCase() === 'rsvp' && 'text-ivory bg-burnt-orange px-3 py-1.5 hover:bg-burnt-orange-dark'}`}
+              className={`text-sm font-medium transition-colors ${
+                link.label === "RSVP"
+                  ? "bg-burnt-orange px-3 py-1.5 text-ivory hover:bg-burnt-orange-dark"
+                  : "text-foreground hover:text-burnt-orange"
+              }`}
             >
               {link.label}
             </a>
@@ -89,7 +76,7 @@ export default function GuestNavClient({
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-label={open ? "Close menu" : "Open menu"}
-          className="flex h-9 w-9 items-center justify-center text-foreground sm:hidden"
+          className="flex h-11 w-11 items-center justify-center text-foreground sm:hidden"
         >
           <svg
             viewBox="0 0 24 24"
@@ -116,7 +103,7 @@ export default function GuestNavClient({
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="py-3 text-sm font-sans font-medium text-foreground transition-colors hover:text-burnt-orange"
+                className="py-3 text-base font-medium text-foreground transition-colors hover:text-burnt-orange"
               >
                 {link.label}
               </a>

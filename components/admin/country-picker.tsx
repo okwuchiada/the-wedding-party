@@ -3,6 +3,7 @@
 import { ChevronDown, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CountryOption } from "@/lib/countries";
+import { buttonClass } from "@/components/ui/button";
 
 /** 🇳🇬 from "NG"; purely decorative. */
 const flag = (code: string) => String.fromCodePoint(...[...code].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
@@ -65,22 +66,22 @@ export default function CountryPicker({ name, countries, defaultValue }: { name:
       <input type="hidden" name={name} value={chosen.map((c) => c.code).join(",")} />
 
       {chosen.length === 0 ? (
-        <p className="text-sm text-foreground/70">Everyone can view your site, wherever they are.</p>
+        <p className="text-sm text-muted">Everyone can view your site, wherever they are.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-foreground/70">
+          <p className="text-sm text-muted">
             Only visitors in {chosen.length === 1 ? "this country" : `these ${chosen.length} countries`} can view your site:
           </p>
           <ul className="flex flex-wrap gap-1.5">
             {visibleChips.map((c) => (
-              <li key={c.code} className="flex items-center gap-1 rounded-full border border-(--m-mist) bg-white py-0.5 pr-1 pl-2.5 text-xs">
+              <li key={c.code} className="flex items-center gap-1 rounded-full border border-line bg-surface py-0.5 pr-1 pl-2.5 text-xs">
                 <span aria-hidden>{flag(c.code)}</span>
                 {c.name}
                 <button
                   type="button"
                   onClick={() => toggle([c.code], false)}
                   aria-label={`Remove ${c.name}`}
-                  className="grid size-5 place-items-center rounded-full text-foreground/50 hover:bg-(--m-mist) hover:text-foreground"
+                  className="grid size-5 place-items-center rounded-full text-muted hover:bg-line hover:text-ink"
                 >
                   <X aria-hidden size={12} />
                 </button>
@@ -102,21 +103,21 @@ export default function CountryPicker({ name, countries, defaultValue }: { name:
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="rounded-full border border-(--m-ink)/25 px-4 py-2 text-xs font-medium hover:border-(--m-ink)"
+          className={buttonClass("secondary", "sm")}
         >
           {open ? "Done choosing" : chosen.length ? "Change countries" : "Limit to certain countries"}
         </button>
         {chosen.length > 0 && (
-          <button type="button" onClick={() => setSelected(new Set())} className="rounded-full px-4 py-2 text-xs font-medium hover:bg-(--m-mist)">
+          <button type="button" onClick={() => setSelected(new Set())} className={buttonClass("text", "sm")}>
             Allow everyone
           </button>
         )}
       </div>
 
       {open && (
-        <div className="flex flex-col rounded-md border border-(--m-mist) bg-white">
-          <label className="flex items-center gap-2 border-b border-(--m-mist) px-3 py-2.5">
-            <Search aria-hidden size={16} className="text-foreground/45" />
+        <div className="flex flex-col rounded-md border border-line bg-surface">
+          <label className="flex items-center gap-2 border-b border-line px-3 py-2.5">
+            <Search aria-hidden size={16} className="text-muted" />
             <span className="sr-only">Search countries</span>
             <input
               type="search"
@@ -135,7 +136,7 @@ export default function CountryPicker({ name, countries, defaultValue }: { name:
               // Searching opens every group that has a match.
               const isOpen = Boolean(q) || expanded.has(continent);
               return (
-                <li key={continent} className="border-b border-(--m-mist) last:border-0">
+                <li key={continent} className="border-b border-line last:border-0">
                   <div className="flex items-center gap-3 px-3 py-2.5">
                     {!q && (
                       <ContinentBox
@@ -153,11 +154,11 @@ export default function CountryPicker({ name, countries, defaultValue }: { name:
                     >
                       <span>
                         {continent}
-                        <span className="ml-2 text-xs font-normal text-foreground/55">
+                        <span className="ml-2 text-xs font-normal text-muted">
                           {count ? `${count} of ${codes.length} chosen` : `${codes.length} ${codes.length === 1 ? "country" : "countries"}`}
                         </span>
                       </span>
-                      {!q && <ChevronDown aria-hidden size={16} className={`text-foreground/50 transition-transform ${isOpen ? "rotate-180" : ""}`} />}
+                      {!q && <ChevronDown aria-hidden size={16} className={`text-muted transition-transform ${isOpen ? "rotate-180" : ""}`} />}
                     </button>
                   </div>
                   {isOpen && (
@@ -177,7 +178,7 @@ export default function CountryPicker({ name, countries, defaultValue }: { name:
               );
             })}
             {q && continents.every(([, list]) => !list.some(matches)) && (
-              <li className="px-3 py-3 text-sm text-foreground/60">No country matches &ldquo;{query}&rdquo;.</li>
+              <li className="px-3 py-3 text-sm text-muted">No country matches &ldquo;{query}&rdquo;.</li>
             )}
           </ul>
         </div>

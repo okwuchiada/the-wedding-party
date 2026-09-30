@@ -17,14 +17,14 @@ import {
 } from "@/lib/layouts";
 
 const cardClass = (selected: boolean) =>
-  `flex flex-col gap-2 rounded-[6px] bg-white p-3 text-left text-sm transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--m-ink) ${
-    selected ? "ring-2 ring-(--m-ink)" : "ring-1 ring-(--m-mist) hover:ring-(--m-ink)/40"
+  `flex flex-col gap-2 rounded-[6px] bg-surface p-3 text-left text-sm transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+    selected ? "ring-2 ring-ink" : "ring-1 ring-(--m-mist) hover:ring-ink/40"
   }`;
 
 /** Tiny wireframes of each template's shape, so the choice is visual. */
 function TemplateSketch({ template }: { template: TemplateKey }) {
-  const bar = "rounded-[2px] bg-(--m-ink)/15";
-  const accent = "rounded-[2px] bg-(--m-gold)";
+  const bar = "rounded-[2px] bg-ink/15";
+  const accent = "rounded-[2px] bg-action";
   const sketches: Record<TemplateKey, React.ReactNode> = {
     classic: (
       <div className="grid h-full grid-cols-[1fr_0.8fr] gap-1.5 p-2">
@@ -34,8 +34,8 @@ function TemplateSketch({ template }: { template: TemplateKey }) {
           <span className={`${accent} mt-1 h-1.5 w-2/5`} />
         </div>
         <div className="relative">
-          <span className="absolute top-0 left-0 h-7 w-6 -rotate-6 rounded-[2px] border-2 border-white bg-(--m-ink)/20" />
-          <span className="absolute right-0 bottom-0 h-6 w-5 rotate-6 rounded-[2px] border-2 border-white bg-(--m-ink)/25" />
+          <span className="absolute top-0 left-0 h-7 w-6 -rotate-6 rounded-[2px] border-2 border-white bg-ink/20" />
+          <span className="absolute right-0 bottom-0 h-6 w-5 rotate-6 rounded-[2px] border-2 border-white bg-ink/25" />
         </div>
       </div>
     ),
@@ -43,13 +43,13 @@ function TemplateSketch({ template }: { template: TemplateKey }) {
       <div className="flex h-full flex-col gap-1 p-2">
         <span className={`${bar} h-3 w-full`} />
         <span className={`${bar} h-3 w-4/5`} />
-        <span className="mt-1 h-px w-full bg-(--m-ink)/30" />
-        <span className="mt-1 flex-1 rounded-[2px] bg-(--m-ink)/20" />
+        <span className="mt-1 h-px w-full bg-ink/30" />
+        <span className="mt-1 flex-1 rounded-[2px] bg-ink/20" />
       </div>
     ),
     minimal: (
       <div className="flex h-full items-center justify-center p-2">
-        <div className="flex h-full w-3/4 flex-col items-center justify-center gap-1 rounded-[2px] border border-(--m-ink)/30">
+        <div className="flex h-full w-3/4 flex-col items-center justify-center gap-1 rounded-[2px] border border-ink/30">
           <span className={`${bar} h-1.5 w-1/2`} />
           <span className={`${bar} h-1.5 w-2/5`} />
           <span className={`${accent} mt-1 h-1 w-1/4`} />
@@ -59,19 +59,19 @@ function TemplateSketch({ template }: { template: TemplateKey }) {
     owambe: (
       <div className="flex h-full flex-col">
         <div className="flex h-1.5">
-          {["bg-(--m-coral)", "bg-(--m-emerald)", "bg-(--m-gold)", "bg-(--m-ink)"].map((c) => (
+          {["bg-danger", "bg-success", "bg-action", "bg-ink"].map((c) => (
             <span key={c} className={`flex-1 ${c}`} />
           ))}
         </div>
-        <div className="flex flex-1 flex-col justify-center gap-1 bg-(--m-coral) p-2">
-          <span className="h-2 w-4/5 rounded-[2px] bg-white/80" />
-          <span className="h-2 w-3/5 rounded-[2px] bg-white/80" />
-          <span className="mt-1 h-3 w-4 rounded-[2px] bg-white" />
+        <div className="flex flex-1 flex-col justify-center gap-1 bg-danger p-2">
+          <span className="h-2 w-4/5 rounded-[2px] bg-surface/80" />
+          <span className="h-2 w-3/5 rounded-[2px] bg-surface/80" />
+          <span className="mt-1 h-3 w-4 rounded-[2px] bg-surface" />
         </div>
       </div>
     ),
   };
-  return <div className="h-16 overflow-hidden rounded-[4px] bg-(--m-paper)">{sketches[template]}</div>;
+  return <div className="h-16 overflow-hidden rounded-[4px] bg-paper">{sketches[template]}</div>;
 }
 
 export function TemplatePicker({ value, onChange }: { value: TemplateKey; onChange: (v: TemplateKey) => void }) {
@@ -81,7 +81,7 @@ export function TemplatePicker({ value, onChange }: { value: TemplateKey; onChan
         <button key={t.key} type="button" role="radio" aria-checked={t.key === value} onClick={() => onChange(t.key)} className={cardClass(t.key === value)}>
           <TemplateSketch template={t.key} />
           <span className="font-semibold">{t.name}</span>
-          <span className="text-xs leading-snug text-(--m-ink)/60">{t.description}</span>
+          <span className="text-xs leading-snug text-ink/60">{t.description}</span>
         </button>
       ))}
     </div>
@@ -105,7 +105,7 @@ export function HeroPicker({
       {options.map((h) => (
         <button key={h.key ?? "default"} type="button" role="radio" aria-checked={h.key === value} onClick={() => onChange(h.key)} className={cardClass(h.key === value)}>
           <span className="font-semibold">{h.name}</span>
-          <span className="text-xs leading-snug text-(--m-ink)/60">{h.description}</span>
+          <span className="text-xs leading-snug text-ink/60">{h.description}</span>
         </button>
       ))}
     </div>
@@ -114,16 +114,16 @@ export function HeroPicker({
 
 /** Tiny wireframes of each how-we-met style. */
 function StorySketch({ style }: { style: StoryStyle }) {
-  const photo = "rounded-[2px] bg-(--m-ink)/20";
-  const line = "rounded-[2px] bg-(--m-ink)/15";
-  const year = "rounded-[2px] bg-(--m-gold)";
+  const photo = "rounded-[2px] bg-ink/20";
+  const line = "rounded-[2px] bg-ink/15";
+  const year = "rounded-[2px] bg-action";
   const sketches: Record<StoryStyle, React.ReactNode> = {
     timeline: (
       <div className="relative flex h-full flex-col justify-center gap-1.5 px-3">
-        <span className="absolute inset-y-1.5 left-1/2 w-px bg-(--m-ink)/25" />
+        <span className="absolute inset-y-1.5 left-1/2 w-px bg-ink/25" />
         {[false, true].map((flip) => (
           <div key={String(flip)} className={`flex items-center gap-2 ${flip ? "flex-row-reverse" : ""}`}>
-            <span className={`h-5 w-5 border-2 border-white bg-(--m-ink)/20 shadow-sm ${flip ? "rotate-3" : "-rotate-3"}`} />
+            <span className={`h-5 w-5 border-2 border-white bg-ink/20 shadow-sm ${flip ? "rotate-3" : "-rotate-3"}`} />
             <span className="flex flex-1 flex-col gap-0.5">
               <span className={`${year} h-1 w-1/3 ${flip ? "self-end" : ""}`} />
               <span className={`${line} h-1 w-2/3 ${flip ? "self-end" : ""}`} />
@@ -133,7 +133,7 @@ function StorySketch({ style }: { style: StoryStyle }) {
       </div>
     ),
     list: (
-      <div className="flex h-full flex-col justify-center divide-y divide-(--m-ink)/15 px-2">
+      <div className="flex h-full flex-col justify-center divide-y divide-ink/15 px-2">
         {[0, 1, 2].map((i) => (
           <div key={i} className="grid grid-cols-[1fr_2fr_1fr] items-center gap-1.5 py-1">
             <span className={`${year} h-1.5`} />
@@ -146,7 +146,7 @@ function StorySketch({ style }: { style: StoryStyle }) {
     cards: (
       <div className="grid h-full grid-cols-3 gap-1 p-2">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="flex flex-col gap-0.5 bg-white">
+          <div key={i} className="flex flex-col gap-0.5 bg-surface">
             <span className={`${photo} flex-1`} />
             <span className={`${year} h-1 w-2/3`} />
             <span className={`${line} h-1`} />
@@ -158,7 +158,7 @@ function StorySketch({ style }: { style: StoryStyle }) {
       <div className="flex h-full gap-1 overflow-hidden py-2 pl-2">
         {[0, 1, 2, 3].map((i) => (
           <span key={i} className={`${photo} relative w-7 shrink-0`}>
-            <span className="absolute right-1 bottom-1 left-1 h-1 rounded-[1px] bg-white/80" />
+            <span className="absolute right-1 bottom-1 left-1 h-1 rounded-[1px] bg-surface/80" />
           </span>
         ))}
       </div>
@@ -178,7 +178,7 @@ function StorySketch({ style }: { style: StoryStyle }) {
         {[0, 1].map((i) => (
           <span key={i} className="flex w-1/2 flex-col items-center gap-0.5">
             <span className={`${line} h-1 w-1/3`} />
-            <span className="h-1.5 w-3/4 rounded-[2px] bg-(--m-ink)/25" />
+            <span className="h-1.5 w-3/4 rounded-[2px] bg-ink/25" />
             <span className={`${line} h-1 w-full`} />
           </span>
         ))}
@@ -186,7 +186,7 @@ function StorySketch({ style }: { style: StoryStyle }) {
     ),
   };
   return (
-    <div aria-hidden className="h-16 overflow-hidden rounded-[4px] bg-(--m-paper)">
+    <div aria-hidden className="h-16 overflow-hidden rounded-[4px] bg-paper">
       {sketches[style]}
     </div>
   );
@@ -214,7 +214,7 @@ export function StoryStylePicker({
         <button key={o.key ?? "default"} type="button" role="radio" aria-checked={o.key === value} onClick={() => onChange(o.key)} className={cardClass(o.key === value)}>
           <StorySketch style={o.sketch} />
           <span className="font-semibold">{o.name}</span>
-          <span className="text-xs leading-snug text-(--m-ink)/60">{o.description}</span>
+          <span className="text-xs leading-snug text-ink/60">{o.description}</span>
         </button>
       ))}
     </div>
@@ -244,12 +244,12 @@ export function HeroNamesPicker({
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(style.key)}
-            className={`flex min-w-0 flex-1 flex-col gap-0.5 rounded-[6px] bg-white px-3 py-2.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--m-ink) ${
-              selected ? "ring-2 ring-(--m-ink)" : "ring-1 ring-(--m-mist) hover:ring-(--m-ink)/40"
+            className={`flex min-w-0 flex-1 flex-col gap-0.5 rounded-[6px] bg-surface px-3 py-2.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+              selected ? "ring-2 ring-ink" : "ring-1 ring-(--m-mist) hover:ring-ink/40"
             }`}
           >
             <span className="text-sm font-semibold">{style.name}</span>
-            <span className="truncate text-xs text-(--m-ink)/60">
+            <span className="truncate text-xs text-ink/60">
               {a} &amp; {b}
             </span>
           </button>
@@ -299,7 +299,7 @@ export function SectionsEditor({
   const rsvpHidden = value.some((s) => s.id === "rsvp" && !s.visible);
 
   const fixedRow = (label: string, note: string) => (
-    <li className="flex items-center gap-3 rounded-[6px] border border-dashed border-(--m-mist) bg-(--m-paper) px-3 py-2.5 text-sm text-(--m-ink)/60">
+    <li className="flex items-center gap-3 rounded-[6px] border border-dashed border-line bg-paper px-3 py-2.5 text-sm text-ink/60">
       <span className="w-5" aria-hidden />
       <span className="font-medium">{label}</span>
       <span className="text-xs">{note}</span>
@@ -333,15 +333,15 @@ export function SectionsEditor({
                 if (dragging) setAnnouncement(`${info(dragging).name} moved to position ${at + 1} of ${value.length}.`);
               }}
               onDragEnd={() => setDragging(null)}
-              className={`grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 rounded-[6px] border bg-white px-3 py-2.5 ${
-                dragging === s.id ? "border-(--m-ink) opacity-60" : "border-(--m-mist)"
+              className={`grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 rounded-[6px] border bg-surface px-3 py-2.5 ${
+                dragging === s.id ? "border-ink opacity-60" : "border-line"
               }`}
             >
-              <GripVertical aria-hidden size={18} className="cursor-grab text-(--m-ink)/40 active:cursor-grabbing" />
+              <GripVertical aria-hidden size={18} className="cursor-grab text-ink/40 active:cursor-grabbing" />
               <span className={s.visible ? "" : "opacity-50"}>
-                <span className={`block text-sm font-semibold ${s.visible ? "" : "line-through decoration-(--m-ink)/40"}`}>{name}</span>
-                <span className="block text-xs text-(--m-ink)/60">
-                  {s.visible && empty.includes(s.id) ? <span className="text-(--m-coral-deep)">{EMPTY_HINTS[s.id]}</span> : description}
+                <span className={`block text-sm font-semibold ${s.visible ? "" : "line-through decoration-ink/40"}`}>{name}</span>
+                <span className="block text-xs text-ink/60">
+                  {s.visible && empty.includes(s.id) ? <span className="text-danger">{EMPTY_HINTS[s.id]}</span> : description}
                 </span>
               </span>
               <span className="flex gap-1">
@@ -350,7 +350,7 @@ export function SectionsEditor({
                   aria-label={`Move ${name} up`}
                   disabled={i === 0}
                   onClick={() => move(i, i - 1)}
-                  className="grid size-8 place-items-center rounded-full border border-(--m-mist) hover:border-(--m-ink) disabled:opacity-30"
+                  className="grid size-8 place-items-center rounded-full border border-line hover:border-ink disabled:opacity-30"
                 >
                   <ArrowUp aria-hidden size={15} />
                 </button>
@@ -359,7 +359,7 @@ export function SectionsEditor({
                   aria-label={`Move ${name} down`}
                   disabled={i === value.length - 1}
                   onClick={() => move(i, i + 1)}
-                  className="grid size-8 place-items-center rounded-full border border-(--m-mist) hover:border-(--m-ink) disabled:opacity-30"
+                  className="grid size-8 place-items-center rounded-full border border-line hover:border-ink disabled:opacity-30"
                 >
                   <ArrowDown aria-hidden size={15} />
                 </button>
@@ -370,11 +370,11 @@ export function SectionsEditor({
                 aria-checked={s.visible}
                 aria-label={`Show ${name}`}
                 onClick={() => toggle(i)}
-                className={`relative h-6 w-11 rounded-full transition-colors motion-reduce:transition-none ${s.visible ? "bg-(--m-emerald)" : "bg-(--m-mist)"}`}
+                className={`relative h-6 w-11 rounded-full transition-colors motion-reduce:transition-none ${s.visible ? "bg-success" : "bg-line"}`}
               >
                 <span
                   aria-hidden
-                  className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform motion-reduce:transition-none ${s.visible ? "translate-x-5" : ""}`}
+                  className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-surface shadow transition-transform motion-reduce:transition-none ${s.visible ? "translate-x-5" : ""}`}
                 />
               </button>
             </li>
@@ -386,9 +386,9 @@ export function SectionsEditor({
         {announcement}
       </p>
       {rsvpHidden && (
-        <p className="text-sm text-(--m-coral-deep)">RSVP is hidden, so guests can&apos;t reply on the site. You can still add RSVPs yourself.</p>
+        <p className="text-sm text-danger">RSVP is hidden, so guests can&apos;t reply on the site. You can still add RSVPs yourself.</p>
       )}
-      <p className="text-xs text-(--m-ink)/60">Hidden sections keep their content, so you can bring them back any time.</p>
+      <p className="text-xs text-ink/60">Hidden sections keep their content, so you can bring them back any time.</p>
     </div>
   );
 }

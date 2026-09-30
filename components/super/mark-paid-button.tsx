@@ -2,6 +2,8 @@
 
 import { useActionState, useState } from "react";
 import { markPaymentPaid } from "@/lib/actions/super";
+import { buttonClass } from "@/components/ui/button";
+import { inputClass } from "@/components/ui/field";
 
 /**
  * "Mark as paid" for a pending or failed payment whose money staff know arrived
@@ -13,14 +15,14 @@ export default function MarkPaidButton({ reference, amountLabel }: { reference: 
   const [state, formAction, pending] = useActionState(markPaymentPaid.bind(null, reference), undefined);
   const today = new Date().toISOString().slice(0, 10);
 
-  if (state?.message) return <span className="text-[11px] text-olive">{state.message}</span>;
+  if (state?.message) return <span className="text-[13px] text-success">{state.message}</span>;
 
   if (!open) {
     return (
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-full border border-(--m-ink)/25 px-3 py-1 text-xs font-medium hover:border-(--m-ink)"
+        className={buttonClass("secondary", "sm")}
       >
         Mark as paid
       </button>
@@ -28,16 +30,16 @@ export default function MarkPaidButton({ reference, amountLabel }: { reference: 
   }
 
   return (
-    <form action={formAction} className="flex w-64 flex-col gap-2 rounded-[6px] border border-(--m-mist) bg-(--m-paper) p-3 text-left">
-      <p className="text-xs text-foreground/75">
+    <form action={formAction} className="flex w-64 flex-col gap-2 rounded-[6px] border border-line bg-paper p-3 text-left">
+      <p className="text-xs text-muted">
         Only if the money arrived: this gives the wedding its plan as if Paystack confirmed {amountLabel} for{" "}
         <span className="font-mono">{reference}</span>.
       </p>
-      <label className="flex flex-col gap-1 text-[11px] text-foreground/60">
+      <label className="flex flex-col gap-1 text-[13px] text-muted">
         Paid on
-        <input type="date" name="paidOn" defaultValue={today} max={today} className="border border-(--m-mist) bg-white px-2 py-1 text-xs" />
+        <input type="date" name="paidOn" defaultValue={today} max={today} className={`${inputClass} py-1.5 text-[13px]`} />
       </label>
-      <label className="flex flex-col gap-1 text-[11px] text-foreground/60">
+      <label className="flex flex-col gap-1 text-[13px] text-muted">
         How you know
         <textarea
           name="note"
@@ -46,19 +48,19 @@ export default function MarkPaidButton({ reference, amountLabel }: { reference: 
           maxLength={500}
           rows={3}
           placeholder="e.g. Paystack success email, 27 Sept, same reference and amount"
-          className="border border-(--m-mist) bg-white px-2 py-1 text-xs"
+          className={`${inputClass} py-1.5 text-[13px]`}
         />
       </label>
-      {state?.error && <p className="text-[11px] text-burnt-orange">{state.error}</p>}
+      {state?.error && <p className="text-[13px] text-danger">{state.error}</p>}
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-(--m-ink) px-3 py-1 text-xs font-semibold text-(--m-paper) hover:bg-(--m-emerald) disabled:opacity-60"
+          className={buttonClass("inverse", "sm")}
         >
           {pending ? "Saving…" : "Mark as paid"}
         </button>
-        <button type="button" onClick={() => setOpen(false)} className="rounded-full px-3 py-1 text-xs hover:bg-(--m-mist)">
+        <button type="button" onClick={() => setOpen(false)} className={buttonClass("text", "sm")}>
           Cancel
         </button>
       </div>

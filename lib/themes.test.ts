@@ -17,11 +17,11 @@ describe("theme presets", () => {
     });
   }
 
-  it("keeps the original palette as the default", () => {
+  it("uses Blush Rose as the default", () => {
+    expect(DEFAULT_PRESET.key).toBe("blush-rose");
     expect(themeColorVars(DEFAULT_PRESET.colors)).toMatchObject({
-      "--burnt-orange": "#c1440e",
-      "--olive": "#6b7a44",
-      "--ink": "58 46 40",
+      "--burnt-orange": "#a8475c",
+      "--olive": "#8a5d66",
     });
   });
 });
@@ -50,7 +50,7 @@ describe("resolveTheme", () => {
   });
 
   it("falls back to the default preset", () => {
-    expect(resolveTheme(null, true).presetKey).toBe("terracotta-olive");
-    expect(resolveTheme({ ...stored, presetKey: "gone" }, true).presetKey).toBe("terracotta-olive");
+    expect(resolveTheme(null, true).presetKey).toBe(DEFAULT_PRESET.key);
+    expect(resolveTheme({ ...stored, presetKey: "gone" }, true).presetKey).toBe(DEFAULT_PRESET.key);
   });
 });

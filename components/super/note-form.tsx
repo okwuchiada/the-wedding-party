@@ -2,6 +2,8 @@
 
 import { useActionState, useRef } from "react";
 import { addSupportNote } from "@/lib/actions/super";
+import { buttonClass } from "@/components/ui/button";
+import { inputClass } from "@/components/ui/field";
 
 export default function NoteForm({ weddingId }: { weddingId: string }) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -26,17 +28,17 @@ export default function NoteForm({ weddingId }: { weddingId: string }) {
         rows={3}
         maxLength={2000}
         placeholder="What happened, what you did, what's next"
-        className="border border-(--m-mist) bg-white px-3 py-2.5 text-sm"
+        className={inputClass}
       />
       <div className="flex items-center gap-3">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-(--m-gold) px-5 py-2 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
+          className={buttonClass("primary", "md")}
         >
           {pending ? "Saving…" : "Save note"}
         </button>
-        {state?.error && <span className="text-sm text-(--m-coral-deep)">{state.error}</span>}
+        {state?.error && <span className="text-sm text-danger">{state.error}</span>}
       </div>
     </form>
   );
