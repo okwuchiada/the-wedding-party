@@ -1,5 +1,6 @@
 import { Camera, HeartHandshake, Link2, PenLine } from "lucide-react";
 import Link from "next/link";
+import Faq, { LANDING_FAQS } from "@/components/marketing/faq";
 import FeatureShowcase from "@/components/marketing/feature-showcase";
 import Pricing from "@/components/marketing/pricing";
 import ThemeShowcase from "@/components/marketing/theme-showcase";
@@ -28,19 +29,6 @@ const STEPS = [
   },
 ];
 
-const FAQS = [
-  { q: "Do our guests need to sign up?", a: "No. They open your link and use the site straight away." },
-  {
-    q: "How do gifts work? Do you hold our money?",
-    a: "We never touch it. Guests see your account details, send a transfer from their own bank, and tell you what it's for. You mark it received when it arrives, and the registry updates.",
-  },
-  { q: "Is it a subscription?", a: "No. Start on the free plan, and if you want more, upgrade once per wedding. Upgrading later costs only the difference." },
-  {
-    q: "Can we keep it private?",
-    a: "Until you publish, only you can see it. After that, anyone with the link can visit. You can also limit it to certain countries and give an access code to guests abroad.",
-  },
-  { q: "Can my partner help?", a: "Yes. Invite them by email and you can both manage the site, RSVPs and gifts." },
-];
 
 export default function LandingPage() {
   return (
@@ -99,18 +87,8 @@ export default function LandingPage() {
 
       <section className="mx-auto max-w-3xl px-5 pb-24 sm:px-8">
         <h2 className="font-(family-name:--m-display) text-3xl font-bold tracking-tight">Questions couples ask</h2>
-        <div className="mt-6 divide-y divide-(--m-mist) border-y border-(--m-mist)">
-          {FAQS.map((faq) => (
-            <details key={faq.q} className="group py-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-lg font-semibold">
-                {faq.q}
-                <span aria-hidden className="text-2xl leading-none text-(--m-emerald) transition-transform group-open:rotate-45 motion-reduce:transition-none">
-                  +
-                </span>
-              </summary>
-              <p className="mt-3 max-w-prose leading-relaxed text-(--m-ink)/75">{faq.a}</p>
-            </details>
-          ))}
+        <div className="mt-6">
+          <Faq items={LANDING_FAQS} />
         </div>
         <div className="mt-10 flex flex-wrap items-center gap-4">
           <Button asChild size="lg" className="py-3.5">

@@ -12,12 +12,14 @@ import {
   type ImportRsvpRow,
   type ImportRsvpsResult,
 } from "@/lib/actions/rsvp";
+import { guestListCsv } from "@/lib/guest-list-csv";
 import { readRsvpFile, RSVP_TEMPLATE_CSV } from "@/lib/rsvp-import";
 import { Pagination, usePagination } from "./pagination";
 import { useConfirm } from "./use-confirm";
 import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -76,7 +78,7 @@ function RsvpForm({
         <Textarea rows={2} name="message" defaultValue={initialValues?.message ?? ""} className={cn(FIELD, "field-sizing-fixed resize-none")} />
       </Label>
 
-      {state?.error && <p className="text-xs text-burnt-orange sm:col-span-2">{state.error}</p>}
+      {state?.error && <p className="text-xs text-destructive sm:col-span-2">{state.error}</p>}
 
       <div className="flex gap-2 sm:col-span-2">
         <Button type="button" variant="outline" size="sm" onClick={onCancel}>
@@ -128,11 +130,11 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="flex flex-col gap-3 bg-paper p-4">
-      <p className="text-xs text-foreground/60">
+      <p className="text-xs text-ink/60">
         Upload a .csv or .xlsx file with columns <strong>Name</strong>, <strong>Attending</strong>{" "}
         (yes/no), and optionally <strong>Email</strong> and <strong>Message</strong>. Guests already on the list (matched by email, or by name when
         there&apos;s no email) are updated instead of duplicated.{" "}
-        <a href={templateHref} download="rsvp-template.csv" className="text-burnt-orange underline">
+        <a href={templateHref} download="rsvp-template.csv" className="text-destructive underline">
           Download template
         </a>
       </p>
@@ -145,14 +147,14 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
         className={cn(FIELD, FILE_INPUT)}
       />
 
-      {fileError && <p className="text-xs text-burnt-orange">{fileError}</p>}
+      {fileError && <p className="text-xs text-destructive">{fileError}</p>}
 
       {rows && (
         <div>
-          <p className="mb-2 text-xs text-foreground/70">
+          <p className="mb-2 text-xs text-ink/70">
             {rows.length} {rows.length === 1 ? "guest" : "guests"} found. Preview:
           </p>
-          <div className="max-h-60 overflow-auto border border-(--m-mist) rounded-[6px] bg-white">
+          <div className="max-h-60 overflow-auto border border-border rounded-[6px] bg-white">
             <Table className="text-xs">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -180,7 +182,7 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
       )}
 
       {result?.error && (
-        <div className="text-xs text-burnt-orange">
+        <div className="text-xs text-destructive">
           <p>{result.error}</p>
           {result.rowErrors && (
             <ul className="mt-1 list-disc pl-5">
@@ -195,7 +197,7 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
         </div>
       )}
       {result && !result.error && (
-        <p className="text-xs text-olive">
+        <p className="text-xs text-emerald">
           Imported: {result.created} added, {result.updated} updated.
         </p>
       )}
@@ -217,33 +219,10 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
   );
 }
 
-function csvCell(value: string) {
-  // Guest-entered text could start with a formula character; prefix it so
-  // Excel/Sheets treat it as text instead of executing it.
-  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
-  return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
-}
-
 // Attending guests only, alphabetical, with a blank column to tick at the door.
 function exportGuestList(rsvps: RsvpView[]) {
-  const guests = rsvps
-    .filter((r) => r.attending)
-    .sort((a, b) => a.guestName.localeCompare(b.guestName));
-
-  const lines = [
-    ["#", "Name", "Email", "Message", "RSVP date", "Checked in"],
-    ...guests.map((r, i) => [
-      String(i + 1),
-      r.guestName,
-      r.email,
-      r.message ?? "",
-      r.dateSubmitted,
-      "",
-    ]),
-  ].map((row) => row.map(csvCell).join(","));
-
   // BOM so Excel reads names with accents correctly.
-  const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const blob = new Blob(["﻿" + guestListCsv(rsvps)], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -252,7 +231,7 @@ function exportGuestList(rsvps: RsvpView[]) {
   URL.revokeObjectURL(url);
 }
 
-export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
+export default function RsvpTab({ rsvps, capacity }: { rsvps: RsvpView[]; capacity: number }) {
   const attendingGuests = rsvps
     .filter((r) => r.attending)
     .reduce((sum, r) => sum + r.guestCount, 0);
@@ -290,20 +269,20 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
   return (
     <div>
       <div className="mb-8 grid grid-cols-2 gap-4 sm:max-w-md">
-        <div className="rounded-[6px] bg-white p-4 border border-(--m-mist)">
-          <p className="text-xs text-foreground/55">Attending</p>
-          <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">
-            {attendingGuests} <span className="text-base text-foreground/40">/ 100</span>
+        <Card className="gap-0 rounded-md p-4 shadow-none">
+          <p className="text-xs text-muted-foreground">Attending</p>
+          <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">
+            {attendingGuests} <span className="text-base text-muted-foreground">/ {capacity}</span>
           </p>
-        </div>
-        <div className="rounded-[6px] bg-white p-4 border border-(--m-mist)">
-          <p className="text-xs text-foreground/55">Declined</p>
-          <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">{declinedCount}</p>
-        </div>
+        </Card>
+        <Card className="gap-0 rounded-md p-4 shadow-none">
+          <p className="text-xs text-muted-foreground">Declined</p>
+          <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">{declinedCount}</p>
+        </Card>
       </div>
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">RSVPs</h2>
+        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">RSVPs</h2>
         {!panel && (
           <div className="flex gap-2">
             <Button
@@ -332,11 +311,11 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
         </div>
       )}
 
-      {deleteError && <p className="mb-3 text-xs text-burnt-orange">{deleteError}</p>}
-      {sendError && <p className="mb-3 text-xs text-burnt-orange">{sendError}</p>}
+      {deleteError && <p className="mb-3 text-xs text-destructive">{deleteError}</p>}
+      {sendError && <p className="mb-3 text-xs text-destructive">{sendError}</p>}
 
       {rsvps.length === 0 ? (
-        <p className="text-sm text-foreground/60">No responses yet.</p>
+        <p className="text-sm text-ink/60">No responses yet.</p>
       ) : (
         <>
         <div className="overflow-hidden rounded-md border border-mist bg-white">
@@ -361,7 +340,7 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
                         action={updateRsvpAdmin.bind(null, weddingId)}
                         initialValues={r}
                         onCancel={() => setEditingId(null)}
-                        submitLabel="Save Changes"
+                        submitLabel="Save changes"
                       />
                     </TableCell>
                   </TableRow>
@@ -369,11 +348,11 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
                   <TableRow key={r.id}>
                     <TableCell className="px-4 py-3 text-ink">
                       {r.guestName}
-                      {r.email && <span className="block text-xs text-foreground/50">{r.email}</span>}
+                      {r.email && <span className="block text-xs text-ink/50">{r.email}</span>}
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       <span
-                        className={`text-xs font-medium ${r.attending ? "text-olive" : "text-burnt-orange"}`}
+                        className={`text-xs font-medium ${r.attending ? "text-emerald" : "text-destructive"}`}
                       >
                         {r.attending ? "Yes" : "No"}
                       </span>
@@ -383,9 +362,9 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
                     <TableCell className="px-4 py-3 text-ink/70">{r.dateSubmitted}</TableCell>
                     <TableCell className="px-4 py-3">
                       {r.confirmationSentAt ? (
-                        <span className="text-xs text-olive">Sent {r.confirmationSentAt}</span>
+                        <span className="text-xs text-emerald">Sent {r.confirmationSentAt}</span>
                       ) : !r.email ? (
-                        <span className="text-xs text-foreground/50">No email</span>
+                        <span className="text-xs text-ink/50">No email</span>
                       ) : (
                         <Button
                           type="button"

@@ -50,12 +50,15 @@ function StrengthMeter({ password, id }: { password: string; id: string }) {
 export default function PasswordField({
   label,
   hint,
+  error,
   showStrength = false,
   onChange,
   ...input
 }: {
   label: string;
   hint?: string;
+  /** A problem with what's been typed, shown under the field. */
+  error?: string;
   /** Show the strength meter and requirement checklist (for creating a password). */
   showStrength?: boolean;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">) {
@@ -64,6 +67,7 @@ export default function PasswordField({
   const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;
   const strengthId = showStrength ? `${id}-strength` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -75,7 +79,8 @@ export default function PasswordField({
           // Held in state so React's post-submit form reset can't clear it.
           value={value}
           type={visible ? "text" : "password"}
-          aria-describedby={[hintId, strengthId].filter(Boolean).join(" ") || undefined}
+          aria-describedby={[errorId, hintId, strengthId].filter(Boolean).join(" ") || undefined}
+          aria-invalid={error ? true : undefined}
           onChange={(e) => {
             setValue(e.target.value);
             onChange?.(e);
@@ -99,6 +104,11 @@ export default function PasswordField({
       {hint && (
         <span id={hintId} className="text-xs text-ink/55">
           {hint}
+        </span>
+      )}
+      {error && (
+        <span id={errorId} className="text-[13px] font-normal text-(--m-coral-deep)">
+          {error}
         </span>
       )}
       {showStrength && <StrengthMeter password={value} id={strengthId!} />}

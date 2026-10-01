@@ -3,12 +3,18 @@
 import { useActionState } from "react";
 import { startCheckout } from "@/lib/actions/billing";
 import PlanCard, { type PlanCardPlan } from "@/components/marketing/plan-card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatMoney } from "@/lib/money";
-import { cn } from "@/lib/utils";
 import { useAdminWeddingId } from "./wedding-context";
+import { StatusBadge } from "@/components/super/status-badge";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
+import { Notice } from "@/components/ui/notice";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { shortDate } from "@/lib/format-date";
+import type { PaymentStatus } from "@/lib/generated/prisma/client";
 
 export type BillingView = {
   currentPlan: {
@@ -41,31 +47,40 @@ function closingNote(closesAt: string | null) {
 export default function BillingTab({ billing }: { billing: BillingView }) {
   const weddingId = useAdminWeddingId();
   const [state, formAction, pending] = useActionState(startCheckout.bind(null, weddingId), undefined);
+  const currentHighlights = billing.plans.find((p) => p.current)?.highlights.slice(0, 3) ?? [];
 
   return (
     <div className="flex flex-col gap-8">
-      <section>
-        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">Your plan</h2>
-        <p className="mt-1 text-sm text-ink/70">
+      <Card className={cn("block gap-0 rounded-md p-5 shadow-none", billing.currentPlan && !billing.currentPlan.free && "border-gold")}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-(family-name:--m-display) text-2xl font-bold tracking-tight text-ink">
+            {billing.currentPlan ? billing.currentPlan.name : "Free draft"}
+          </h2>
+          <Badge className="bg-emerald/12 px-2.5 py-1 text-[13px] font-semibold text-emerald">
+            {billing.currentPlan?.comped ? "Complimentary" : "Current plan"}
+          </Badge>
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground">
           {!billing.currentPlan
-            ? "You're on a free draft. Choose a plan to publish your site for guests."
+            ? "Choose a plan to publish your site for guests."
             : billing.currentPlan.free
-              ? `You're on ${billing.currentPlan.name}. Upgrade any time; you only pay once per wedding.`
-              : `${billing.currentPlan.name}${billing.currentPlan.comped ? " (complimentary)" : ""}, a one-time payment for this wedding.`}
+              ? "Upgrade any time; you only pay once per wedding."
+              : "A one-time payment for this wedding."}{" "}
+          {billing.currentPlan && closingNote(billing.currentPlan.closesAt)}
         </p>
-        {billing.currentPlan && <p className="mt-1 text-sm text-ink/70">{closingNote(billing.currentPlan.closesAt)}</p>}
-      </section>
+        {currentHighlights.length > 0 && (
+          <ul className="mt-3 flex flex-wrap gap-2" aria-label="Included in your plan">
+            {currentHighlights.map((h) => (
+              <li key={h} className="rounded-full bg-accent px-2.5 py-1 text-[13px] text-ink">
+                {h}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
-      {!billing.paymentsEnabled && (
-        <Alert className="border-transparent bg-accent text-ink/70">
-          <AlertDescription className="text-xs text-ink/70">Online payments aren&apos;t switched on yet.</AlertDescription>
-        </Alert>
-      )}
-      {state?.error && (
-        <Alert variant="destructive">
-          <AlertDescription className="text-xs">{state.error}</AlertDescription>
-        </Alert>
-      )}
+      {!billing.paymentsEnabled && <Notice tone="info">Online payments aren&apos;t switched on yet.</Notice>}
+      {state?.error && <Notice tone="error">{state.error}</Notice>}
 
       <div className="grid grid-cols-1 gap-5 pt-3 md:grid-cols-2 xl:grid-cols-3">
         {billing.plans.map((plan) => (
@@ -87,7 +102,8 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
                     type="submit"
                     variant={plan.popular ? "default" : "ink"}
                     disabled={pending || !billing.paymentsEnabled}
-                    className={cn("w-full px-4 py-3 disabled:opacity-50", plan.popular && "hover:bg-paper hover:text-ink")}
+                    // The popular plan sits on an ink card, so its gold button lightens on hover instead.
+                    className={cn("w-full py-3", plan.popular && "hover:bg-paper hover:text-ink")}
                   >
                     {pending
                       ? "Redirecting…"
@@ -104,24 +120,26 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
 
       {billing.payments.length > 0 && (
         <section>
-          <h2 className="mb-3 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">Payments</h2>
-          <div className="overflow-hidden rounded-md bg-white">
-            <Table>
+          <SectionHeading title="Payments" />
+          <div className="overflow-hidden rounded-md border bg-card">
+            <Table className="min-w-0">
               <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="px-4">Date</TableHead>
-                  <TableHead className="px-4">Plan</TableHead>
-                  <TableHead className="px-4">Amount</TableHead>
-                  <TableHead className="px-4">Status</TableHead>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {billing.payments.map((p) => (
                   <TableRow key={p.reference}>
-                    <TableCell className="px-4 text-ink/70">{p.date}</TableCell>
-                    <TableCell className="px-4">{p.planName}</TableCell>
-                    <TableCell className="px-4">{formatMoney(p.amountKobo, NAIRA)}</TableCell>
-                    <TableCell className="px-4 text-ink/70">{p.status.toLowerCase()}</TableCell>
+                    <TableCell className="text-muted-foreground">{shortDate(p.date)}</TableCell>
+                    <TableCell>{p.planName}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoney(p.amountKobo, NAIRA)}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={p.status as PaymentStatus} />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

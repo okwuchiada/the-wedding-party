@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { savePlan } from "@/lib/actions/super";
 import { ResultText } from "@/components/result-text";
 import { FEATURE_LABELS, UNLIMITED_GUESTS, type PlanFeature } from "@/lib/plans";
+import { MoneyInput } from "@/components/ui/money-input";
 
 export type PlanView = {
   id: string;
@@ -121,8 +122,10 @@ export default function PlanForm({
             <Input name="name" defaultValue={plan?.name} required className={field} />
           </Label>
           <Label className={label}>
-            Price (₦)
-            <Input name="priceNaira" type="number" min={0} step="0.01" defaultValue={plan ? plan.priceKobo / 100 : ""} required className={field} />
+            <span>
+              Price <span className="sr-only">in naira</span>
+            </span>
+            <MoneyInput symbol="₦" name="priceNaira" min={0} step="0.01" defaultValue={plan ? plan.priceKobo / 100 : ""} required className="h-8" />
           </Label>
           <Label className={label}>
             Key

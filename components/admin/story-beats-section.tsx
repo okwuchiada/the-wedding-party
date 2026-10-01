@@ -6,6 +6,7 @@ import {
   addStoryBeat,
   createStoryBeatUploadUrl,
   deleteStoryBeat,
+  moveStoryBeat,
   updateStoryBeat,
   type StoryBeatFormState,
 } from "@/lib/actions/story-beats";
@@ -15,12 +16,15 @@ import { useConfirm } from "./use-confirm";
 import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Notice } from "@/components/ui/notice";
+import { SectionHeading } from "@/components/ui/section-heading";
+import MoveButtons from "./move-buttons";
+import { FIELD, FILE_INPUT, TEXT_ACTION } from "@/components/admin/form-styles";
 import { cn } from "@/lib/utils";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FIELD, FIELD_LABEL, FILE_INPUT, TEXT_ACTION } from "./form-styles";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 export type StoryBeatView = {
   id: string;
@@ -92,50 +96,47 @@ function BeatForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 bg-ivory p-4 sm:grid-cols-2">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 bg-accent p-4 sm:grid-cols-2">
       {initialValues?.id && <input type="hidden" name="id" defaultValue={initialValues.id} />}
       {initialValues?.photoUrl && (
         <input type="hidden" name="existingPhotoUrl" defaultValue={initialValues.photoUrl} />
       )}
 
-      <Label className={FIELD_LABEL}>
+      <Label className="flex-col items-stretch gap-1.5">
         Label (e.g. &ldquo;The Drawing&rdquo;)
         <Input
           name="year"
           defaultValue={initialValues?.year}
-          className={FIELD}
         />
       </Label>
-      <Label className={FIELD_LABEL}>
+      <Label className="flex-col items-stretch gap-1.5">
         Order
         <Input
           name="order"
           type="number"
           defaultValue={initialValues?.order ?? 0}
-          className={FIELD}
         />
       </Label>
 
-      <Label className={cn(FIELD_LABEL, "sm:col-span-2")}>
+      <Label className="flex-col items-stretch gap-1.5 sm:col-span-2">
         Title
         <Input
           name="title"
           defaultValue={initialValues?.title}
-          className={FIELD}
         />
       </Label>
 
-      <Label className={cn(FIELD_LABEL, "sm:col-span-2")}>
+      <Label className="flex-col items-stretch gap-1.5 sm:col-span-2">
         Story text
         <Textarea
           name="text"
           rows={3}
           defaultValue={initialValues?.text}
-          className={cn(FIELD, "field-sizing-fixed resize-none")}
+          className="resize-none"
         />
       </Label>
 
-      <Label className={cn(FIELD_LABEL, "sm:col-span-2")}>
+      <Label className="flex-col items-stretch gap-1.5 sm:col-span-2">
         Photo (optional)
         <Input
           name="file"
@@ -144,7 +145,7 @@ function BeatForm({
           className={cn(FIELD, FILE_INPUT)}
         />
         {initialValues?.photoUrl && (
-          <span className="mt-1 flex items-center gap-2 text-[11px] text-foreground/50">
+          <span className="mt-1 flex items-center gap-2 text-[13px] text-muted-foreground">
             <Image
               src={initialValues.photoUrl}
               alt=""
@@ -158,14 +159,23 @@ function BeatForm({
       </Label>
 
       {(uploadError || state?.error) && (
-        <p className="text-xs text-burnt-orange sm:col-span-2">{uploadError || state?.error}</p>
+        <p className="text-[13px] text-destructive sm:col-span-2">{uploadError || state?.error}</p>
       )}
 
       <div className="flex gap-2 sm:col-span-2">
-        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
+        <Button
+          type="button"
+          onClick={onCancel}
+          variant="outline"
+          size="sm"
+        >
           Cancel
         </Button>
-        <Button type="submit" size="sm" disabled={pending || uploading}>
+        <Button
+          type="submit"
+          disabled={pending || uploading}
+          size="sm"
+        >
           {uploading ? "Uploading…" : pending ? "Saving…" : submitLabel}
         </Button>
       </div>
@@ -183,7 +193,7 @@ export default function StoryBeatsSection({ beats }: { beats: StoryBeatView[] })
 
   const handleDelete = async (id: string) => {
     const ok = await confirm({
-      title: "Delete this beat?",
+      title: "Remove this moment?",
       description: "This can't be undone.",
     });
     if (!ok) return;
@@ -192,104 +202,86 @@ export default function StoryBeatsSection({ beats }: { beats: StoryBeatView[] })
       try {
         await deleteStoryBeat(weddingId, id);
       } catch {
-        setDeleteError("Couldn't delete that beat.");
+        setDeleteError("Couldn't remove that moment.");
       }
     });
   };
 
+  const move = (id: string, direction: "up" | "down") => run(id, direction, () => moveStoryBeat(weddingId, id, direction));
+
   return (
-    <div className="mt-10">
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">
-          How We Met Timeline
-        </h2>
-        {!adding && (
-          <Button type="button" size="sm" onClick={() => setAdding(true)}>
-            Add Beat
-          </Button>
-        )}
-      </div>
-      <p className="mb-4 max-w-2xl text-sm text-foreground/60">
-        These appear as the alternating timeline on the public &ldquo;How We
-        Met&rdquo; section, in order. Photos are optional — beats without one
-        show a placeholder.
-      </p>
+    <section className="mt-12">
+      <SectionHeading
+        title="How we met: moments"
+        description="These show as the timeline in your How we met section, in this order. Photos are optional."
+        action={
+          !adding && (
+            <Button size="sm" onClick={() => setAdding(true)}>
+              Add a moment
+            </Button>
+          )
+        }
+      />
 
       {adding && (
         <div className="mb-5">
-          <BeatForm action={addStoryBeat.bind(null, weddingId)} onCancel={() => setAdding(false)} submitLabel="Add Beat" />
+          <BeatForm action={addStoryBeat.bind(null, weddingId)} onCancel={() => setAdding(false)} submitLabel="Add moment" />
         </div>
       )}
 
-      {deleteError && <p className="mb-3 text-xs text-burnt-orange">{deleteError}</p>}
+      {deleteError && (
+        <div className="mb-3">
+          <Notice tone="error">{deleteError}</Notice>
+        </div>
+      )}
 
-      <div className="overflow-hidden rounded-md border border-mist bg-white">
-        <Table className="min-w-150">
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="px-4 py-3 text-ink/50">Order</TableHead>
-              <TableHead className="px-4 py-3 text-ink/50">Label</TableHead>
-              <TableHead className="px-4 py-3 text-ink/50">Title</TableHead>
-              <TableHead className="px-4 py-3 text-ink/50">Photo</TableHead>
-              <TableHead className="px-4 py-3 text-ink/50">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {beats.map((beat) =>
-              editingId === beat.id ? (
-                <TableRow key={beat.id}>
-                  <TableCell colSpan={5} className="p-0">
-                    <BeatForm
-                      action={updateStoryBeat.bind(null, weddingId)}
-                      initialValues={beat}
-                      onCancel={() => setEditingId(null)}
-                      submitLabel="Save Changes"
-                    />
-                  </TableCell>
-                </TableRow>
-              ) : (
-                <TableRow key={beat.id}>
-                  <TableCell className="px-4 py-3 text-ink/70">{beat.order}</TableCell>
-                  <TableCell className="px-4 py-3 text-ink/70">{beat.year}</TableCell>
-                  <TableCell className="px-4 py-3 text-ink">{beat.title}</TableCell>
-                  <TableCell className="px-4 py-3">
-                    {beat.photoUrl ? (
-                      <span className="bg-olive/10 px-2 py-1 text-xs text-olive">
-                        Yes
-                      </span>
-                    ) : (
-                      <span className="text-foreground/40">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="px-4 py-3">
-                    <Button
-                      type="button"
-                      variant="link"
-                      size="xs"
-                      disabled={isPending(beat.id)}
-                      onClick={() => setEditingId(beat.id)}
-                      className={cn(TEXT_ACTION, "mr-3")}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="link"
-                      size="xs"
-                      disabled={isPending(beat.id)}
-                      onClick={() => handleDelete(beat.id)}
-                      className={TEXT_ACTION}
-                    >
-                      {isPending(beat.id, "delete") ? "Deleting…" : "Delete"}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              )
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {beats.length === 0 && !adding ? (
+        <EmptyState title="No moments yet" body="Add a few moments, like where you met or the proposal, to tell your story in order." />
+      ) : (
+        <ol className="flex flex-col gap-3">
+          {beats.map((beat, index) =>
+            editingId === beat.id ? (
+              <li key={beat.id}>
+                <BeatForm
+                  action={updateStoryBeat.bind(null, weddingId)}
+                  initialValues={beat}
+                  onCancel={() => setEditingId(null)}
+                  submitLabel="Save changes"
+                />
+              </li>
+            ) : (
+              <li key={beat.id} className="flex items-center gap-4 rounded-[8px] border border-border bg-card p-3">
+                {beat.photoUrl ? (
+                  <Image src={beat.photoUrl} alt="" width={56} height={56} className="size-14 shrink-0 rounded-[6px] object-cover" />
+                ) : (
+                  <span className="size-14 shrink-0 rounded-[6px] bg-accent" aria-hidden />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold text-muted-foreground">{beat.year}</p>
+                  <p className="font-semibold text-ink">{beat.title}</p>
+                  {beat.text && <p className="truncate text-[13px] text-muted-foreground">{beat.text}</p>}
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <MoveButtons
+                    name={beat.title}
+                    first={index === 0}
+                    last={index === beats.length - 1}
+                    disabled={isPending(beat.id)}
+                    onMove={(direction) => move(beat.id, direction)}
+                  />
+                  <Button size="xs" variant="link" className={cn(TEXT_ACTION, "ml-2")} disabled={isPending(beat.id)} onClick={() => setEditingId(beat.id)}>
+                    Edit
+                  </Button>
+                  <Button size="xs" variant="link" className={cn(TEXT_ACTION, "ml-3")} disabled={isPending(beat.id)} onClick={() => handleDelete(beat.id)}>
+                    {isPending(beat.id, "delete") ? "Removing…" : "Remove"}
+                  </Button>
+                </div>
+              </li>
+            )
+          )}
+        </ol>
+      )}
       {confirmDialog}
-    </div>
+    </section>
   );
 }

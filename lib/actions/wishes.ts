@@ -54,3 +54,10 @@ export async function hideWish(weddingId: string, id: string) {
   await db.wish.update({ where: { id, weddingId: wedding.id }, data: { status: "HIDDEN" } });
   revalidateWedding(wedding);
 }
+
+/** Moves a wish to any status; used to undo an approve, hide or restore. */
+export async function setWishStatus(weddingId: string, id: string, status: "PENDING" | "APPROVED" | "HIDDEN") {
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "setWishStatus");
+  await db.wish.update({ where: { id, weddingId: wedding.id }, data: { status } });
+  revalidateWedding(wedding);
+}

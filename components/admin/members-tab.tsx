@@ -9,6 +9,7 @@ import { inviteMember, removeMember } from "@/lib/actions/members";
 import { useActionPending } from "./use-action-pending";
 import { useConfirm } from "./use-confirm";
 import { useAdminWeddingId } from "./wedding-context";
+import { useSuccessToast } from "@/components/ui/toast";
 
 export type MemberView = {
   id: string;
@@ -24,6 +25,7 @@ const ROLE_LABELS = { OWNER: "Owner", EDITOR: "Editor" } as const;
 function InviteForm() {
   const weddingId = useAdminWeddingId();
   const [state, formAction, pending] = useActionState(inviteMember.bind(null, weddingId), undefined);
+  useSuccessToast(state, "Invite sent");
 
   return (
     <form action={formAction} className="grid grid-cols-1 gap-3 rounded-md bg-white p-4 sm:grid-cols-[1fr_auto_auto]">
@@ -40,7 +42,7 @@ function InviteForm() {
       <Button type="submit" size="sm" disabled={pending}>
         {pending ? "Inviting…" : "Invite"}
       </Button>
-      <ResultText error={state?.error} message={state?.message} className="sm:col-span-3" />
+      <ResultText error={state?.error} className="sm:col-span-3" />
     </form>
   );
 }

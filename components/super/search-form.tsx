@@ -78,15 +78,19 @@ export function FilterSelect({
   name,
   defaultValue = "",
   allLabel,
+  label,
   options,
 }: {
   name: string;
   defaultValue?: string;
-  allLabel: string;
+  /** The "no filter" choice, like "All statuses". Leave out for a menu that always has a value, like sorting. */
+  allLabel?: string;
+  /** What the menu is for, read out by screen readers; defaults to allLabel. */
+  label?: string;
   options: { value: string; label: string }[];
 }) {
   const submit = useContext(SubmitContext);
-  const [value, setValue] = useState(defaultValue || ALL);
+  const [value, setValue] = useState(defaultValue || (allLabel ? ALL : options[0]?.value ?? ALL));
   const real = value === ALL ? "" : value;
 
   return (
@@ -99,11 +103,11 @@ export function FilterSelect({
           submit({ [name]: next === ALL ? "" : next });
         }}
       >
-        <SelectTrigger aria-label={allLabel} className="h-auto py-2 data-[size=default]:h-auto">
+        <SelectTrigger aria-label={label ?? allLabel} className="h-auto py-2 data-[size=default]:h-auto">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={ALL}>{allLabel}</SelectItem>
+          {allLabel && <SelectItem value={ALL}>{allLabel}</SelectItem>}
           {options.map((o) => (
             <SelectItem key={o.value} value={o.value}>
               {o.label}

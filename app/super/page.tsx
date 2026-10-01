@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Pagination } from "@/components/super/pagination";
+import { StatusBadge } from "@/components/super/status-badge";
 import { date, Table } from "@/components/super/table";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { requirePermission } from "@/lib/dal";
@@ -68,9 +69,9 @@ export default async function SuperOverviewPage({
     <div className="flex flex-col gap-10">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-md bg-white p-4">
-            <p className="text-xs text-foreground/55">{s.label}</p>
-            <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">{s.value}</p>
+          <div key={s.label} className="rounded-md bg-card p-4">
+            <p className="text-xs text-muted-foreground">{s.label}</p>
+            <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">{s.value}</p>
           </div>
         ))}
       </div>
@@ -81,14 +82,16 @@ export default async function SuperOverviewPage({
           {recentWeddings.map((w) => (
             <TableRow key={w.id}>
               <TableCell className="py-2.5">
-                <Link href={`/super/weddings?q=${w.slug}`} className="hover:text-burnt-orange">
+                <Link href={`/super/weddings?q=${w.slug}`} className="hover:text-ink hover:underline">
                   {coupleTitle(w.story, resolveLayout(w.theme).heroNames) ?? "—"}
                 </Link>
               </TableCell>
-              <TableCell className="py-2.5 text-foreground/70">/w/{w.slug}</TableCell>
-              <TableCell className="py-2.5 text-foreground/70">{w.status.toLowerCase()}</TableCell>
-              <TableCell className="py-2.5 text-foreground/70">{w.plan?.name ?? "—"}</TableCell>
-              <TableCell className="py-2.5 text-foreground/70">{date(w.createdAt)}</TableCell>
+              <TableCell className="py-2.5 text-muted-foreground">/w/{w.slug}</TableCell>
+              <TableCell className="py-2.5">
+                <StatusBadge status={w.status} />
+              </TableCell>
+              <TableCell className="py-2.5 text-muted-foreground">{w.plan?.name ?? "—"}</TableCell>
+              <TableCell className="py-2.5 text-muted-foreground">{date(w.createdAt)}</TableCell>
             </TableRow>
           ))}
         </Table>
@@ -100,10 +103,10 @@ export default async function SuperOverviewPage({
         <Table head={["When", "Who", "Action", "Wedding"]}>
           {recentAudit.map((a) => (
             <TableRow key={a.id}>
-              <TableCell className="py-2.5 whitespace-nowrap text-foreground/70">{a.createdAt.toISOString().slice(0, 16).replace("T", " ")}</TableCell>
-              <TableCell className="py-2.5 text-foreground/70">{a.actor?.email ?? "system"}</TableCell>
+              <TableCell className="py-2.5 whitespace-nowrap text-muted-foreground">{a.createdAt.toISOString().slice(0, 16).replace("T", " ")}</TableCell>
+              <TableCell className="py-2.5 text-muted-foreground">{a.actor?.email ?? "system"}</TableCell>
               <TableCell className="py-2.5">{a.action}</TableCell>
-              <TableCell className="py-2.5 text-foreground/70">{a.wedding ? `/w/${a.wedding.slug}` : "—"}</TableCell>
+              <TableCell className="py-2.5 text-muted-foreground">{a.wedding ? `/w/${a.wedding.slug}` : "—"}</TableCell>
             </TableRow>
           ))}
         </Table>

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { DASHBOARD_TABS, dashboardTabHref, type TabId } from "@/lib/dashboard-tabs";
 import LiveRefresh from "@/components/live-refresh";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSyncedState } from "./use-synced-state";
 import type {
+  MediaView,
+  WishView,
   ApprovedMediaView,
   ApprovedWishView,
   BankDetailsView,
@@ -35,15 +35,17 @@ import type { ResolvedLayout } from "@/lib/layouts";
 import type { ResolvedTheme } from "@/lib/themes";
 import { AdminWeddingProvider } from "./wedding-context";
 import { formatMoney, type MoneyFormat } from "@/lib/money";
-import { confirmContribution } from "@/lib/actions/contributions";
-import { approveWish, hideWish } from "@/lib/actions/wishes";
-import { approveMedia, deleteMedia, hideMedia } from "@/lib/actions/media";
+import { confirmContribution, unconfirmContribution } from "@/lib/actions/contributions";
+import { setWishStatus } from "@/lib/actions/wishes";
+import { deleteMedia, setMediaStatusMany } from "@/lib/actions/media";
+import { useToast } from "@/components/ui/toast";
+import { reviewMessage, type ReviewStatus } from "./review";
 import { setGalleryEnabled } from "@/lib/actions/story";
+import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
-const tabs = ["Registry", "Contributions", "Media", "Wishes", "RSVPs", "Our Story", "Design", "Wording", "People", "Settings", "Billing"] as const;
-type Tab = (typeof tabs)[number];
-const OWNER_TABS: readonly Tab[] = ["Settings", "Billing"];
 
 export default function AdminHome({
   weddingId,
@@ -70,6 +72,8 @@ export default function AdminHome({
   approvedMedia: initialApprovedMedia,
   hiddenMedia: initialHiddenMedia,
   rsvps,
+  capacity,
+  initialTab,
   bankDetails,
 }: {
   weddingId: string;
@@ -90,7 +94,7 @@ export default function AdminHome({
     planName: string | null;
     isDraft: boolean;
   };
-  copy: CopyView & { canCustomCredit: boolean; brandingRemoved: boolean };
+  copy: CopyView & { canCustomCredit: boolean; brandingRemoved: boolean; brandingPlan: string | null; creditPlan: string | null };
   settings: SettingsView;
   billing: BillingView;
   registryItems: RegistryItemWithContributions[];
@@ -106,9 +110,21 @@ export default function AdminHome({
   approvedMedia: ApprovedMediaView[];
   hiddenMedia: HiddenMediaView[];
   rsvps: RsvpView[];
+  /** Most guests who can attend, after the plan's cap. */
+  capacity: number;
+  /** The tab named in the URL (?tab=), already checked against the viewer's access. */
+  initialTab: TabId;
   bankDetails: BankDetailsView;
 }) {
-  const [activeTab, setActiveTab] = useState<Tab>("Registry");
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+  const visibleTabs = DASHBOARD_TABS.filter((t) => isOwner || !("ownerOnly" in t && t.ownerOnly));
+
+  // Keep the open tab in the URL without a navigation, so a reload or a shared link opens it.
+  const selectTab = (id: TabId) => {
+    setActiveTab(id);
+    window.history.replaceState(null, "", dashboardTabHref(weddingId, id));
+  };
+
 
   const [pendingContributions, setPendingContributions] = useSyncedState(initialPendingContributions);
   const [confirmedContributions, setConfirmedContributions] = useSyncedState(initialConfirmedContributions);
@@ -129,99 +145,86 @@ export default function AdminHome({
     setGalleryEnabledState(next);
   };
 
+  const toast = useToast();
+
   const handleConfirmContribution = async (contribution: PendingContributionView) => {
-    await confirmContribution(weddingId, contribution.id);
+    if (!(await attempt(() => confirmContribution(weddingId, contribution.id)))) return;
+    const confirmed: ConfirmedContributionView = { ...contribution, dateConfirmed: new Date().toISOString().slice(0, 10) };
     setPendingContributions((prev) => prev.filter((c) => c.id !== contribution.id));
-    setConfirmedContributions((prev) => [
-      {
-        id: contribution.id,
-        guestName: contribution.guestName,
-        itemName: contribution.itemName,
-        amountCents: contribution.amountCents,
-        dateConfirmed: new Date().toISOString().slice(0, 10),
+    setConfirmedContributions((prev) => [confirmed, ...prev]);
+    toast({
+      message: `${formatMoney(contribution.amountCents, money)} from ${contribution.guestName} confirmed`,
+      undo: async () => {
+        await unconfirmContribution(weddingId, contribution.id);
+        setConfirmedContributions((prev) => prev.filter((c) => c.id !== contribution.id));
+        setPendingContributions((prev) => [contribution, ...prev]);
       },
-      ...prev,
-    ]);
+    });
   };
 
-  const handleApproveMedia = async (media: PendingMediaView) => {
-    await approveMedia(weddingId, media.id);
-    setPendingMedia((prev) => prev.filter((m) => m.id !== media.id));
-    setApprovedMedia((prev) => [
-      {
-        id: media.id,
-        guestName: media.guestName,
-        url: media.url,
-        type: media.type,
-        dateUploaded: media.dateUploaded,
+  const wishLists: Record<ReviewStatus, [WishView[], (fn: (prev: WishView[]) => WishView[]) => void]> = {
+    PENDING: [pendingWishes, setPendingWishes],
+    APPROVED: [approvedWishes, setApprovedWishes],
+    HIDDEN: [hiddenWishes, setHiddenWishes],
+  };
+  const mediaLists: Record<ReviewStatus, [MediaView[], (fn: (prev: MediaView[]) => MediaView[]) => void]> = {
+    PENDING: [pendingMedia, setPendingMedia],
+    APPROVED: [approvedMedia, setApprovedMedia],
+    HIDDEN: [hiddenMedia, setHiddenMedia],
+  };
+
+  /** Moves items between the local lists (the server has already been told). */
+  function moveLocal<T extends { id: string }>(
+    lists: Record<ReviewStatus, [T[], (fn: (prev: T[]) => T[]) => void]>,
+    items: T[],
+    from: ReviewStatus,
+    to: ReviewStatus
+  ) {
+    const ids = new Set(items.map((i) => i.id));
+    lists[from][1]((prev) => prev.filter((i) => !ids.has(i.id)));
+    lists[to][1]((prev) => [...items, ...prev]);
+  }
+
+  /** Runs a review action; on failure nothing moves and the couple is told. */
+  const attempt = async (action: () => Promise<void>) => {
+    try {
+      await action();
+      return true;
+    } catch {
+      toast({ message: "That didn't save. Check your connection and try again.", tone: "error" });
+      return false;
+    }
+  };
+
+  const handleWishChange = async (wish: WishView, from: ReviewStatus, to: ReviewStatus) => {
+    if (!(await attempt(() => setWishStatus(weddingId, wish.id, to)))) return;
+    moveLocal(wishLists, [wish], from, to);
+    toast({
+      message: reviewMessage("Wish", 1, from, to),
+      undo: async () => {
+        await setWishStatus(weddingId, wish.id, from);
+        moveLocal(wishLists, [wish], to, from);
       },
-      ...prev,
-    ]);
+    });
   };
 
-  const handleHideMedia = async (media: PendingMediaView) => {
-    await hideMedia(weddingId, media.id);
-    setPendingMedia((prev) => prev.filter((m) => m.id !== media.id));
-    setHiddenMedia((prev) => [
-      { id: media.id, guestName: media.guestName, url: media.url, type: media.type, dateUploaded: media.dateUploaded },
-      ...prev,
-    ]);
-  };
-
-  const handleRestoreMedia = async (media: HiddenMediaView) => {
-    await approveMedia(weddingId, media.id);
-    setHiddenMedia((prev) => prev.filter((m) => m.id !== media.id));
-    setApprovedMedia((prev) => [
-      {
-        id: media.id,
-        guestName: media.guestName,
-        url: media.url,
-        type: media.type,
-        dateUploaded: media.dateUploaded,
+  const handleMediaChange = async (items: MediaView[], from: ReviewStatus, to: ReviewStatus) => {
+    const ids = items.map((i) => i.id);
+    if (!(await attempt(() => setMediaStatusMany(weddingId, ids, to)))) return;
+    moveLocal(mediaLists, items, from, to);
+    toast({
+      message: reviewMessage("Photo", items.length, from, to),
+      undo: async () => {
+        await setMediaStatusMany(weddingId, ids, from);
+        moveLocal(mediaLists, items, to, from);
       },
-      ...prev,
-    ]);
+    });
   };
 
-  const handleHideApprovedMedia = async (media: ApprovedMediaView) => {
-    await hideMedia(weddingId, media.id);
-    setApprovedMedia((prev) => prev.filter((m) => m.id !== media.id));
-    setHiddenMedia((prev) => [
-      {
-        id: media.id,
-        guestName: media.guestName,
-        url: media.url,
-        type: media.type,
-        dateUploaded: media.dateUploaded,
-      },
-      ...prev,
-    ]);
-  };
-
-  const handleDeleteApprovedMedia = async (media: ApprovedMediaView) => {
+  const handleDeleteApprovedMedia = async (media: MediaView) => {
     await deleteMedia(weddingId, media.id);
     setApprovedMedia((prev) => prev.filter((m) => m.id !== media.id));
-  };
-
-  const handleApproveWish = async (wish: PendingWishView) => {
-    await approveWish(weddingId, wish.id);
-    setPendingWishes((prev) => prev.filter((w) => w.id !== wish.id));
-    setApprovedWishes((prev) => [{ id: wish.id, guestName: wish.guestName, message: wish.message }, ...prev]);
-  };
-
-  const handleHideWish = async (wish: PendingWishView) => {
-    await hideWish(weddingId, wish.id);
-    setPendingWishes((prev) => prev.filter((w) => w.id !== wish.id));
-    setHiddenWishes((prev) => [
-      { id: wish.id, guestName: wish.guestName, message: wish.message, dateSubmitted: wish.dateSubmitted },
-      ...prev,
-    ]);
-  };
-
-  const handleRestoreWish = async (wish: HiddenWishView) => {
-    await approveWish(weddingId, wish.id);
-    setHiddenWishes((prev) => prev.filter((w) => w.id !== wish.id));
-    setApprovedWishes((prev) => [{ id: wish.id, guestName: wish.guestName, message: wish.message }, ...prev]);
+    toast({ message: "Photo deleted" });
   };
 
   const totalRaisedCents = confirmedContributions.reduce((sum, c) => sum + c.amountCents, 0);
@@ -246,11 +249,14 @@ export default function AdminHome({
           <h1 className="font-(family-name:--m-display) text-4xl leading-none font-extrabold tracking-[-0.03em] sm:text-5xl">
             {coupleTitle ?? `${story.brideName} & ${story.groomName}`}
           </h1>
-          <Button asChild variant="ink">
-            <a href={guestUrl} target="_blank" rel="noopener noreferrer">
-              View guest site
-            </a>
-          </Button>
+          <a
+            href={guestUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonVariants({ variant: "ink" })}
+          >
+            View guest site
+          </a>
         </div>
 
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -262,80 +268,64 @@ export default function AdminHome({
           ))}
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)} className="gap-0">
+        {/* shadcn Tabs: arrow keys, Home and End move between sections. */}
+        <Tabs value={activeTab} onValueChange={(v) => selectTab(v as TabId)} className="gap-0">
           <TabsList
             aria-label="Dashboard sections"
             className="mt-10 mb-8 h-auto w-full justify-start gap-1.5 overflow-x-auto rounded-none bg-transparent p-0 pb-1 group-data-[orientation=horizontal]/tabs:h-auto"
           >
-            {tabs.filter((tab) => isOwner || !OWNER_TABS.includes(tab)).map((tab) => (
+            {visibleTabs.map((tab) => (
               <TabsTrigger
-                key={tab}
-                value={tab}
+                key={tab.id}
+                value={tab.id}
                 className="h-auto flex-none rounded-full border-0 px-4 py-2 text-ink/70 hover:bg-mist hover:text-ink focus-visible:ring-ink/40 data-[state=active]:bg-ink data-[state=active]:text-paper data-[state=active]:shadow-none"
               >
-                {tab}
+                {tab.label}
               </TabsTrigger>
             ))}
           </TabsList>
 
-          {/* A disabled fieldset disables every control inside it; the server refuses changes too. */}
-          <fieldset disabled={readOnly} className="min-w-0 disabled:opacity-80">
-            <TabsContent value="Registry">
-              <RegistryTab items={registryItems} bankDetails={bankDetails} />
-            </TabsContent>
-            <TabsContent value="Contributions">
-              <ContributionsTab pending={pendingContributions} confirmed={confirmedContributions} onConfirm={handleConfirmContribution} />
-            </TabsContent>
-            <TabsContent value="Media">
-              <MediaTab
-                pending={pendingMedia}
-                approved={approvedMedia}
-                hidden={hiddenMedia}
-                galleryEnabled={galleryEnabled}
-                onApprove={handleApproveMedia}
-                onHide={handleHideMedia}
-                onHideApproved={handleHideApprovedMedia}
-                onDeleteApproved={handleDeleteApprovedMedia}
-                onRestore={handleRestoreMedia}
-                onToggleGallery={handleToggleGallery}
-              />
-            </TabsContent>
-            <TabsContent value="Wishes">
-              <WishesTab
-                pending={pendingWishes}
-                approved={approvedWishes}
-                hidden={hiddenWishes}
-                onApprove={handleApproveWish}
-                onHide={handleHideWish}
-                onRestore={handleRestoreWish}
-              />
-            </TabsContent>
-            <TabsContent value="RSVPs">
-              <RsvpTab rsvps={rsvps} />
-            </TabsContent>
-            <TabsContent value="Our Story">
-              <StoryTab story={story} photos={storyPhotos} storyBeats={storyBeats} />
-            </TabsContent>
-            <TabsContent value="Design">
-              <DesignTab {...design} guestUrl={guestUrl} names={[story.brideName, story.groomName]} />
-            </TabsContent>
-            <TabsContent value="Wording">
-              <WordingTab copy={copy} canCustomCredit={copy.canCustomCredit} brandingRemoved={copy.brandingRemoved} />
-            </TabsContent>
-            <TabsContent value="People">
-              <MembersTab members={members} isOwner={isOwner} />
-            </TabsContent>
-            {isOwner && (
-              <>
-                <TabsContent value="Settings">
-                  <SettingsTab settings={settings} />
-                </TabsContent>
-                <TabsContent value="Billing">
-                  <BillingTab billing={billing} />
-                </TabsContent>
-              </>
-            )}
-          </fieldset>
+        {/* One panel for whichever section is open. A disabled fieldset disables every control inside it; the server refuses changes too. */}
+        <TabsContent value={activeTab}>
+        <fieldset disabled={readOnly} className="min-w-0 disabled:opacity-80">
+        {activeTab === "registry" && <RegistryTab items={registryItems} bankDetails={bankDetails} />}
+        {activeTab === "contributions" && (
+          <ContributionsTab
+            pending={pendingContributions}
+            confirmed={confirmedContributions}
+            onConfirm={handleConfirmContribution}
+          />
+        )}
+        {activeTab === "media" && (
+          <MediaTab
+            pending={pendingMedia}
+            approved={approvedMedia}
+            hidden={hiddenMedia}
+            galleryEnabled={galleryEnabled}
+            onChange={handleMediaChange}
+            onDeleteApproved={handleDeleteApprovedMedia}
+            onToggleGallery={handleToggleGallery}
+          />
+        )}
+        {activeTab === "wishes" && (
+          <WishesTab
+            pending={pendingWishes}
+            approved={approvedWishes}
+            hidden={hiddenWishes}
+            onChange={handleWishChange}
+          />
+        )}
+        {activeTab === "rsvps" && <RsvpTab rsvps={rsvps} capacity={capacity} />}
+        {activeTab === "story" && (
+          <StoryTab story={story} photos={storyPhotos} storyBeats={storyBeats} />
+        )}
+        {activeTab === "design" && <DesignTab {...design} guestUrl={guestUrl} names={[story.brideName, story.groomName]} />}
+        {activeTab === "wording" && <WordingTab copy={copy} canCustomCredit={copy.canCustomCredit} brandingRemoved={copy.brandingRemoved} plans={{ brandingPlan: copy.brandingPlan, creditPlan: copy.creditPlan }} />}
+        {activeTab === "people" && <MembersTab members={members} isOwner={isOwner} />}
+        {activeTab === "settings" && isOwner && <SettingsTab settings={settings} guestUrl={guestUrl} />}
+        {activeTab === "billing" && isOwner && <BillingTab billing={billing} />}
+        </fieldset>
+        </TabsContent>
         </Tabs>
       </div>
     </div>

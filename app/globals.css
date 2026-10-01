@@ -95,17 +95,24 @@
   }
 }
 
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #23261c;
-    --foreground: #fdf6ec;
-  }
-} */
+/* Stacking order for fixed layers, lowest to highest. */
+@utility z-nav {
+  z-index: 40;
+}
+@utility z-overlay {
+  z-index: 80;
+}
+@utility z-toast {
+  z-index: 90;
+}
+@utility z-banner {
+  z-index: 95;
+}
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--sans, system-ui), system-ui, sans-serif;
 }
 
 /* Marketing hero: strips weave in once on load. */
@@ -145,4 +152,69 @@ body {
   .loom-thread {
     animation: none;
   }
+}
+
+/* Guest sites: labelled fields and a visible focus ring in the wedding's own colour. */
+[data-wedding-theme] :focus-visible {
+  outline: 2px solid var(--burnt-orange);
+  outline-offset: 2px;
+}
+[data-wedding-theme] .guest-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+[data-wedding-theme] .guest-input {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid rgb(var(--ink) / 0.3);
+  background: #fff;
+  padding: 0.625rem 0.875rem;
+  font-size: 1rem;
+  color: var(--foreground);
+}
+[data-wedding-theme] .guest-input:focus-visible {
+  border-color: var(--burnt-orange);
+}
+[data-wedding-theme] .guest-btn {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  background: var(--burnt-orange);
+  color: var(--ivory);
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 150ms;
+}
+[data-wedding-theme] .guest-btn:hover {
+  background: var(--burnt-orange-dark);
+}
+[data-wedding-theme] .guest-btn:disabled {
+  opacity: 0.6;
+}
+[data-wedding-theme] .guest-choice {
+  display: flex;
+  min-height: 2.75rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(var(--ink) / 0.3);
+  background: #fff;
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.9375rem;
+}
+[data-wedding-theme] .guest-choice:has(input:checked) {
+  border: 2px solid var(--burnt-orange);
+  color: var(--burnt-orange);
+  font-weight: 600;
+}
+[data-wedding-theme] .guest-choice:has(input:focus-visible) {
+  outline: 2px solid var(--burnt-orange);
+  outline-offset: 2px;
 }

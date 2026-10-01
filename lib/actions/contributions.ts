@@ -2,6 +2,7 @@
 
 import { requireWeddingAccess } from "@/lib/dal";
 import { moneyFormat, resolveGuestAction, revalidateDashboard, revalidateWedding, weddingTheme } from "@/lib/tenant";
+import { isTransferReference } from "@/lib/transfer-reference";
 import { contributionNotificationEmail, emailPalette, sendMail } from "@/lib/mail";
 
 export type SubmitContributionState = { error?: string; success?: boolean } | undefined;
@@ -31,6 +32,9 @@ export async function submitContribution(
     return { error: "Enter a valid amount" };
   }
 
+  const referenceRaw = formData.get("reference");
+  const reference = typeof referenceRaw === "string" && isTransferReference(referenceRaw) ? referenceRaw : null;
+
   const item = await db.registryItem.findUnique({
     where: { id: registryItemId, weddingId: wedding.id },
     select: { id: true },
@@ -44,6 +48,7 @@ export async function submitContribution(
       guestName: guestName.trim(),
       amountCents: Math.round(amount),
       note: typeof note === "string" && note.trim() ? note.trim() : null,
+      reference,
       status: "AWAITING_CONFIRMATION",
     },
     include: { registryItem: true },
@@ -80,5 +85,15 @@ export async function confirmContribution(weddingId: string, contributionId: str
     data: { status: "CONFIRMED", confirmedAt: new Date() },
   });
 
+  revalidateWedding(wedding);
+}
+
+/** Puts a confirmed contribution back to awaiting confirmation (undo). */
+export async function unconfirmContribution(weddingId: string, contributionId: string) {
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "unconfirmContribution");
+  await db.contribution.update({
+    where: { id: contributionId, weddingId: wedding.id },
+    data: { status: "AWAITING_CONFIRMATION", confirmedAt: null },
+  });
   revalidateWedding(wedding);
 }

@@ -8,6 +8,8 @@ import { scopedPrisma } from "@/lib/db-scoped";
 import { can, isStaff, type Permission } from "@/lib/permissions";
 
 export const LOGIN_PATH = "/login";
+/** Where anyone holding a temporary password is sent until they choose their own. */
+export const CHANGE_PASSWORD_PATH = "/change-password";
 
 /**
  * The signed-in user, re-read from the database on every request so deleted
@@ -19,7 +21,7 @@ export const getCurrentUser = cache(async () => {
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, email: true, name: true, role: true, sessionVersion: true },
+    select: { id: true, email: true, name: true, role: true, sessionVersion: true, mustChangePassword: true },
   });
   if (!user || user.sessionVersion !== session.sv) return null;
 
@@ -40,6 +42,8 @@ export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>
 export const verifySession = cache(async () => {
   const user = await getCurrentUser();
   if (!user) redirect(LOGIN_PATH);
+  // Nothing else until a temporary password is replaced (not while staff "view as" them).
+  if (user.mustChangePassword && !user.impersonatorId) redirect(CHANGE_PASSWORD_PATH);
   return user;
 });
 

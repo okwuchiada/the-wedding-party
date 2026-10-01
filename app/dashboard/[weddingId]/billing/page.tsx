@@ -5,14 +5,14 @@ import { formatMoney } from "@/lib/money";
 import { fulfillPayment } from "@/lib/payments";
 import { PAYSTACK_CURRENCY, verifyTransaction } from "@/lib/paystack";
 import { prisma } from "@/lib/prisma";
-import { dashboardPath } from "@/lib/tenant";
+import { dashboardTabHref } from "@/lib/dashboard-tabs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 const MESSAGES = {
   success: { title: "Payment received", body: "Your plan is active. You can publish your site from Settings." },
   pending: { title: "Payment processing", body: "We haven't had confirmation from Paystack yet. This page will update once it arrives — you can safely leave it." },
-  failed: { title: "Payment didn't go through", body: "You haven't been charged. You can try again from the Billing tab." },
+  failed: { title: "Payment didn't go through", body: "You haven't been charged. You can try again from Billing." },
   review: { title: "We're checking your payment", body: "Something about this payment needs a manual check. We'll be in touch; you don't need to pay again." },
   unknown: { title: "Payment not found", body: "We couldn't find that payment for this wedding." },
 } as const;
@@ -56,13 +56,13 @@ export default async function BillingReturnPage({
         <div className="p-8">
           <h1 className="font-(family-name:--m-display) text-3xl font-extrabold tracking-[-0.02em]">{message.title}</h1>
           {payment && (
-            <p className="mt-2 text-sm text-(--m-ink)/60">
+            <p className="mt-2 text-sm text-ink/60">
               {payment.plan.name}, {formatMoney(payment.amountKobo, { currency: PAYSTACK_CURRENCY, locale: "en-NG" })}
             </p>
           )}
-          <p className="mt-4 leading-relaxed text-(--m-ink)/80">{message.body}</p>
+          <p className="mt-4 leading-relaxed text-ink/80">{message.body}</p>
           <Button asChild size="lg" className="mt-7 py-3">
-            <Link href={dashboardPath(wedding.id)}>Back to dashboard</Link>
+            <Link href={dashboardTabHref(wedding.id, "billing")}>Back to billing</Link>
           </Button>
         </div>
       </Card>
