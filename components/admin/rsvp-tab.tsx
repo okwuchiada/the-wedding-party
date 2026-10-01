@@ -258,10 +258,19 @@ export default function RsvpTab({ rsvps, capacity }: { rsvps: RsvpView[]; capaci
     });
   };
 
-  const handleSend = async (id: string) => {
+  const handleSend = async (r: RsvpView) => {
+    const ok = await confirm({
+      title: `Send ${r.guestName} their confirmation?`,
+      // Matches what lib/mail.ts sends: details for guests coming, a thank-you for those who can't.
+      description: `We'll email ${r.email} ${r.attending ? "to confirm their place, with your date and venue" : "a thank-you for letting you know they can't come"}. Each guest gets one confirmation, so check the address first.`,
+      confirmLabel: "Send email",
+      cancelLabel: "Not now",
+      danger: false,
+    });
+    if (!ok) return;
     setSendError("");
-    await run(id, "send", async () => {
-      const result = await sendRsvpConfirmation(weddingId, id);
+    await run(r.id, "send", async () => {
+      const result = await sendRsvpConfirmation(weddingId, r.id);
       if (result.error) setSendError(result.error);
     });
   };
@@ -370,7 +379,7 @@ export default function RsvpTab({ rsvps, capacity }: { rsvps: RsvpView[]; capaci
                           type="button"
                           size="xs"
                           disabled={isPending(r.id)}
-                          onClick={() => handleSend(r.id)}
+                          onClick={() => handleSend(r)}
                         >
                           {isPending(r.id, "send") ? "Sending…" : "Send confirmation"}
                         </Button>

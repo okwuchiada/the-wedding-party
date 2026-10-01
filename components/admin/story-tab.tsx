@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-src";
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { saveStory } from "@/lib/actions/story";
 import {
@@ -139,7 +140,7 @@ function PhotoForm({
         {initialValues?.url && (
           <span className="mt-1 flex items-center gap-2 text-[13px] text-muted-foreground">
             <Image
-              src={initialValues.url}
+              src={initialValues.url} unoptimized={!canOptimizeImage(initialValues.url)}
               alt=""
               width={32}
               height={32}
@@ -347,7 +348,7 @@ function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
           {photos.map((photo, index) => (
             <li key={photo.id} className={`overflow-hidden rounded-[8px] border bg-card ${editingId === photo.id ? "border-ink" : "border-border"}`}>
               <div className="relative aspect-square bg-accent">
-                <Image src={photo.url} alt={photo.caption || `Story photo ${index + 1}`} fill sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw" className="object-cover" />
+                <Image src={photo.url} unoptimized={!canOptimizeImage(photo.url)} alt={photo.caption || `Story photo ${index + 1}`} fill sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw" className="object-cover" />
                 {photo.showInHero && (
                   <span className="absolute top-2 left-2 rounded-full bg-ink/80 px-2 py-0.5 text-[13px] font-semibold text-paper">Cover</span>
                 )}

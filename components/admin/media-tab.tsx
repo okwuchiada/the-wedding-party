@@ -14,6 +14,7 @@ import { Pagination, usePagination } from "./pagination";
 import type { ReviewStatus } from "./review";
 import { useConfirm } from "./use-confirm";
 import { useActionPending } from "./use-action-pending";
+import { canOptimizeImage } from "@/lib/image-src";
 
 const EMPTY: Record<ReviewStatus, { title: string; body: string }> = {
   PENDING: { title: "Nothing waiting for you", body: "Photos and videos guests upload appear here for you to approve." },
@@ -36,7 +37,7 @@ function Thumb({ media }: { media: MediaView }) {
           </span>
         </>
       ) : (
-        <Image src={media.url} alt={label} fill sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw" className="object-cover" />
+        <Image src={media.url} unoptimized={!canOptimizeImage(media.url)} alt={label} fill sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw" className="object-cover" />
       )}
     </a>
   );

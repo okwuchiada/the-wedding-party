@@ -2,8 +2,9 @@
 
 import { requireWeddingAccess } from "@/lib/dal";
 import { createPresignedUploadUrl } from "@/lib/s3";
+import { deleteUnusedUploads } from "@/lib/upload-cleanup";
 import { revalidateWedding } from "@/lib/tenant";
-import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL, weddingUploadFolder } from "@/lib/uploads";
+import { uploadSizeError, weddingUploadFolder } from "@/lib/uploads";
 
 export type CreateRegistryItemUploadUrlState =
   | { error?: string; uploadUrl?: string; publicUrl?: string }
@@ -20,14 +21,14 @@ export async function createRegistryItemUploadUrl(
   if (!fileType.startsWith("image/")) {
     return { error: "Only image files are allowed" };
   }
-  if (fileSize > MAX_UPLOAD_BYTES) {
-    return { error: `Image is over the ${MAX_UPLOAD_LABEL} limit` };
-  }
+  const sizeError = uploadSizeError(fileSize, "Image");
+  if (sizeError) return { error: sizeError };
 
   const { uploadUrl, publicUrl } = await createPresignedUploadUrl(
     weddingUploadFolder(wedding.id, "registry"),
     fileName,
-    fileType
+    fileType,
+    fileSize
   );
   return { uploadUrl, publicUrl };
 }
@@ -98,7 +99,9 @@ export async function updateRegistryItem(
   const parsed = parseRegistryItemForm(formData);
   if ("error" in parsed) return { error: parsed.error };
 
+  const previous = await db.registryItem.findUniqueOrThrow({ where: { id, weddingId: wedding.id }, select: { image: true } });
   await db.registryItem.update({ where: { id, weddingId: wedding.id }, data: parsed.data });
+  if (previous.image !== parsed.data.image) await deleteUnusedUploads(db, wedding.id, [previous.image]);
 
   revalidateWedding(wedding);
 
@@ -118,7 +121,8 @@ export async function deleteRegistryItem(
     return { error: "Can't delete an item that already has contributions." };
   }
 
-  await db.registryItem.delete({ where: { id, weddingId: wedding.id } });
+  const item = await db.registryItem.delete({ where: { id, weddingId: wedding.id } });
+  await deleteUnusedUploads(db, wedding.id, [item.image]);
 
   revalidateWedding(wedding);
 

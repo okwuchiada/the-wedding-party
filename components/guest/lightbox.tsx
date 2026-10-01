@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Play, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { canOptimizeImage } from "@/lib/image-src";
 
 export type LightboxItem = { id: string; url: string; type: "PHOTO" | "VIDEO"; guestName: string };
 
@@ -104,7 +105,7 @@ export default function Lightbox({ items }: { items: LightboxItem[] }) {
                   </span>
                 </>
               ) : (
-                <Image src={m.url} alt="" fill sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw" className="object-cover" />
+                <Image src={m.url} unoptimized={!canOptimizeImage(m.url)} alt="" fill sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw" className="object-cover" />
               )}
             </button>
           </li>
@@ -144,7 +145,7 @@ export default function Lightbox({ items }: { items: LightboxItem[] }) {
             {item.type === "VIDEO" ? (
               <video key={item.id} src={item.url} controls playsInline className="h-full w-full object-contain" />
             ) : (
-              <Image key={item.id} src={item.url} alt={`Photo from ${item.guestName}`} fill sizes="100vw" className="object-contain" />
+              <Image key={item.id} src={item.url} unoptimized={!canOptimizeImage(item.url)} alt={`Photo from ${item.guestName}`} fill sizes="100vw" className="object-contain" />
             )}
           </div>
           <div className="flex items-center justify-between px-2 py-3">

@@ -5,7 +5,8 @@ import { submitRsvp } from "@/lib/actions/rsvp";
 import { MAX_PARTY_SIZE } from "@/lib/rsvp-rules";
 import { useGuestSlug } from "./wedding-context";
 
-export default function RsvpForm() {
+/** `maxPartySize` is the couple's "guests per RSVP"; 1 means the invitation is for the guest alone. */
+export default function RsvpForm({ maxPartySize = MAX_PARTY_SIZE }: { maxPartySize?: number }) {
   const slug = useGuestSlug();
   const [state, formAction, pending] = useActionState(submitRsvp.bind(null, slug), undefined);
   const [attending, setAttending] = useState<"yes" | "no" | "">("");
@@ -86,7 +87,14 @@ export default function RsvpForm() {
           </div>
         </fieldset>
 
-        {attending === "yes" && (
+        {attending === "yes" && maxPartySize === 1 && (
+          <p className="text-[15px] text-foreground/80">
+            <input type="hidden" name="partySize" value="1" />
+            This invitation is for you alone.
+          </p>
+        )}
+
+        {attending === "yes" && maxPartySize > 1 && (
           <div>
             <label htmlFor="rsvp-party" className="guest-label">
               How many of you, including you?
@@ -106,19 +114,22 @@ export default function RsvpForm() {
                 name="partySize"
                 inputMode="numeric"
                 value={party}
-                onChange={(e) => setParty(Math.min(MAX_PARTY_SIZE, Math.max(1, Number(e.target.value.replace(/\D/g, "")) || 1)))}
+                onChange={(e) => setParty(Math.min(maxPartySize, Math.max(1, Number(e.target.value.replace(/\D/g, "")) || 1)))}
                 className="w-full border-x border-foreground/20 text-center text-base"
               />
               <button
                 type="button"
                 aria-label="One more"
-                disabled={party >= MAX_PARTY_SIZE}
-                onClick={() => setParty((n) => Math.min(MAX_PARTY_SIZE, n + 1))}
+                disabled={party >= maxPartySize}
+                onClick={() => setParty((n) => Math.min(maxPartySize, n + 1))}
                 className="min-h-11 min-w-12 text-xl disabled:opacity-40"
               >
                 +
               </button>
             </div>
+            {maxPartySize < MAX_PARTY_SIZE && (
+              <p className="mt-1.5 text-[13px] text-foreground/70">Up to {maxPartySize} people, including you.</p>
+            )}
           </div>
         )}
 

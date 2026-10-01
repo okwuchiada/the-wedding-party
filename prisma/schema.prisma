@@ -226,6 +226,8 @@ model Wedding {
   timezone         String        @default("Africa/Lagos")
   phoneCountryCode String        @default("234")
   maxGuests        Int           @default(100)
+  // Most people one RSVP can bring, including the guest replying (1 = this invitation only). At most MAX_PARTY_SIZE.
+  maxPartySize     Int           @default(10)
   // ISO country codes allowed to view the guest site; empty means everyone.
   allowedCountries String[]      @default([])
   geoBypassToken   String?

@@ -5,8 +5,11 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type Input = { name: unknown; email: unknown; attending: unknown; partySize: unknown; message: unknown };
 type Data = { guestName: string; email: string; attending: boolean; guestCount: number; message: string | null };
 
-/** Validates a guest's RSVP form. Email is optional; declines always count as one reply. */
-export function parseGuestRsvp(input: Input): { error: string } | { data: Data } {
+/**
+ * Validates a guest's RSVP form. Email is optional; declines always count as one reply.
+ * `maxPartySize` is the couple's "guests per RSVP" (1 means the invitation is for one person).
+ */
+export function parseGuestRsvp(input: Input, maxPartySize = MAX_PARTY_SIZE): { error: string } | { data: Data } {
   const guestName = typeof input.name === "string" ? input.name.trim().replace(/\s+/g, " ") : "";
   if (!guestName) return { error: "Please enter your name" };
 
@@ -18,9 +21,19 @@ export function parseGuestRsvp(input: Input): { error: string } | { data: Data }
 
   const raw = typeof input.partySize === "string" && input.partySize.trim() ? Number(input.partySize) : 1;
   if (!Number.isInteger(raw) || raw < 1 || raw > MAX_PARTY_SIZE) return { error: `Party size must be between 1 and ${MAX_PARTY_SIZE}` };
+  if (attending && raw > maxPartySize) {
+    return { error: maxPartySize === 1 ? "This invitation is for one guest" : `Each reply can include up to ${maxPartySize} people, including you` };
+  }
 
   const message = typeof input.message === "string" ? input.message.trim() : "";
   return { data: { guestName, email, attending, guestCount: attending ? raw : 1, message: message || null } };
+}
+
+/** The couple's "guests per RSVP" setting: a whole number from 1 to MAX_PARTY_SIZE. */
+export function parsePartySizeLimit(value: unknown): { value: number } | { error: string } {
+  const n = typeof value === "string" && value.trim() ? Number(value) : NaN;
+  if (!Number.isInteger(n) || n < 1 || n > MAX_PARTY_SIZE) return { error: `Guests per RSVP should be a whole number from 1 to ${MAX_PARTY_SIZE}` };
+  return { value: n };
 }
 
 type AdminInput = { guestName: unknown; email: unknown; attending: unknown; message: unknown };

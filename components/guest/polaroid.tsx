@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-src";
 
 export default function Polaroid({
   src,
@@ -23,7 +24,7 @@ export default function Polaroid({
       className={`rotate-(--r) bg-white pt-3 px-3 pb-0 shadow-[0_18px_40px_-20px_rgb(var(--ink)/0.45)] transition-transform duration-400 ease-[cubic-bezier(.2,.7,.2,1)] hover:rotate-[calc(var(--r)/2)] hover:scale-[1.03] ${className ?? ""}`}
     >
       <div style={{ height }} className="relative overflow-hidden bg-olive/10">
-        <Image src={src} alt={alt} fill sizes={`${width}px`} className="object-cover" loading="eager" />
+        <Image src={src} unoptimized={!canOptimizeImage(src)} alt={alt} fill sizes={`${width}px`} className="object-cover" loading="eager" />
       </div>
       <figcaption className="pt-3 px-1 pb-4 text-center font-(family-name:--serif) text-lg italic text-foreground">
         {caption}

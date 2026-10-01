@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-src";
 import { startTransition, useActionState, useEffect, useState } from "react";
 import {
   addStoryBeat,
@@ -147,7 +148,7 @@ function BeatForm({
         {initialValues?.photoUrl && (
           <span className="mt-1 flex items-center gap-2 text-[13px] text-muted-foreground">
             <Image
-              src={initialValues.photoUrl}
+              src={initialValues.photoUrl} unoptimized={!canOptimizeImage(initialValues.photoUrl)}
               alt=""
               width={32}
               height={32}
@@ -252,7 +253,7 @@ export default function StoryBeatsSection({ beats }: { beats: StoryBeatView[] })
             ) : (
               <li key={beat.id} className="flex items-center gap-4 rounded-[8px] border border-border bg-card p-3">
                 {beat.photoUrl ? (
-                  <Image src={beat.photoUrl} alt="" width={56} height={56} className="size-14 shrink-0 rounded-[6px] object-cover" />
+                  <Image src={beat.photoUrl} unoptimized={!canOptimizeImage(beat.photoUrl)} alt="" width={56} height={56} className="size-14 shrink-0 rounded-[6px] object-cover" />
                 ) : (
                   <span className="size-14 shrink-0 rounded-[6px] bg-accent" aria-hidden />
                 )}

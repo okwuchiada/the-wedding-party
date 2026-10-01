@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-src";
 import { prisma } from "@/lib/prisma";
 import CoupleGallerySkeleton from "./couple-gallery-skeleton";
 
@@ -14,7 +15,7 @@ async function CoupleGalleryGrid({ weddingId }: { weddingId: string }) {
         <figure key={photo.id} className="group">
           <div className="relative aspect-square overflow-hidden bg-olive/10">
             <Image
-              src={photo.url}
+              src={photo.url} unoptimized={!canOptimizeImage(photo.url)}
               alt={photo.caption}
               fill
               sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"

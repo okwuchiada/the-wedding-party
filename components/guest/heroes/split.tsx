@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-src";
 import { heroName, type HeroNameStyle, type TemplateKey } from "@/lib/layouts";
 import CountdownBar from "../countdown-bar";
 import Polaroid from "../polaroid";
@@ -41,7 +42,7 @@ export default async function HeroSplit({
           className="pointer-events-none absolute inset-0 z-0 opacity-10 lg:hidden"
         >
           <Image
-            src={heroPhotoUrl}
+            src={heroPhotoUrl} unoptimized={!canOptimizeImage(heroPhotoUrl)}
             alt=""
             fill
             sizes="100vw"

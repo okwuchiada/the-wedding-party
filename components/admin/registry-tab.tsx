@@ -31,6 +31,7 @@ import { FIELD, FILE_INPUT, TEXT_ACTION } from "@/components/admin/form-styles";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { canOptimizeImage } from "@/lib/image-src";
 
 
 function sumContributions(contributions: { amountCents: number }[]) {
@@ -426,7 +427,7 @@ export default function RegistryTab({
                       <TableRow key={item.id}>
                         <TableCell className="w-14">
                           {item.image ? (
-                            <Image src={item.image} alt="" width={40} height={40} className="size-10 rounded-[4px] object-cover" />
+                            <Image src={item.image} unoptimized={!canOptimizeImage(item.image)} alt="" width={40} height={40} className="size-10 rounded-[4px] object-cover" />
                           ) : (
                             <span className="block size-10 rounded-[4px] bg-accent" />
                           )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, useSyncExternalStore } from "react";
 import { checkSlugAvailable } from "@/lib/actions/weddings";
 import { saveSettings } from "@/lib/actions/settings";
 import PublishControl from "./publish-control";
@@ -16,15 +16,22 @@ import { Notice } from "@/components/ui/notice";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useSuccessToast, useToast } from "@/components/ui/toast";
 import { Label } from "@/components/ui/label";
+import { MAX_PARTY_SIZE } from "@/lib/rsvp-rules";
+import { Copy } from "lucide-react";
+import { slugFromInput } from "@/lib/slug";
 
 export type SettingsView = {
   slug: string;
+  /** The full link to share (own domain, or site address + /w/slug); null when the site address isn't configured. */
+  shareUrl: string | null;
   status: "DRAFT" | "ACTIVE" | "SUSPENDED" | "ARCHIVED";
   canPublish: boolean;
   currency: string;
   locale: string;
   phoneCountryCode: string;
   maxGuests: number;
+  /** Guests per RSVP, including the person replying. */
+  maxPartySize: number;
   guestLimit: number;
   allowedCountries: string[];
   geoBypassToken: string | null;
@@ -78,11 +85,27 @@ function useSlugCheck(slug: string, saved: string) {
 export default function SettingsTab({ settings, guestUrl }: { settings: SettingsView; guestUrl: string }) {
   const weddingId = useAdminWeddingId();
   const toast = useToast();
+  // The saved address, in full. Without a configured site address, use the one this dashboard is on.
+  const origin = useSyncExternalStore(
+    () => () => {},
+    () => window.location.origin,
+    () => ""
+  );
+  const shareLink = settings.shareUrl ?? `${origin}${guestUrl}`;
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      toast({ message: "Link copied" });
+    } catch {
+      toast({ message: "Couldn't copy. Select the link and copy it yourself.", tone: "error" });
+    }
+  };
   const [state, formAction, pending] = useActionState(saveSettings.bind(null, weddingId), undefined);
   useSuccessToast(state, "Settings saved");
   const [currency, setCurrency] = useState(settings.currency);
   const [locale, setLocale] = useState(settings.locale);
   const [slug, setSlug] = useState(settings.slug);
+  const [pastedLink, setPastedLink] = useState(false);
   const slugStatus = useSlugCheck(slug, settings.slug);
 
   const copyAccessLink = async () => {
@@ -111,7 +134,18 @@ export default function SettingsTab({ settings, guestUrl }: { settings: Settings
               id="settings-slug"
               name="slug"
               value={slug}
-              onChange={(e) => setSlug(e.target.value.toLowerCase())}
+              onChange={(e) => {
+                setSlug(e.target.value.toLowerCase());
+                setPastedLink(false);
+              }}
+              // Couples often paste their whole link back in; keep just the address part.
+              onPaste={(e) => {
+                const pasted = slugFromInput(e.clipboardData.getData("text"));
+                if (!pasted.fromLink) return;
+                e.preventDefault();
+                setSlug(pasted.slug);
+                setPastedLink(true);
+              }}
               aria-describedby="settings-slug-status"
               className="w-full rounded-[6px] px-1 py-2.5 text-[15px] text-ink outline-none"
             />
@@ -122,7 +156,18 @@ export default function SettingsTab({ settings, guestUrl }: { settings: Settings
                 {slugStatus.available ? "✓ That address is free" : slugStatus.reason}
               </span>
             )}
+            {pastedLink && <span className="text-muted-foreground">We kept just the address part of the link you pasted.</span>}
             {slug !== settings.slug && <span className="text-destructive">Links you&apos;ve already shared will stop working if you change this.</span>}
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md bg-accent px-3.5 py-2.5">
+            <span className="min-w-0 text-sm">
+              <span className="block text-[13px] text-muted-foreground">Your link</span>
+              <span className="font-medium break-all text-ink select-all">{shareLink}</span>
+            </span>
+            <Button type="button" variant="outline" size="sm" onClick={copyLink} className="bg-card">
+              <Copy aria-hidden />
+              Copy link
+            </Button>
           </div>
         </Card>
 
@@ -162,6 +207,18 @@ export default function SettingsTab({ settings, guestUrl }: { settings: Settings
             defaultValue={settings.maxGuests}
             hint={`Your plan allows up to ${settings.guestLimit.toLocaleString()}.`}
           />
+          <div className="mt-4">
+            <SelectInput
+              label="Guests per RSVP"
+              name="maxPartySize"
+              defaultValue={String(settings.maxPartySize)}
+              options={Array.from({ length: MAX_PARTY_SIZE }, (_, i) => ({
+                value: String(i + 1),
+                label: i === 0 ? "1 (just the guest)" : `Up to ${i + 1}`,
+              }))}
+              hint="How many people one reply can bring, including the guest. Replies already in keep their numbers."
+            />
+          </div>
         </Card>
 
         <Card className="gap-0 rounded-md p-5 shadow-none block">
