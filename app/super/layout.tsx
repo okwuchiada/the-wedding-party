@@ -1,5 +1,4 @@
 import { ToastProvider } from "@/components/ui/toast";
-import Link from "next/link";
 import DashboardBar from "@/components/admin/dashboard-bar";
 import { BRAND_CLASS, BRAND_STYLE } from "@/components/marketing/brand";
 import SuperNav from "@/components/super/nav";
