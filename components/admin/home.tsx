@@ -243,7 +243,7 @@ export default function AdminHome({
   return (
     <AdminWeddingProvider weddingId={weddingId} money={money}>
     <div className="mx-auto max-w-6xl px-5 pt-4 pb-16 sm:px-8">
-      <LiveRefresh />
+      <LiveRefresh intervalMs={15_000} />
       <div>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <h1 className="font-(family-name:--m-display) text-4xl leading-none font-extrabold tracking-[-0.03em] sm:text-5xl">

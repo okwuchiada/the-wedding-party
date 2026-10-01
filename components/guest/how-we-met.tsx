@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-src";
 import type { StoryStyle } from "@/lib/layouts";
 import { prisma } from "@/lib/prisma";
 import HowWeMetSkeleton from "./how-we-met-skeleton";
@@ -29,7 +30,7 @@ function ClassicTimeline({ beats }: { beats: Beat[] }) {
                   <div className="relative h-52 w-full overflow-hidden bg-olive/10">
                     {beat.photoUrl && (
                       <Image
-                        src={beat.photoUrl}
+                        src={beat.photoUrl} unoptimized={!canOptimizeImage(beat.photoUrl)}
                         alt={beat.title}
                         fill
                         sizes="240px"
@@ -68,7 +69,7 @@ function PhotoStrip({ beats }: { beats: Beat[] }) {
           <li key={beat.id} className="flex w-64 shrink-0 snap-start flex-col gap-3 sm:w-72">
             <div className="relative aspect-[3/4] overflow-hidden bg-olive/15">
               {beat.photoUrl ? (
-                <Image src={beat.photoUrl} alt={beat.title} fill sizes="18rem" className="object-cover" />
+                <Image src={beat.photoUrl} unoptimized={!canOptimizeImage(beat.photoUrl)} alt={beat.title} fill sizes="18rem" className="object-cover" />
               ) : (
                 <div aria-hidden className="absolute inset-0 bg-linear-to-br from-olive to-burnt-orange" />
               )}
@@ -102,7 +103,7 @@ function Chapters({ beats }: { beats: Beat[] }) {
           >
             {beat.photoUrl && (
               <div className={`relative aspect-[4/3] overflow-hidden bg-olive/10 ${flip ? "md:order-2" : ""}`}>
-                <Image src={beat.photoUrl} alt={beat.title} fill sizes="(min-width: 768px) 55vw, 100vw" className="object-cover" />
+                <Image src={beat.photoUrl} unoptimized={!canOptimizeImage(beat.photoUrl)} alt={beat.title} fill sizes="(min-width: 768px) 55vw, 100vw" className="object-cover" />
               </div>
             )}
             <div className={flip && beat.photoUrl ? "md:order-1 md:text-right" : ""}>
@@ -135,7 +136,7 @@ function StoryLayout({ beats, style }: { beats: Beat[]; style: StoryStyle }) {
             </div>
             {beat.photoUrl && (
               <div className="relative aspect-[4/3] overflow-hidden bg-olive/10">
-                <Image src={beat.photoUrl} alt={beat.title} fill sizes="12rem" className="object-cover" />
+                <Image src={beat.photoUrl} unoptimized={!canOptimizeImage(beat.photoUrl)} alt={beat.title} fill sizes="12rem" className="object-cover" />
               </div>
             )}
           </li>
@@ -163,7 +164,7 @@ function StoryLayout({ beats, style }: { beats: Beat[]; style: StoryStyle }) {
           <li key={beat.id} className={`flex flex-col bg-white border-t-8 ${i % 2 ? "border-olive" : "border-burnt-orange"}`}>
             {beat.photoUrl && (
               <div className="relative aspect-[4/3] overflow-hidden bg-olive/10">
-                <Image src={beat.photoUrl} alt={beat.title} fill sizes="(min-width: 1024px) 33vw, 100vw" className="object-cover" />
+                <Image src={beat.photoUrl} unoptimized={!canOptimizeImage(beat.photoUrl)} alt={beat.title} fill sizes="(min-width: 1024px) 33vw, 100vw" className="object-cover" />
               </div>
             )}
             <div className="p-6">

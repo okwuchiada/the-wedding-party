@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { canOptimizeImage } from "@/lib/image-src";
 import { useEffect, useRef, useState } from "react";
 
 type StoryItem = { src: string; alt: string; note: string };
@@ -84,7 +85,7 @@ export default function StoryCarousel({ items }: { items: StoryItem[] }) {
             }`}
           >
             <Image
-              src={current.src}
+              src={current.src} unoptimized={!canOptimizeImage(current.src)}
               alt={current.alt}
               fill
               sizes="(min-width: 768px) 672px, 100vw"

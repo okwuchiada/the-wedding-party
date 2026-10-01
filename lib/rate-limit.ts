@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { getClientIp } from "@/lib/request";
 
 const PRUNE_AFTER_MS = 24 * 60 * 60 * 1000;
 
@@ -21,4 +22,14 @@ export async function takeRateLimit(kind: string, key: string | null, limit: num
     });
   }
   return true;
+}
+
+/**
+ * Per-guest limit on a public form: counted per IP within one wedding, so a busy
+ * wedding can't use up another's allowance. Guests at a venue often share one IP
+ * (the venue Wi-Fi), so keep limits generous.
+ */
+export async function takeGuestRateLimit(kind: string, weddingId: string, limit: number, windowMs: number) {
+  const ip = await getClientIp();
+  return takeRateLimit(`guest:${kind}`, ip ? `${weddingId}:${ip}` : null, limit, windowMs);
 }
