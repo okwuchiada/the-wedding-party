@@ -24,7 +24,7 @@ const SORTS = {
   newest: { label: "Newest first", orderBy: { createdAt: "desc" } },
   oldest: { label: "Oldest first", orderBy: { createdAt: "asc" } },
   date: { label: "Wedding date (soonest)", orderBy: { story: { weddingDate: "asc" } } },
-  slug: { label: "Slug A–Z", orderBy: { slug: "asc" } },
+  slug: { label: "Slug A-Z", orderBy: { slug: "asc" } },
 } satisfies Record<string, { label: string; orderBy: Prisma.WeddingOrderByWithRelationInput }>;
 type SortKey = keyof typeof SORTS;
 

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { BrandLink } from "@/components/marketing/shell";
-import { Button } from "@/components/ui/button";
-import { logout } from "@/lib/actions/auth";
+import SignOutButton from "./sign-out-button";
 
 const linkClass = "rounded-full px-3 py-2 hover:bg-mist";
 
@@ -15,11 +14,7 @@ export default function DashboardBar({ showConsole = false }: { showConsole?: bo
         <Link href={showConsole ? "/super/profile" : "/dashboard/account"} className={linkClass}>
           {showConsole ? "My profile" : "Account"}
         </Link>
-        <form action={logout}>
-          <Button type="submit" variant="outline" size="sm" className="text-sm">
-            Sign out
-          </Button>
-        </form>
+        <SignOutButton />
       </nav>
     </header>
   );
