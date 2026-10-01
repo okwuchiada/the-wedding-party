@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { signup } from "@/lib/actions/auth";
 import { PRIVACY, TERMS, type LegalDocument } from "@/lib/legal";
 import { missingRequirements } from "@/lib/password-rules";
+import { Checkbox } from "@/components/ui/checkbox";
 import AuthField from "./auth-field";
 import { AuthMessage, AuthSubmit, authLinkClass } from "./fields";
 import LegalModal from "./legal-modal";
@@ -26,7 +27,7 @@ export default function SignupForm({ minPasswordLength }: { minPasswordLength: n
     setTermsError(agreed ? "" : "Tick this box to continue");
     if (missing || !agreed) {
       e.preventDefault();
-      form.querySelector<HTMLInputElement>(missing ? 'input[name="password"]' : 'input[name="agreedToTerms"]')?.focus();
+      form.querySelector<HTMLElement>(missing ? 'input[name="password"]' : "#agreedToTerms")?.focus();
     }
   };
 
@@ -44,17 +45,17 @@ export default function SignupForm({ minPasswordLength }: { minPasswordLength: n
         error={passwordError}
       />
       <div className="flex flex-col gap-1.5">
-      <label className="flex items-start gap-2.5 text-sm text-(--m-ink)/75">
-        <input
-          type="checkbox"
+      <div className="flex items-start gap-2.5 text-sm text-ink/75">
+        <Checkbox
+          id="agreedToTerms"
           name="agreedToTerms"
           required
           aria-invalid={termsError ? true : undefined}
           aria-describedby={termsError ? "terms-error" : undefined}
-          onChange={(e) => e.target.checked && setTermsError("")}
-          className="mt-0.5 size-4"
+          onCheckedChange={(checked) => checked === true && setTermsError("")}
+          className="mt-0.5"
         />
-        <span>
+        <label htmlFor="agreedToTerms">
           I agree to the{" "}
           <button type="button" onClick={() => setOpenDoc(TERMS)} className={authLinkClass}>
             Terms of Service
@@ -64,17 +65,17 @@ export default function SignupForm({ minPasswordLength }: { minPasswordLength: n
             Privacy Policy
           </button>
           .
-        </span>
-      </label>
+        </label>
+      </div>
       {termsError && (
-        <p id="terms-error" className="pl-6.5 text-[13px] text-(--m-coral-deep)">
+        <p id="terms-error" className="pl-6.5 text-[13px] text-coral-deep">
           {termsError}
         </p>
       )}
       </div>
       <AuthMessage error={state?.error} />
       <AuthSubmit pending={pending} label="Create account" pendingLabel="Creating account…" />
-      <p className="text-sm text-(--m-ink)/70">
+      <p className="text-sm text-ink/70">
         Already have an account?{" "}
         <Link href="/login" className={authLinkClass}>
           Sign in

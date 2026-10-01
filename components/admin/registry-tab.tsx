@@ -22,11 +22,15 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { inputClass, SelectInput, TextInput } from "@/components/ui/field";
+import { MoneyField, SelectInput, TextInput } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { TableShell, Td, Th } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { NG_BANKS, normaliseAccountNumber } from "@/lib/bank-account";
+import { FIELD, FILE_INPUT, TEXT_ACTION } from "@/components/admin/form-styles";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 
 function sumContributions(contributions: { amountCents: number }[]) {
@@ -109,17 +113,21 @@ function RegistryItemForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 rounded-[8px] bg-surface-muted p-4 sm:grid-cols-2">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 rounded-[8px] bg-accent p-4 sm:grid-cols-2">
       {initialValues?.id && <input type="hidden" name="id" defaultValue={initialValues.id} />}
 
       <TextInput label="Name" name="name" defaultValue={initialValues?.name} required />
 
       <CategoryField name="category" defaultValue={initialValues?.category} existing={categories} />
 
-      <TextInput
-        label={`Price (${currencySymbol(money)})`}
+      <MoneyField
+        label={
+          <>
+            Price <span className="sr-only">in {money.currency}</span>
+          </>
+        }
+        symbol={currencySymbol(money)}
         name="price"
-        type="number"
         min={1}
         step="0.01"
         defaultValue={initialValues?.price}
@@ -133,21 +141,21 @@ function RegistryItemForm({
           <TextInput label="Image link" name="image" defaultValue={initialValues?.image} placeholder="https://" />
         ) : (
           <>
-            <label htmlFor="registry-photo" className="text-sm font-medium text-ink">
+            <Label htmlFor="registry-photo" className="text-sm font-medium text-ink">
               Photo
-            </label>
-            <input
+            </Label>
+            <Input
               id="registry-photo"
               name="file"
               type="file"
               accept="image/*,.heic,.heif"
-              className={`${inputClass} file:mr-3 file:rounded-full file:border-0 file:bg-ink file:px-3 file:py-1.5 file:text-[13px] file:font-medium file:text-paper`}
+              className={cn(FIELD, FILE_INPUT)}
             />
             {initialValues?.image && <input type="hidden" name="image" defaultValue={initialValues.image} />}
-            {initialValues?.image && <span className="text-[13px] text-muted">Leave empty to keep the current photo.</span>}
+            {initialValues?.image && <span className="text-[13px] text-muted-foreground">Leave empty to keep the current photo.</span>}
           </>
         )}
-        <Button variant="text" size="sm" className="self-start" onClick={() => setPasteLink((v) => !v)}>
+        <Button size="xs" variant="link" className={cn(TEXT_ACTION, "self-start")} onClick={() => setPasteLink((v) => !v)}>
           {pasteLink ? "Upload a photo instead" : "Paste an image link instead"}
         </Button>
       </div>
@@ -159,7 +167,7 @@ function RegistryItemForm({
       )}
 
       <div className="flex gap-2 sm:col-span-2">
-        <Button variant="secondary" size="sm" onClick={onCancel}>
+        <Button variant="outline" size="sm" onClick={onCancel}>
           Cancel
         </Button>
         <Button type="submit" size="sm" disabled={pending || uploading}>
@@ -195,18 +203,18 @@ function BankDetailsForm({
   }, [state?.success]);
 
   return (
-    <form action={formAction} className="grid grid-cols-1 gap-4 rounded-[8px] bg-surface-muted p-4 sm:grid-cols-2">
+    <form action={formAction} className="grid grid-cols-1 gap-4 rounded-[8px] bg-accent p-4 sm:grid-cols-2">
       {naira ? (
         <>
-          <SelectInput label="Bank" name={bankChoice === OTHER_BANK ? undefined : "bank"} value={bankChoice} onChange={(e) => setBankChoice(e.target.value)} required>
-            <option value="" disabled>
-              Choose your bank
-            </option>
-            {NG_BANKS.map((b) => (
-              <option key={b}>{b}</option>
-            ))}
-            <option value={OTHER_BANK}>Other bank</option>
-          </SelectInput>
+          <SelectInput
+            label="Bank"
+            name={bankChoice === OTHER_BANK ? undefined : "bank"}
+            value={bankChoice}
+            onValueChange={setBankChoice}
+            placeholder="Choose your bank"
+            options={[...NG_BANKS.map((b) => ({ value: b, label: b })), { value: OTHER_BANK, label: "Other bank" }]}
+            required
+          />
           {bankChoice === OTHER_BANK && <TextInput label="Bank name" name="bank" defaultValue={knownBank ? "" : bankDetails.bank} required />}
         </>
       ) : (
@@ -226,7 +234,7 @@ function BankDetailsForm({
       {showSwift ? (
         <TextInput label="SWIFT / BIC (optional)" name="swift" defaultValue={bankDetails.swift ?? ""} hint="Only needed for gifts from banks abroad." />
       ) : (
-        <Button variant="text" size="sm" className="self-end justify-self-start" onClick={() => setShowSwift(true)}>
+        <Button size="xs" variant="link" className={cn(TEXT_ACTION, "self-end justify-self-start")} onClick={() => setShowSwift(true)}>
           Guests abroad? Add a SWIFT code
         </Button>
       )}
@@ -238,11 +246,11 @@ function BankDetailsForm({
       )}
 
       <div className="flex gap-2 sm:col-span-2">
-        <Button variant="secondary" size="sm" onClick={onCancel}>
+        <Button variant="outline" size="sm" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" size="sm" pending={pending} pendingLabel="Saving…">
-          Save bank details
+        <Button type="submit" size="sm" disabled={pending}>
+          {pending ? "Saving…" : "Save bank details"}
         </Button>
       </div>
     </form>
@@ -298,32 +306,32 @@ export default function RegistryTab({
             <BankDetailsForm bankDetails={bankDetails} onCancel={() => setEditingBank(false)} />
           </>
         ) : hasBank ? (
-          <Card>
+          <Card className="gap-0 rounded-md p-5 shadow-none block">
             <SectionHeading
               as="h3"
               title="Where cash gifts go"
               action={
-                <Button variant="text" size="sm" onClick={() => setEditingBank(true)}>
+                <Button size="xs" className={TEXT_ACTION} variant="link" onClick={() => setEditingBank(true)}>
                   Edit
                 </Button>
               }
             />
             <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
               <div>
-                <dt className="text-[13px] text-muted">Account name</dt>
+                <dt className="text-[13px] text-muted-foreground">Account name</dt>
                 <dd className="mt-1 text-ink">{bankDetails.name}</dd>
               </div>
               <div>
-                <dt className="text-[13px] text-muted">Bank</dt>
+                <dt className="text-[13px] text-muted-foreground">Bank</dt>
                 <dd className="mt-1 text-ink">{bankDetails.bank}</dd>
               </div>
               <div>
-                <dt className="text-[13px] text-muted">Account number</dt>
+                <dt className="text-[13px] text-muted-foreground">Account number</dt>
                 <dd className="mt-1 text-ink tabular-nums">{bankDetails.account}</dd>
               </div>
               {bankDetails.swift && (
                 <div>
-                  <dt className="text-[13px] text-muted">SWIFT / BIC</dt>
+                  <dt className="text-[13px] text-muted-foreground">SWIFT / BIC</dt>
                   <dd className="mt-1 text-ink">{bankDetails.swift}</dd>
                 </div>
               )}
@@ -375,80 +383,82 @@ export default function RegistryTab({
           )
         ) : (
           <>
-            <TableShell>
-              <thead>
-                <tr>
-                  <Th>
-                    <span className="sr-only">Photo</span>
-                  </Th>
-                  <Th>Gift</Th>
-                  <Th>Raised</Th>
-                  <Th numeric>Goal</Th>
-                  <Th>Claimed by</Th>
-                  <Th>
-                    <span className="sr-only">Actions</span>
-                  </Th>
-                </tr>
-              </thead>
-              <tbody>
-                {pageItems.map((item) => {
-                  const raised = sumContributions(item.contributions);
-                  const pct = Math.min(100, Math.round((raised / item.priceCents) * 100));
-                  return editingId === item.id ? (
-                    <tr key={item.id}>
-                      <td colSpan={6} className="border-b border-line p-0">
-                        <RegistryItemForm
-                          action={updateRegistryItem.bind(null, weddingId)}
-                          categories={categories}
-                          initialValues={{
-                            id: item.id,
-                            name: item.name,
-                            category: item.category,
-                            price: item.priceCents / 100,
-                            image: item.image,
-                            externalUrl: item.externalUrl,
-                          }}
-                          onCancel={() => setEditingId(null)}
-                          submitLabel="Save changes"
-                        />
-                      </td>
-                    </tr>
-                  ) : (
-                    <tr key={item.id}>
-                      <Td className="w-14">
-                        {item.image ? (
-                          <Image src={item.image} alt="" width={40} height={40} className="size-10 rounded-[4px] object-cover" />
-                        ) : (
-                          <span className="block size-10 rounded-[4px] bg-surface-muted" />
-                        )}
-                      </Td>
-                      <Td>
-                        <span className="font-semibold">{item.name}</span>
-                        <span className="block text-[13px] text-muted">{item.category}</span>
-                      </Td>
-                      <Td className="min-w-40">
-                        <span className="block h-1 overflow-hidden rounded-full bg-line" aria-hidden>
-                          <span className="block h-full bg-success" style={{ width: `${pct}%` }} />
-                        </span>
-                        <span className="mt-1 block text-[13px] tabular-nums">
-                          {formatMoney(raised, money)} <span className="text-muted">· {pct}%</span>
-                        </span>
-                      </Td>
-                      <Td numeric>{formatMoney(item.priceCents, money)}</Td>
-                      <Td className="text-muted">{item.claimedBy ?? "—"}</Td>
-                      <Td className="whitespace-nowrap text-right">
-                        <Button variant="text" size="sm" className="mr-3" disabled={isPending(item.id)} onClick={() => setEditingId(item.id)}>
-                          Edit
-                        </Button>
-                        <Button variant="text" size="sm" disabled={isPending(item.id)} onClick={() => handleDelete(item.id, item.name)}>
-                          {isPending(item.id, "delete") ? "Deleting…" : "Delete"}
-                        </Button>
-                      </Td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </TableShell>
+            <div className="overflow-hidden rounded-md border bg-card">
+              <Table className="min-w-150">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                      <span className="sr-only">Photo</span>
+                    </TableHead>
+                    <TableHead>Gift</TableHead>
+                    <TableHead>Raised</TableHead>
+                    <TableHead className="text-right">Goal</TableHead>
+                    <TableHead>Claimed by</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pageItems.map((item) => {
+                    const raised = sumContributions(item.contributions);
+                    const pct = Math.min(100, Math.round((raised / item.priceCents) * 100));
+                    return editingId === item.id ? (
+                      <TableRow key={item.id}>
+                        <TableCell colSpan={6} className="p-0 whitespace-normal">
+                          <RegistryItemForm
+                            action={updateRegistryItem.bind(null, weddingId)}
+                            categories={categories}
+                            initialValues={{
+                              id: item.id,
+                              name: item.name,
+                              category: item.category,
+                              price: item.priceCents / 100,
+                              image: item.image,
+                              externalUrl: item.externalUrl,
+                            }}
+                            onCancel={() => setEditingId(null)}
+                            submitLabel="Save changes"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      <TableRow key={item.id}>
+                        <TableCell className="w-14">
+                          {item.image ? (
+                            <Image src={item.image} alt="" width={40} height={40} className="size-10 rounded-[4px] object-cover" />
+                          ) : (
+                            <span className="block size-10 rounded-[4px] bg-accent" />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-semibold">{item.name}</span>
+                          <span className="block text-[13px] text-muted-foreground">{item.category}</span>
+                        </TableCell>
+                        <TableCell className="min-w-40">
+                          <span className="block h-1 overflow-hidden rounded-full bg-border" aria-hidden>
+                            <span className="block h-full bg-emerald" style={{ width: `${pct}%` }} />
+                          </span>
+                          <span className="mt-1 block text-[13px] tabular-nums">
+                            {formatMoney(raised, money)} <span className="text-muted-foreground">· {pct}%</span>
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{formatMoney(item.priceCents, money)}</TableCell>
+                        <TableCell className="text-muted-foreground">{item.claimedBy ?? "—"}</TableCell>
+                        <TableCell className="whitespace-nowrap text-right">
+                          <Button size="xs" variant="link" className={cn(TEXT_ACTION, "mr-3")} disabled={isPending(item.id)} onClick={() => setEditingId(item.id)}>
+                            Edit
+                          </Button>
+                          <Button size="xs" className={TEXT_ACTION} variant="link" disabled={isPending(item.id)} onClick={() => handleDelete(item.id, item.name)}>
+                            {isPending(item.id, "delete") ? "Deleting…" : "Delete"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
             <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
           </>
         )}

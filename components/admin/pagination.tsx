@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { inputClass } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PAGE_SIZE_OPTIONS, pageWindow } from "@/lib/pagination";
 
 /**
@@ -52,60 +53,52 @@ export function Pagination({
   if (total === 0) return null;
 
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-[13px] text-muted">
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-ink/70">
       <p>
         Showing {from}–{to} of {total}
       </p>
       <div className="flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-1.5">
-          Per page
-          <select
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value) as (typeof PAGE_SIZE_OPTIONS)[number])}
-            aria-label="Rows per page"
-            className={`${inputClass} w-auto py-1.5 text-[13px]`}
-          >
-            {PAGE_SIZE_OPTIONS.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="flex items-center gap-1.5">
+          <span>Per page</span>
+          <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v) as (typeof PAGE_SIZE_OPTIONS)[number])}>
+            <SelectTrigger size="sm" aria-label="Per page" className="gap-1 px-1.5 text-xs data-[size=sm]:h-6">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <SelectItem key={n} value={String(n)} className="text-xs">
+                  {n}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <nav aria-label="Pagination" className="flex items-center gap-1">
-          <button
-            type="button"
-            disabled={page <= 1}
-            onClick={() => onPageChange(page - 1)}
-            className="min-h-9 min-w-9 rounded-full px-2 text-[13px] hover:bg-surface-muted aria-[current=page]:bg-ink aria-[current=page]:text-paper disabled:opacity-40 disabled:hover:bg-transparent"
-          >
+          <Button type="button" variant="ghost" size="xs" disabled={page <= 1} onClick={() => onPageChange(page - 1)} className="font-medium disabled:opacity-40">
             Previous
-          </button>
+          </Button>
           {pageWindow(page, totalPages).map((p, i) =>
             p === "…" ? (
-              <span key={`gap-${i}`} className="px-1 text-muted">
+              <span key={`gap-${i}`} className="px-1 text-ink/40">
                 …
               </span>
             ) : (
-              <button
+              <Button
                 key={p}
                 type="button"
+                variant={p === page ? "outline" : "ghost"}
+                size="icon-xs"
                 aria-current={p === page ? "page" : undefined}
                 onClick={() => onPageChange(p)}
-                className="min-h-9 min-w-9 rounded-full px-2 text-[13px] hover:bg-surface-muted aria-[current=page]:bg-ink aria-[current=page]:text-paper disabled:opacity-40 disabled:hover:bg-transparent"
+                className="size-7 text-xs"
               >
                 {p}
-              </button>
+              </Button>
             )
           )}
-          <button
-            type="button"
-            disabled={page >= totalPages}
-            onClick={() => onPageChange(page + 1)}
-            className="min-h-9 min-w-9 rounded-full px-2 text-[13px] hover:bg-surface-muted aria-[current=page]:bg-ink aria-[current=page]:text-paper disabled:opacity-40 disabled:hover:bg-transparent"
-          >
+          <Button type="button" variant="ghost" size="xs" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)} className="font-medium disabled:opacity-40">
             Next
-          </button>
+          </Button>
         </nav>
       </div>
     </div>

@@ -3,9 +3,11 @@ import ActionButton from "@/components/super/action-button";
 import { RoleBadge } from "@/components/super/role-badge";
 import CompForm from "@/components/super/comp-form";
 import { Pagination } from "@/components/super/pagination";
-import { SearchForm } from "@/components/super/search-form";
+import { FilterSelect, SearchForm } from "@/components/super/search-form";
 import { StatusBadge } from "@/components/super/status-badge";
 import { date, Table } from "@/components/super/table";
+import { Badge } from "@/components/ui/badge";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { impersonateUser, setWeddingStatus } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
@@ -15,7 +17,6 @@ import { readPagination } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { dashboardPath, guestPath } from "@/lib/tenant";
 import { hasFeature } from "@/lib/plans";
-import { inputClass } from "@/components/ui/field";
 
 const STATUSES: WeddingStatus[] = ["DRAFT", "ACTIVE", "SUSPENDED", "ARCHIVED"];
 
@@ -79,64 +80,57 @@ export default async function SuperWeddingsPage({
   return (
     <div className="flex flex-col gap-5">
       <SearchForm q={term} placeholder="Slug, couple name or owner email">
-        <select name="status" defaultValue={status ?? ""} aria-label="Status" className={`${inputClass} w-auto`}>
-          <option value="">All statuses</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s.charAt(0) + s.slice(1).toLowerCase()}
-            </option>
-          ))}
-        </select>
-        <select name="plan" defaultValue={plan ?? ""} aria-label="Plan" className={`${inputClass} w-auto`}>
-          <option value="">All plans</option>
-          <option value="none">No plan</option>
-          {plans.map((p) => (
-            <option key={p.key} value={p.key}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-        <select name="sort" defaultValue={sortKey} aria-label="Sort" className={`${inputClass} w-auto`}>
-          {Object.entries(SORTS).map(([key, { label }]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
+        <FilterSelect
+          name="status"
+          defaultValue={status ?? ""}
+          allLabel="All statuses"
+          label="Status"
+          options={STATUSES.map((s) => ({ value: s, label: s.charAt(0) + s.slice(1).toLowerCase() }))}
+        />
+        <FilterSelect
+          name="plan"
+          defaultValue={plan ?? ""}
+          allLabel="All plans"
+          label="Plan"
+          options={[{ value: "none", label: "No plan" }, ...plans.map((p) => ({ value: p.key, label: p.name }))]}
+        />
+        <FilterSelect name="sort" defaultValue={sortKey} label="Sort" options={Object.entries(SORTS).map(([key, { label }]) => ({ value: key, label }))} />
       </SearchForm>
       <Table head={["Wedding", "Status", "Plan", "Owners", "Actions"]}>
         {weddings.map((w) => (
-          <tr key={w.id}>
-            <td className="px-3 py-3">
+          <TableRow key={w.id}>
+            <TableCell>
               <Link href={`/super/weddings/${w.id}`} className="font-medium text-ink underline decoration-ink/20 underline-offset-4 hover:decoration-ink">
                 {coupleTitle(w.story, resolveLayout(w.theme).heroNames) ?? w.slug}
               </Link>
-              <p className="text-xs text-muted">
+              <p className="text-xs text-muted-foreground">
                 /w/{w.slug} · {w.story ? date(w.story.weddingDate) : "no date"} · created {date(w.createdAt)}
               </p>
               <p className="mt-1 flex gap-3 text-xs">
-                <Link href={dashboardPath(w.id)} className="text-success underline hover:text-ink hover:underline">
+                <Link href={dashboardPath(w.id)} className="text-emerald underline hover:text-ink hover:underline">
                   Dashboard
                 </Link>
-                <a href={guestPath(w.slug)} target="_blank" rel="noopener noreferrer" className="text-success underline hover:text-ink hover:underline">
+                <a href={guestPath(w.slug)} target="_blank" rel="noopener noreferrer" className="text-emerald underline hover:text-ink hover:underline">
                   Guest site
                 </a>
               </p>
-            </td>
-            <td className="px-3 py-3">
+            </TableCell>
+            <TableCell>
               <StatusBadge status={w.status} />
-            </td>
-            <td className="px-3 py-3 text-muted">
+            </TableCell>
+            <TableCell className="text-muted-foreground">
               {w.plan?.name ?? "—"}
               {hasFeature(w.plan, "prioritySupport") && (
-                <span className="ml-1.5 rounded-full bg-action px-1.5 py-0.5 text-[13px] font-bold">Priority</span>
+                <Badge variant="gold" className="ml-1.5 px-1.5 text-[13px]">
+                  Priority
+                </Badge>
               )}
-              {w.comped && <span className="text-xs text-muted"> (comped)</span>}
-              {w.paidAt && !w.comped && <span className="text-xs text-muted"> (paid)</span>}
-            </td>
-            <td className="px-3 py-3">
+              {w.comped && <span className="text-xs text-muted-foreground"> (comped)</span>}
+              {w.paidAt && !w.comped && <span className="text-xs text-muted-foreground"> (paid)</span>}
+            </TableCell>
+            <TableCell>
               {w.members.map((m) => (
-                <div key={m.id} className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                <div key={m.id} className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   {m.user.email}
                   {isStaff(m.user.role) && <RoleBadge role={m.user.role} />}
                   {allowed.impersonate && !isStaff(m.user.role) && (
@@ -144,8 +138,8 @@ export default async function SuperWeddingsPage({
                   )}
                 </div>
               ))}
-            </td>
-            <td className="px-3 py-3">
+            </TableCell>
+            <TableCell>
               <div className="flex flex-col items-start gap-2">
                 {allowed.status && (
                 <div className="flex flex-wrap gap-1">
@@ -177,8 +171,8 @@ export default async function SuperWeddingsPage({
                   </Link>
                 )}
               </div>
-            </td>
-          </tr>
+            </TableCell>
+          </TableRow>
         ))}
       </Table>
       <Pagination page={page} pageSize={pageSize} total={total} />

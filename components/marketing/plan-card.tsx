@@ -1,5 +1,8 @@
 import { Check, Minus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/lib/money";
+import { cn } from "@/lib/utils";
 
 const NAIRA = { currency: "NGN", locale: "en-NG" };
 
@@ -24,17 +27,22 @@ export default function PlanCard({
   current?: boolean;
 }) {
   const dark = plan.popular;
-  const muted = dark ? "text-(--m-paper)/70" : "text-(--m-ink)/60";
+  const muted = dark ? "text-paper/70" : "text-ink/60";
 
   return (
-    <section
+    <Card
+      role="region"
       aria-label={plan.name}
-      className={`relative flex flex-col rounded-[6px] p-7 ${
-        dark ? "bg-(--m-ink) text-(--m-paper)" : "border border-(--m-mist) bg-white text-(--m-ink)"
-      } ${current ? "ring-3 ring-(--m-gold) ring-offset-2" : ""}`}
+      className={cn(
+        "relative gap-0 rounded-md p-7 shadow-none",
+        dark ? "border-transparent bg-ink text-paper" : "bg-white text-ink",
+        current && "ring-3 ring-gold ring-offset-2"
+      )}
     >
       {plan.popular && (
-        <span className="absolute -top-3 left-7 rounded-full bg-(--m-gold) px-3 py-1 text-xs font-bold text-(--m-ink)">Most popular</span>
+        <Badge variant="gold" className="absolute -top-3 left-7 px-3 py-1">
+          Most popular
+        </Badge>
       )}
       <h3 className="font-(family-name:--m-display) text-2xl font-bold">{plan.name}</h3>
       {plan.tagline && <p className={`mt-1.5 text-sm ${muted}`}>{plan.tagline}</p>}
@@ -46,7 +54,7 @@ export default function PlanCard({
       <ul className="mt-6 flex flex-col gap-2.5 text-[15px]">
         {plan.highlights.map((item) => (
           <li key={item} className="flex gap-2.5">
-            <Check aria-hidden size={18} className={`mt-0.5 shrink-0 ${dark ? "text-(--m-gold)" : "text-(--m-emerald)"}`} />
+            <Check aria-hidden size={18} className={`mt-0.5 shrink-0 ${dark ? "text-gold" : "text-emerald"}`} />
             {item}
           </li>
         ))}
@@ -54,7 +62,7 @@ export default function PlanCard({
       {plan.limitations.length > 0 && (
         <ul
           aria-label="Limits"
-          className={`mt-6 flex flex-col gap-2 border-t pt-5 text-sm ${muted} ${dark ? "border-(--m-paper)/15" : "border-(--m-mist)"}`}
+          className={`mt-6 flex flex-col gap-2 border-t pt-5 text-sm ${muted} ${dark ? "border-paper/15" : "border-mist"}`}
         >
           {plan.limitations.map((item) => (
             <li key={item} className="flex gap-2.5">
@@ -65,6 +73,6 @@ export default function PlanCard({
         </ul>
       )}
       <div className="mt-auto pt-8">{action}</div>
-    </section>
+    </Card>
   );
 }

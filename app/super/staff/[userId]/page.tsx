@@ -22,7 +22,7 @@ export default async function StaffMemberPage({ params }: { params: Promise<{ us
       </Link>
       <div>
         <h2 className="font-(family-name:--m-display) text-2xl font-bold tracking-tight">{profile.values.fullName || profile.user.email}</h2>
-        <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
+        <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
           {profile.user.email} · <RoleBadge role={profile.user.role} /> · on the team since{" "}
           {profile.user.createdAt.toISOString().slice(0, 10)}
         </p>

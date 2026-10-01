@@ -5,36 +5,36 @@ import ConfirmModal, { type ConfirmOptions } from "./confirm-modal";
 
 export function useConfirm() {
   const [options, setOptions] = useState<ConfirmOptions | null>(null);
+  // The dialog animates out after closing; keep showing what it asked meanwhile.
+  const [shown, setShown] = useState<ConfirmOptions | null>(null);
   const resolverRef = useRef<(value: boolean) => void>(null);
-  // Whatever had focus when the dialog opened gets it back when it closes.
-  const openerRef = useRef<HTMLElement | null>(null);
 
   const confirm = useCallback((opts: ConfirmOptions) => {
-    openerRef.current = document.activeElement as HTMLElement | null;
     setOptions(opts);
+    setShown(opts);
     return new Promise<boolean>((resolve) => {
       resolverRef.current = resolve;
     });
   }, []);
 
-  const close = (value: boolean) => {
+  const settle = (value: boolean) => {
     resolverRef.current?.(value);
+    // Closing the dialog after a confirm also reports a cancel; only the first answer counts.
+    resolverRef.current = null;
     setOptions(null);
-    const opener = openerRef.current;
-    setTimeout(() => opener?.focus(), 0);
   };
 
-  const handleConfirm = () => close(true);
-  const handleCancel = () => close(false);
+  const handleConfirm = () => settle(true);
+  const handleCancel = () => settle(false);
 
   const confirmDialog = (
     <ConfirmModal
       open={options !== null}
-      title={options?.title ?? ""}
-      description={options?.description}
-      confirmLabel={options?.confirmLabel}
-      cancelLabel={options?.cancelLabel}
-      danger={options?.danger}
+      title={shown?.title ?? ""}
+      description={shown?.description}
+      confirmLabel={shown?.confirmLabel}
+      cancelLabel={shown?.cancelLabel}
+      danger={shown?.danger}
       onConfirm={handleConfirm}
       onCancel={handleCancel}
     />

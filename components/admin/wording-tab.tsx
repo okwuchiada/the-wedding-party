@@ -6,11 +6,15 @@ import { COPY_FIELDS, COPY_MAX_LENGTH, type CopyKey } from "@/lib/copy";
 import { creditUpgradeNotice } from "@/lib/credit-notice";
 import { useAdminWeddingId } from "./wedding-context";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { inputClass, TextInput } from "@/components/ui/field";
+import { TextInput } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { useSuccessToast } from "@/components/ui/toast";
+import { TEXT_ACTION } from "@/components/admin/form-styles";
+import { Textarea } from "@/components/ui/textarea";
 
 export type CopyView = Record<CopyKey, string | null> & {
   footerCredit: string | null;
@@ -32,10 +36,10 @@ function CopyInput({ field, initial }: { field: CopyField; initial: string }) {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-ink">
+      <Label htmlFor={id} className="text-sm font-medium text-ink">
         {field.label}
-      </label>
-      <textarea
+      </Label>
+      <Textarea
         id={id}
         name={field.key}
         value={value}
@@ -43,9 +47,9 @@ function CopyInput({ field, initial }: { field: CopyField; initial: string }) {
         maxLength={COPY_MAX_LENGTH}
         rows={field.fallback.length > 120 ? 4 : 2}
         aria-describedby={`${id}-help`}
-        className={`${inputClass} resize-y`}
+        className="resize-y"
       />
-      <div id={`${id}-help`} className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 text-[13px] text-muted">
+      <div id={`${id}-help`} className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
         <span className="min-w-0 flex-1">
           {empty ? <>Guests see: &ldquo;{field.fallback}&rdquo;</> : "Your own wording."}
           {"hint" in field && <> {field.hint}</>}
@@ -55,11 +59,11 @@ function CopyInput({ field, initial }: { field: CopyField; initial: string }) {
             {value.length}/{COPY_MAX_LENGTH}
           </span>
           {empty ? (
-            <Button variant="text" size="sm" onClick={() => setValue(field.fallback)}>
+            <Button size="xs" className={TEXT_ACTION} variant="link" onClick={() => setValue(field.fallback)}>
               Start from this
             </Button>
           ) : (
-            <Button variant="text" size="sm" onClick={() => setValue("")}>
+            <Button size="xs" className={TEXT_ACTION} variant="link" onClick={() => setValue("")}>
               Use the default
             </Button>
           )}
@@ -89,7 +93,7 @@ export default function WordingTab({
 
   return (
     <form action={formAction} className="flex max-w-3xl flex-col gap-5">
-      <Card as="section">
+      <Card className="gap-0 rounded-md p-5 shadow-none block">
         <SectionHeading as="h3" title="Site text" description="Leave a box empty to use the default wording." />
         <div className="flex flex-col gap-5">
           {COPY_FIELDS.map((field) => (
@@ -98,13 +102,13 @@ export default function WordingTab({
         </div>
       </Card>
 
-      <Card as="section">
+      <Card className="gap-0 rounded-md p-5 shadow-none block">
         <SectionHeading as="h3" title="Asoebi" description="Show a section about the fabric, with a WhatsApp button to order it." />
         <div className="flex flex-col gap-4">
-          <label className="flex items-center gap-2.5 text-sm text-ink">
-            <input type="checkbox" name="asoebiEnabled" defaultChecked={copy.asoebiEnabled} className="size-4 accent-[var(--success)]" />
+          <Label className="gap-2.5 font-normal">
+            <Checkbox name="asoebiEnabled" defaultChecked={copy.asoebiEnabled} />
             Show the asoebi section
-          </label>
+          </Label>
           <TextInput
             label="Fabric (optional)"
             name="asoebiFabric"
@@ -115,7 +119,7 @@ export default function WordingTab({
         </div>
       </Card>
 
-      <Card as="section">
+      <Card className="gap-0 rounded-md p-5 shadow-none block">
         <SectionHeading as="h3" title="Footer credit" />
         {!canCustomCredit && (
           <div className="mb-4">
@@ -136,8 +140,8 @@ export default function WordingTab({
       </Card>
 
       {state?.error && <Notice tone="error">{state.error}</Notice>}
-      <Button type="submit" size="lg" className="self-start" pending={pending} pendingLabel="Saving…">
-        Save wording
+      <Button type="submit" size="lg" className="self-start" disabled={pending}>
+        {pending ? "Saving…" : "Save wording"}
       </Button>
     </form>
   );

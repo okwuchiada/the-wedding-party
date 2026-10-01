@@ -15,7 +15,7 @@ export default function Error({ error, unstable_retry }: { error: Error & { dige
         <h1 className="font-(family-name:--m-display) text-3xl font-extrabold tracking-[-0.02em]">Something went wrong</h1>
         <p className="text-(--m-ink)/75">We couldn&apos;t load this page. Your changes up to now are saved.</p>
         <Button size="lg" onClick={() => unstable_retry()}>Try again</Button>
-        {error.digest && <p className="text-[13px] text-muted">Reference: {error.digest}</p>}
+        {error.digest && <p className="text-[13px] text-muted-foreground">Reference: {error.digest}</p>}
       </div>
     </div>
   );

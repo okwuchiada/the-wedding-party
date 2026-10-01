@@ -3,12 +3,14 @@
 import { useState } from "react";
 import type { WishView } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Segmented } from "@/components/ui/segmented";
 import { Pagination, usePagination } from "./pagination";
 import type { ReviewStatus } from "./review";
 import { useActionPending } from "./use-action-pending";
+import { cn } from "@/lib/utils";
 
 const EMPTY: Record<ReviewStatus, { title: string; body: string }> = {
   PENDING: { title: "Nothing waiting for you", body: "New wishes from guests appear here for you to approve." },
@@ -32,7 +34,7 @@ export default function WishesTab({
   const lists = { PENDING: pending, APPROVED: approved, HIDDEN: hidden };
   const paged = usePagination(lists[view], 25);
 
-  const action = (wish: WishView, to: ReviewStatus, label: string, pendingLabel: string, variant: "primary" | "secondary") => (
+  const action = (wish: WishView, to: ReviewStatus, label: string, pendingLabel: string, variant: "default" | "outline") => (
     <Button
       size="sm"
       variant={variant}
@@ -68,26 +70,25 @@ export default function WishesTab({
         <>
           <ul className="flex flex-col gap-3">
             {paged.pageItems.map((wish) => (
-              <li
-                key={wish.id}
-                className={`flex flex-wrap items-start justify-between gap-4 rounded-[8px] border border-line bg-surface p-4 ${view === "HIDDEN" ? "opacity-75" : ""}`}
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="text-base text-ink italic">&ldquo;{wish.message}&rdquo;</p>
-                  <p className="mt-2 text-[13px] text-muted">
-                    {wish.guestName} &middot; {wish.dateSubmitted}
-                  </p>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  {view === "PENDING" && (
-                    <>
-                      {action(wish, "APPROVED", "Approve", "Approving…", "primary")}
-                      {action(wish, "HIDDEN", "Hide", "Hiding…", "secondary")}
-                    </>
-                  )}
-                  {view === "APPROVED" && action(wish, "HIDDEN", "Hide", "Hiding…", "secondary")}
-                  {view === "HIDDEN" && action(wish, "APPROVED", "Restore", "Restoring…", "secondary")}
-                </div>
+              <li key={wish.id}>
+                <Card className={cn("flex-row flex-wrap items-start justify-between gap-4 rounded-md p-4 shadow-none", view === "HIDDEN" && "opacity-75")}>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base text-ink italic">&ldquo;{wish.message}&rdquo;</p>
+                    <p className="mt-2 text-[13px] text-muted-foreground">
+                      {wish.guestName} &middot; {wish.dateSubmitted}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    {view === "PENDING" && (
+                      <>
+                        {action(wish, "APPROVED", "Approve", "Approving…", "default")}
+                        {action(wish, "HIDDEN", "Hide", "Hiding…", "outline")}
+                      </>
+                    )}
+                    {view === "APPROVED" && action(wish, "HIDDEN", "Hide", "Hiding…", "outline")}
+                    {view === "HIDDEN" && action(wish, "APPROVED", "Restore", "Restoring…", "outline")}
+                  </div>
+                </Card>
               </li>
             ))}
           </ul>

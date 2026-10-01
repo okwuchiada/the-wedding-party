@@ -9,6 +9,9 @@ import { Pagination } from "@/components/super/pagination";
 import { RoleBadge } from "@/components/super/role-badge";
 import { StatusBadge } from "@/components/super/status-badge";
 import { date, Table } from "@/components/super/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { impersonateUser, reverifyPayment, sendUserPasswordReset, setWeddingStatus } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
@@ -18,7 +21,6 @@ import { hasFeature, siteClosesAt } from "@/lib/plans";
 import { can, isStaff, ROLE_LABELS } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { dashboardPath, guestPath } from "@/lib/tenant";
-import { buttonClass } from "@/components/ui/button";
 
 const NAIRA = { currency: "NGN", locale: "en-NG" };
 const when = (d: Date) => d.toISOString().slice(0, 16).replace("T", " ");
@@ -97,7 +99,9 @@ export default async function WeddingCasePage({
             {wedding.story && ` · wedding ${date(wedding.story.weddingDate)}`}
           </p>
           {hasFeature(wedding.plan, "prioritySupport") && (
-            <p className="mt-2 inline-block rounded-full bg-action px-2.5 py-0.5 text-xs font-bold">Priority support</p>
+            <Badge variant="gold" className="mt-2">
+              Priority support
+            </Badge>
           )}
           <p className="mt-1 text-sm text-ink/60">
             {closes ? `Site ${closes <= new Date() ? "closed" : "open until"} ${date(closes)}` : "Site stays online"}
@@ -108,25 +112,19 @@ export default async function WeddingCasePage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link
-            href={dashboardPath(wedding.id)}
-            className={buttonClass("inverse", "md")}
-          >
-            {allowed.edit ? "Open their dashboard" : "View their dashboard"}
-          </Link>
-          <a
-            href={guestPath(wedding.slug)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={buttonClass("secondary", "md")}
-          >
-            Guest site
-          </a>
+          <Button asChild variant="ink">
+            <Link href={dashboardPath(wedding.id)}>{allowed.edit ? "Open their dashboard" : "View their dashboard"}</Link>
+          </Button>
+          <Button asChild variant="outline" className="font-semibold">
+            <a href={guestPath(wedding.slug)} target="_blank" rel="noopener noreferrer">
+              Guest site
+            </a>
+          </Button>
         </div>
       </section>
 
       {(allowed.status || allowed.comp) && (
-        <section className="flex flex-wrap items-center gap-3 rounded-[6px] border border-line bg-surface p-4">
+        <section className="flex flex-wrap items-center gap-3 rounded-[6px] border border-border bg-card p-4">
           {allowed.status &&
             (wedding.status === "SUSPENDED" || wedding.status === "ARCHIVED" ? (
               <ActionButton action={setWeddingStatus.bind(null, wedding.id, "restore")} label="Restore" />
@@ -145,7 +143,7 @@ export default async function WeddingCasePage({
       )}
 
       {allowed.domain && (
-        <section className="flex flex-col gap-3 rounded-[6px] border border-line bg-surface p-4">
+        <section className="flex flex-col gap-3 rounded-[6px] border border-border bg-card p-4">
           <div>
             <h3 className="font-(family-name:--m-display) text-xl font-bold tracking-tight">Custom domain</h3>
             <p className="mt-1 text-sm text-ink/65">
@@ -169,7 +167,7 @@ export default async function WeddingCasePage({
           ) : (
             <ol className="flex flex-col gap-3">
               {wedding.supportNotes.map((note) => (
-                <li key={note.id} className="rounded-[6px] border border-line bg-surface p-4">
+                <li key={note.id} className="rounded-[6px] border border-border bg-card p-4">
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{note.body}</p>
                   <p className="mt-2 text-xs text-ink/55">
                     {note.author?.name ?? note.author?.email ?? "Former staff"} · {when(note.createdAt)}
@@ -182,7 +180,7 @@ export default async function WeddingCasePage({
 
         <section className="flex flex-col gap-4">
           <h3 className="font-(family-name:--m-display) text-2xl font-bold tracking-tight">People</h3>
-          <ul className="flex flex-col divide-y divide-line rounded-[6px] border border-line bg-surface">
+          <ul className="flex flex-col divide-y divide-border rounded-[6px] border border-border bg-card">
             {wedding.members.map((m) => (
               <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
                 <span className="flex flex-wrap items-center gap-x-1.5">
@@ -213,22 +211,22 @@ export default async function WeddingCasePage({
             <>
               <Table head={["Date", "Plan", "Amount", "Status", ""]}>
                 {wedding.payments.map((p) => (
-                  <tr key={p.id}>
-                    <td className="px-3 py-2.5 text-muted">{date(p.createdAt)}</td>
-                    <td className="px-3 py-2.5">{p.plan.name}</td>
-                    <td className="px-3 py-2.5">{formatMoney(p.amountKobo, NAIRA)}</td>
-                    <td className="px-3 py-2.5">
+                  <TableRow key={p.id}>
+                    <TableCell className="py-2.5 text-muted-foreground">{date(p.createdAt)}</TableCell>
+                    <TableCell className="py-2.5">{p.plan.name}</TableCell>
+                    <TableCell className="py-2.5">{formatMoney(p.amountKobo, NAIRA)}</TableCell>
+                    <TableCell className="py-2.5">
                       <StatusBadge status={p.status} />
-                    </td>
-                    <td className="px-3 py-2.5">
+                    </TableCell>
+                    <TableCell className="py-2.5">
                       {p.status !== "SUCCESS" && (
                         <div className="flex flex-col items-start gap-1.5">
                           {allowed.reverify && <ActionButton action={reverifyPayment.bind(null, p.reference)} label="Check" />}
                           {allowed.resolve && <MarkPaidButton reference={p.reference} amountLabel={formatMoney(p.amountKobo, NAIRA)} />}
                         </div>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
               </Table>
               <Pagination
@@ -252,14 +250,14 @@ export default async function WeddingCasePage({
               {activity.map((a) => {
                 const meta = (a.meta ?? {}) as { role?: keyof typeof ROLE_LABELS };
                 return (
-                  <tr key={a.id}>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-muted">{when(a.createdAt)}</td>
-                    <td className="px-3 py-2.5 text-muted">
+                  <TableRow key={a.id}>
+                    <TableCell className="py-2.5 whitespace-nowrap text-muted-foreground">{when(a.createdAt)}</TableCell>
+                    <TableCell className="py-2.5 text-muted-foreground">
                       {a.actor?.email ?? "system"}
-                      {meta.role && <span className="text-muted"> ({ROLE_LABELS[meta.role]})</span>}
-                    </td>
-                    <td className="px-3 py-2.5">{a.action}</td>
-                  </tr>
+                      {meta.role && <span className="text-muted-foreground"> ({ROLE_LABELS[meta.role]})</span>}
+                    </TableCell>
+                    <TableCell className="py-2.5">{a.action}</TableCell>
+                  </TableRow>
                 );
               })}
             </Table>

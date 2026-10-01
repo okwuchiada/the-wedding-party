@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Segmented } from "@/components/ui/segmented";
-import { TableShell, Td, Th } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pagination, usePagination } from "./pagination";
 import { useConfirm } from "./use-confirm";
 import { useActionPending } from "./use-action-pending";
@@ -67,36 +67,38 @@ export default function ContributionsTab({
           <EmptyState title="Nothing to confirm" body="When a guest says they've sent money, it shows here for you to check." />
         ) : (
           <>
-            <TableShell>
-              <thead>
-                <tr>
-                  <Th>Guest</Th>
-                  <Th>Gift</Th>
-                  <Th>Reference</Th>
-                  <Th numeric>Amount</Th>
-                  <Th>Sent</Th>
-                  <Th>
-                    <span className="sr-only">Action</span>
-                  </Th>
-                </tr>
-              </thead>
-              <tbody>
-                {pendingPage.pageItems.map((c) => (
-                  <tr key={c.id}>
-                    <Td className="font-semibold">{c.guestName}</Td>
-                    <Td className="text-muted">{c.itemName}</Td>
-                    <Td className="font-mono text-[13px]">{c.reference ?? "—"}</Td>
-                    <Td numeric>{formatMoney(c.amountCents, money)}</Td>
-                    <Td className="text-muted">{c.dateRequested}</Td>
-                    <Td className="text-right">
-                      <Button size="sm" disabled={isPending(c.id)} onClick={() => handleConfirm(c)}>
-                        {isPending(c.id, "confirm") ? "Confirming…" : "Confirm"}
-                      </Button>
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </TableShell>
+            <div className="overflow-hidden rounded-md border bg-card">
+              <Table className="min-w-150">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Guest</TableHead>
+                    <TableHead>Gift</TableHead>
+                    <TableHead>Reference</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Sent</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Action</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingPage.pageItems.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-semibold">{c.guestName}</TableCell>
+                      <TableCell className="text-muted-foreground">{c.itemName}</TableCell>
+                      <TableCell className="font-mono text-[13px]">{c.reference ?? "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatMoney(c.amountCents, money)}</TableCell>
+                      <TableCell className="text-muted-foreground">{c.dateRequested}</TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" disabled={isPending(c.id)} onClick={() => handleConfirm(c)}>
+                          {isPending(c.id, "confirm") ? "Confirming…" : "Confirm"}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
             <Pagination page={pendingPage.page} pageSize={pendingPage.pageSize} total={pendingPage.total} onPageChange={pendingPage.setPage} onPageSizeChange={pendingPage.setPageSize} />
           </>
         ))}
@@ -106,28 +108,30 @@ export default function ContributionsTab({
           <EmptyState title="No confirmed gifts yet" body="Gifts you confirm move here and count towards each registry item." />
         ) : (
           <>
-            <TableShell>
-              <thead>
-                <tr>
-                  <Th>Guest</Th>
-                  <Th>Gift</Th>
-                  <Th>Reference</Th>
-                  <Th numeric>Amount</Th>
-                  <Th>Confirmed</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {confirmedPage.pageItems.map((c) => (
-                  <tr key={c.id}>
-                    <Td className="font-semibold">{c.guestName}</Td>
-                    <Td className="text-muted">{c.itemName}</Td>
-                    <Td className="font-mono text-[13px]">{c.reference ?? "—"}</Td>
-                    <Td numeric>{formatMoney(c.amountCents, money)}</Td>
-                    <Td className="text-muted">{c.dateConfirmed}</Td>
-                  </tr>
-                ))}
-              </tbody>
-            </TableShell>
+            <div className="overflow-hidden rounded-md border bg-card">
+              <Table className="min-w-150">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Guest</TableHead>
+                    <TableHead>Gift</TableHead>
+                    <TableHead>Reference</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Confirmed</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {confirmedPage.pageItems.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-semibold">{c.guestName}</TableCell>
+                      <TableCell className="text-muted-foreground">{c.itemName}</TableCell>
+                      <TableCell className="font-mono text-[13px]">{c.reference ?? "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatMoney(c.amountCents, money)}</TableCell>
+                      <TableCell className="text-muted-foreground">{c.dateConfirmed}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
             <Pagination page={confirmedPage.page} pageSize={confirmedPage.pageSize} total={confirmedPage.total} onPageChange={confirmedPage.setPage} onPageSizeChange={confirmedPage.setPageSize} />
           </>
         ))}

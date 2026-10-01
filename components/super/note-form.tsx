@@ -1,9 +1,11 @@
 "use client";
 
 import { useActionState, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { addSupportNote } from "@/lib/actions/super";
-import { buttonClass } from "@/components/ui/button";
-import { inputClass } from "@/components/ui/field";
+import { ResultText } from "@/components/result-text";
 
 export default function NoteForm({ weddingId }: { weddingId: string }) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -18,27 +20,21 @@ export default function NoteForm({ weddingId }: { weddingId: string }) {
 
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-2">
-      <label htmlFor="note-body" className="text-sm font-medium">
-        Add a note
-      </label>
-      <textarea
+      <Label htmlFor="note-body">Add a note</Label>
+      <Textarea
         id="note-body"
         name="body"
         required
         rows={3}
         maxLength={2000}
         placeholder="What happened, what you did, what's next"
-        className={inputClass}
+        className="field-sizing-fixed py-2.5"
       />
       <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className={buttonClass("primary", "md")}
-        >
+        <Button type="submit" size="sm" disabled={pending} className="text-sm">
           {pending ? "Saving…" : "Save note"}
-        </button>
-        {state?.error && <span className="text-sm text-danger">{state.error}</span>}
+        </Button>
+        <ResultText error={state?.error} className="text-sm" />
       </div>
     </form>
   );

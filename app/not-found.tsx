@@ -1,6 +1,6 @@
 import Link from "next/link";
 import MarketingShell from "@/components/marketing/shell";
-import { buttonClass } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
@@ -9,8 +9,8 @@ export default function NotFound() {
         <h1 className="font-(family-name:--m-display) text-4xl font-extrabold tracking-[-0.03em]">We can&apos;t find that page</h1>
         <p className="text-lg text-(--m-ink)/75">The link may be old or mistyped.</p>
         <div className="flex flex-wrap gap-3">
-          <Link href="/dashboard" className={buttonClass("primary", "lg")}>Go to your dashboard</Link>
-          <Link href="/" className={buttonClass("secondary", "lg")}>Home</Link>
+          <Link href="/dashboard" className={buttonVariants({ size: "lg" })}>Go to your dashboard</Link>
+          <Link href="/" className={buttonVariants({ variant: "outline", size: "lg" })}>Home</Link>
         </div>
       </section>
     </MarketingShell>

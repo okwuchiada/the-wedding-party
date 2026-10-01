@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { buttonClass } from "@/components/ui/button";
 import { useConfirm } from "@/components/admin/use-confirm";
+import { Button } from "@/components/ui/button";
 import type { SuperActionResult } from "@/lib/actions/super";
+import { cn } from "@/lib/utils";
+import { ResultText } from "@/components/result-text";
 
 /** Runs a bound super-admin action, optionally after a confirm prompt, and shows its result. */
 export default function ActionButton({
@@ -23,19 +25,20 @@ export default function ActionButton({
 
   return (
     <span className="inline-flex flex-col items-start gap-1">
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="xs"
         disabled={pending}
         onClick={async () => {
           if (confirmText && !(await confirm({ title: confirmText, danger: tone === "danger" }))) return;
           startTransition(async () => setResult((await action()) ?? null));
         }}
-        className={buttonClass(tone === "danger" ? "danger" : "secondary", "sm")}
+        className={cn("py-1", tone === "danger" && "border-coral/40 text-coral-deep hover:border-coral-deep hover:bg-coral-deep hover:text-white")}
       >
         {pending ? "…" : label}
-      </button>
-      {result?.error && <span className="text-[13px] text-danger">{result.error}</span>}
-      {result?.message && <span className="text-[13px] text-success">{result.message}</span>}
+      </Button>
+      <ResultText error={result?.error} message={result?.message} className="text-[11px]" />
       {confirmDialog}
     </span>
   );

@@ -12,15 +12,21 @@ import {
   type ImportRsvpRow,
   type ImportRsvpsResult,
 } from "@/lib/actions/rsvp";
-import { readRsvpFile, RSVP_TEMPLATE_CSV } from "@/lib/rsvp-import";
 import { guestListCsv } from "@/lib/guest-list-csv";
+import { readRsvpFile, RSVP_TEMPLATE_CSV } from "@/lib/rsvp-import";
 import { Pagination, usePagination } from "./pagination";
 import { useConfirm } from "./use-confirm";
 import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
-import { buttonClass } from "@/components/ui/button";
-import { inputClass } from "@/components/ui/field";
-
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { FIELD, FIELD_LABEL, FILE_INPUT, TEXT_ACTION } from "./form-styles";
+import { cn } from "@/lib/utils";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 function RsvpForm({
   action,
@@ -41,63 +47,46 @@ function RsvpForm({
   }, [state?.success]);
 
   return (
-    <form action={formAction} className="grid grid-cols-1 gap-3 bg-surface-muted p-4 sm:grid-cols-2">
+    <form action={formAction} className="grid grid-cols-1 gap-3 bg-paper p-4 sm:grid-cols-2">
       {initialValues?.id && <input type="hidden" name="id" defaultValue={initialValues.id} />}
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
+      <Label className={FIELD_LABEL}>
         Name
-        <input name="guestName" defaultValue={initialValues?.guestName} className={inputClass} />
-      </label>
+        <Input name="guestName" defaultValue={initialValues?.guestName} className={FIELD} />
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
+      <Label className={FIELD_LABEL}>
         Email (optional)
-        <input
-          name="email"
-          type="email"
-          defaultValue={initialValues?.email}
-          className={inputClass}
-        />
-      </label>
+        <Input name="email" type="email" defaultValue={initialValues?.email} className={FIELD} />
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
+      <Label className={FIELD_LABEL}>
         Attending
-        <select
-          name="attending"
-          defaultValue={initialValues ? (initialValues.attending ? "yes" : "no") : "yes"}
-          className={inputClass}
-        >
-          <option value="yes">Yes</option>
-          <option value="no">No</option>
-        </select>
-      </label>
+        <Select name="attending" defaultValue={initialValues ? (initialValues.attending ? "yes" : "no") : "yes"}>
+          <SelectTrigger className={cn(FIELD, "w-full data-[size=default]:h-auto")}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="yes">Yes</SelectItem>
+            <SelectItem value="no">No</SelectItem>
+          </SelectContent>
+        </Select>
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink sm:col-span-2">
+      <Label className={cn(FIELD_LABEL, "sm:col-span-2")}>
         Message (optional)
-        <textarea
-          rows={2}
-          name="message"
-          defaultValue={initialValues?.message ?? ""}
-          className={`${inputClass} resize-none`}
-        />
-      </label>
+        <Textarea rows={2} name="message" defaultValue={initialValues?.message ?? ""} className={cn(FIELD, "field-sizing-fixed resize-none")} />
+      </Label>
 
-      {state?.error && <p className="text-[13px] text-danger sm:col-span-2">{state.error}</p>}
+      {state?.error && <p className="text-xs text-destructive sm:col-span-2">{state.error}</p>}
 
       <div className="flex gap-2 sm:col-span-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className={buttonClass("secondary", "sm")}
-        >
+        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={pending}
-          className={buttonClass("primary", "sm")}
-        >
+        </Button>
+        <Button type="submit" size="sm" disabled={pending}>
           {pending ? "Saving…" : submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -140,60 +129,60 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
   const templateHref = `data:text/csv;charset=utf-8,${encodeURIComponent(RSVP_TEMPLATE_CSV)}`;
 
   return (
-    <div className="flex flex-col gap-3 bg-surface-muted p-4">
-      <p className="text-xs text-muted">
+    <div className="flex flex-col gap-3 bg-paper p-4">
+      <p className="text-xs text-ink/60">
         Upload a .csv or .xlsx file with columns <strong>Name</strong>, <strong>Attending</strong>{" "}
         (yes/no), and optionally <strong>Email</strong> and <strong>Message</strong>. Guests already on the list (matched by email, or by name when
         there&apos;s no email) are updated instead of duplicated.{" "}
-        <a href={templateHref} download="rsvp-template.csv" className="text-danger underline">
+        <a href={templateHref} download="rsvp-template.csv" className="text-destructive underline">
           Download template
         </a>
       </p>
 
-      <input
+      <Input
         ref={fileRef}
         type="file"
         accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         onChange={handleFile}
-        className={`${inputClass} file:mr-3 file:border-0 file:rounded-full file:bg-ink file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-paper`}
+        className={cn(FIELD, FILE_INPUT)}
       />
 
-      {fileError && <p className="text-[13px] text-danger">{fileError}</p>}
+      {fileError && <p className="text-xs text-destructive">{fileError}</p>}
 
       {rows && (
         <div>
-          <p className="mb-2 text-xs text-muted">
+          <p className="mb-2 text-xs text-ink/70">
             {rows.length} {rows.length === 1 ? "guest" : "guests"} found. Preview:
           </p>
-          <div className="max-h-60 overflow-auto border border-line rounded-[6px] bg-surface">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-line text-xs text-muted">
-                  <th className="px-3 py-2 font-medium">Row</th>
-                  <th className="px-3 py-2 font-medium">Name</th>
-                  <th className="px-3 py-2 font-medium">Email</th>
-                  <th className="px-3 py-2 font-medium">Attending</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="max-h-60 overflow-auto border border-border rounded-[6px] bg-white">
+            <Table className="text-xs">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="px-3 py-2 text-ink/50">Row</TableHead>
+                  <TableHead className="px-3 py-2 text-ink/50">Name</TableHead>
+                  <TableHead className="px-3 py-2 text-ink/50">Email</TableHead>
+                  <TableHead className="px-3 py-2 text-ink/50">Attending</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {rows.map((r, i) => (
-                  <tr key={i} className="border-b border-line last:border-0">
-                    <td className="px-3 py-1.5 text-muted">{i + 2}</td>
-                    <td className="px-3 py-1.5 text-ink">{String(r.guestName)}</td>
-                    <td className="px-3 py-1.5 text-muted">{String(r.email) || "—"}</td>
-                    <td className="px-3 py-1.5 text-muted">
+                  <TableRow key={i}>
+                    <TableCell className="px-3 py-1.5 text-ink/50">{i + 2}</TableCell>
+                    <TableCell className="px-3 py-1.5 text-ink">{String(r.guestName)}</TableCell>
+                    <TableCell className="px-3 py-1.5 text-ink/70">{String(r.email) || "—"}</TableCell>
+                    <TableCell className="px-3 py-1.5 text-ink/70">
                       {r.attending === true ? "Yes" : r.attending === false ? "No" : `? (${String(r.attending)})`}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}
 
       {result?.error && (
-        <div className="text-[13px] text-danger">
+        <div className="text-xs text-destructive">
           <p>{result.error}</p>
           {result.rowErrors && (
             <ul className="mt-1 list-disc pl-5">
@@ -208,32 +197,27 @@ function RsvpImport({ onClose }: { onClose: () => void }) {
         </div>
       )}
       {result && !result.error && (
-        <p className="text-[13px] text-success">
+        <p className="text-xs text-emerald">
           Imported: {result.created} added, {result.updated} updated.
         </p>
       )}
 
       <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className={buttonClass("secondary", "sm")}
-        >
+        <Button type="button" variant="outline" size="sm" onClick={onClose}>
           {result && !result.error ? "Done" : "Cancel"}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          size="sm"
           disabled={!rows || importing}
           onClick={handleImport}
-          className={buttonClass("primary", "sm")}
         >
           {importing ? "Importing…" : "Import"}
-        </button>
+        </Button>
       </div>
     </div>
   );
 }
-
 
 // Attending guests only, alphabetical, with a blank column to tick at the door.
 function exportGuestList(rsvps: RsvpView[]) {
@@ -285,36 +269,33 @@ export default function RsvpTab({ rsvps, capacity }: { rsvps: RsvpView[]; capaci
   return (
     <div>
       <div className="mb-8 grid grid-cols-2 gap-4 sm:max-w-md">
-        <div className="rounded-[6px] bg-surface p-4 border border-line">
-          <p className="text-xs text-muted">Attending</p>
+        <Card className="gap-0 rounded-md p-4 shadow-none">
+          <p className="text-xs text-muted-foreground">Attending</p>
           <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">
-            {attendingGuests} <span className="text-base text-muted">/ {capacity}</span>
+            {attendingGuests} <span className="text-base text-muted-foreground">/ {capacity}</span>
           </p>
-        </div>
-        <div className="rounded-[6px] bg-surface p-4 border border-line">
-          <p className="text-xs text-muted">Declined</p>
+        </Card>
+        <Card className="gap-0 rounded-md p-4 shadow-none">
+          <p className="text-xs text-muted-foreground">Declined</p>
           <p className="mt-2 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">{declinedCount}</p>
-        </div>
+        </Card>
       </div>
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">RSVPs</h2>
         {!panel && (
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setPanel("import")}
-              className={buttonClass("secondary", "sm")}
             >
               Import CSV / Excel
-            </button>
-            <button
-              type="button"
-              onClick={() => setPanel("add")}
-              className={buttonClass("primary", "sm")}
-            >
+            </Button>
+            <Button type="button" size="sm" onClick={() => setPanel("add")}>
               Add RSVP
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -330,94 +311,98 @@ export default function RsvpTab({ rsvps, capacity }: { rsvps: RsvpView[]; capaci
         </div>
       )}
 
-      {deleteError && <p className="mb-3 text-[13px] text-danger">{deleteError}</p>}
-      {sendError && <p className="mb-3 text-[13px] text-danger">{sendError}</p>}
+      {deleteError && <p className="mb-3 text-xs text-destructive">{deleteError}</p>}
+      {sendError && <p className="mb-3 text-xs text-destructive">{sendError}</p>}
 
       {rsvps.length === 0 ? (
-        <p className="text-sm text-muted">No responses yet.</p>
+        <p className="text-sm text-ink/60">No responses yet.</p>
       ) : (
         <>
-        <div className="overflow-x-auto rounded-[6px] border border-line bg-surface">
-          <table className="w-full min-w-150 text-left text-sm">
-            <thead>
-              <tr className="border-b border-line text-xs text-muted">
-                <th className="px-4 py-3 font-medium">Guest</th>
-                <th className="px-4 py-3 font-medium">Attending</th>
-                <th className="px-4 py-3 font-medium">Party</th>
-                <th className="px-4 py-3 font-medium">Message</th>
-                <th className="px-4 py-3 font-medium">Submitted</th>
-                <th className="px-4 py-3 font-medium">Confirmation</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="overflow-hidden rounded-md border border-mist bg-white">
+          <Table className="min-w-150">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="px-4 py-3 text-ink/50">Guest</TableHead>
+                <TableHead className="px-4 py-3 text-ink/50">Attending</TableHead>
+                <TableHead className="px-4 py-3 text-ink/50">Guests</TableHead>
+                <TableHead className="px-4 py-3 text-ink/50">Message</TableHead>
+                <TableHead className="px-4 py-3 text-ink/50">Submitted</TableHead>
+                <TableHead className="px-4 py-3 text-ink/50">Confirmation</TableHead>
+                <TableHead className="px-4 py-3 text-ink/50">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {pageItems.map((r) =>
                 editingId === r.id ? (
-                  <tr key={r.id} className="border-b border-line last:border-0">
-                    <td colSpan={7} className="p-0">
+                  <TableRow key={r.id}>
+                    <TableCell colSpan={7} className="p-0">
                       <RsvpForm
                         action={updateRsvpAdmin.bind(null, weddingId)}
                         initialValues={r}
                         onCancel={() => setEditingId(null)}
                         submitLabel="Save changes"
                       />
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
-                  <tr key={r.id} className="border-b border-line last:border-0">
-                    <td className="px-4 py-3 text-ink">
+                  <TableRow key={r.id}>
+                    <TableCell className="px-4 py-3 text-ink">
                       {r.guestName}
-                      {r.email && <span className="block text-xs text-muted">{r.email}</span>}
-                    </td>
-                    <td className="px-4 py-3">
+                      {r.email && <span className="block text-xs text-ink/50">{r.email}</span>}
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
                       <span
-                        className={`text-xs font-medium ${r.attending ? "text-success" : "text-danger"}`}
+                        className={`text-xs font-medium ${r.attending ? "text-emerald" : "text-destructive"}`}
                       >
                         {r.attending ? "Yes" : "No"}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-muted">{r.attending ? r.guestCount : "—"}</td>
-                    <td className="px-4 py-3 text-muted">{r.message || "—"}</td>
-                    <td className="px-4 py-3 text-muted">{r.dateSubmitted}</td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-ink/70">{r.attending ? r.guestCount : "—"}</TableCell>
+                    <TableCell className="px-4 py-3 text-ink/70">{r.message || "—"}</TableCell>
+                    <TableCell className="px-4 py-3 text-ink/70">{r.dateSubmitted}</TableCell>
+                    <TableCell className="px-4 py-3">
                       {r.confirmationSentAt ? (
-                        <span className="text-[13px] text-success">Sent {r.confirmationSentAt}</span>
+                        <span className="text-xs text-emerald">Sent {r.confirmationSentAt}</span>
                       ) : !r.email ? (
-                        <span className="text-xs text-muted">No email</span>
+                        <span className="text-xs text-ink/50">No email</span>
                       ) : (
-                        <button
+                        <Button
                           type="button"
+                          size="xs"
                           disabled={isPending(r.id)}
                           onClick={() => handleSend(r.id)}
-                          className={buttonClass("primary", "sm")}
                         >
                           {isPending(r.id, "send") ? "Sending…" : "Send confirmation"}
-                        </button>
+                        </Button>
                       )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <Button
                         type="button"
+                        variant="link"
+                        size="xs"
                         disabled={isPending(r.id)}
                         onClick={() => setEditingId(r.id)}
-                        className={`mr-3 ${buttonClass("text", "sm")}`}
+                        className={cn(TEXT_ACTION, "mr-3")}
                       >
                         Edit
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="link"
+                        size="xs"
                         disabled={isPending(r.id)}
                         onClick={() => handleDelete(r.id, r.guestName)}
-                        className={buttonClass("text", "sm")}
+                        className={TEXT_ACTION}
                       >
                         {isPending(r.id, "delete") ? "Deleting…" : "Delete"}
-                      </button>
-                    </td>
-                  </tr>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 )
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
         <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
         </>
@@ -425,13 +410,14 @@ export default function RsvpTab({ rsvps, capacity }: { rsvps: RsvpView[]; capaci
 
       {rsvps.some((r) => r.attending) && (
         <div className="mt-6 flex justify-end">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => exportGuestList(rsvps)}
-            className={buttonClass("secondary", "sm")}
           >
             Export guest list (CSV)
-          </button>
+          </Button>
         </div>
       )}
       {confirmDialog}

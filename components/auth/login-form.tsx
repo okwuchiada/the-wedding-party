@@ -21,7 +21,7 @@ export default function LoginForm({ next }: { next?: string }) {
         <Link href="/forgot-password" className={authLinkClass}>
           Forgot your password?
         </Link>
-        <span className="text-(--m-ink)/70">
+        <span className="text-ink/70">
           New here?{" "}
           <Link href="/signup" className={authLinkClass}>
             Create your site

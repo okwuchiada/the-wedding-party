@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import { useState } from "react";
 import {
@@ -17,14 +19,14 @@ import {
 } from "@/lib/layouts";
 
 const cardClass = (selected: boolean) =>
-  `flex flex-col gap-2 rounded-[6px] bg-surface p-3 text-left text-sm transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+  `flex flex-col gap-2 rounded-[6px] bg-card p-3 text-left text-sm transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
     selected ? "ring-2 ring-ink" : "ring-1 ring-(--m-mist) hover:ring-ink/40"
   }`;
 
 /** Tiny wireframes of each template's shape, so the choice is visual. */
 function TemplateSketch({ template }: { template: TemplateKey }) {
   const bar = "rounded-[2px] bg-ink/15";
-  const accent = "rounded-[2px] bg-action";
+  const accent = "rounded-[2px] bg-gold";
   const sketches: Record<TemplateKey, React.ReactNode> = {
     classic: (
       <div className="grid h-full grid-cols-[1fr_0.8fr] gap-1.5 p-2">
@@ -59,14 +61,14 @@ function TemplateSketch({ template }: { template: TemplateKey }) {
     owambe: (
       <div className="flex h-full flex-col">
         <div className="flex h-1.5">
-          {["bg-danger", "bg-success", "bg-action", "bg-ink"].map((c) => (
+          {["bg-destructive", "bg-emerald", "bg-gold", "bg-ink"].map((c) => (
             <span key={c} className={`flex-1 ${c}`} />
           ))}
         </div>
-        <div className="flex flex-1 flex-col justify-center gap-1 bg-danger p-2">
-          <span className="h-2 w-4/5 rounded-[2px] bg-surface/80" />
-          <span className="h-2 w-3/5 rounded-[2px] bg-surface/80" />
-          <span className="mt-1 h-3 w-4 rounded-[2px] bg-surface" />
+        <div className="flex flex-1 flex-col justify-center gap-1 bg-destructive p-2">
+          <span className="h-2 w-4/5 rounded-[2px] bg-card/80" />
+          <span className="h-2 w-3/5 rounded-[2px] bg-card/80" />
+          <span className="mt-1 h-3 w-4 rounded-[2px] bg-card" />
         </div>
       </div>
     ),
@@ -116,7 +118,7 @@ export function HeroPicker({
 function StorySketch({ style }: { style: StoryStyle }) {
   const photo = "rounded-[2px] bg-ink/20";
   const line = "rounded-[2px] bg-ink/15";
-  const year = "rounded-[2px] bg-action";
+  const year = "rounded-[2px] bg-gold";
   const sketches: Record<StoryStyle, React.ReactNode> = {
     timeline: (
       <div className="relative flex h-full flex-col justify-center gap-1.5 px-3">
@@ -146,7 +148,7 @@ function StorySketch({ style }: { style: StoryStyle }) {
     cards: (
       <div className="grid h-full grid-cols-3 gap-1 p-2">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="flex flex-col gap-0.5 bg-surface">
+          <div key={i} className="flex flex-col gap-0.5 bg-card">
             <span className={`${photo} flex-1`} />
             <span className={`${year} h-1 w-2/3`} />
             <span className={`${line} h-1`} />
@@ -158,7 +160,7 @@ function StorySketch({ style }: { style: StoryStyle }) {
       <div className="flex h-full gap-1 overflow-hidden py-2 pl-2">
         {[0, 1, 2, 3].map((i) => (
           <span key={i} className={`${photo} relative w-7 shrink-0`}>
-            <span className="absolute right-1 bottom-1 left-1 h-1 rounded-[1px] bg-surface/80" />
+            <span className="absolute right-1 bottom-1 left-1 h-1 rounded-[1px] bg-card/80" />
           </span>
         ))}
       </div>
@@ -244,7 +246,7 @@ export function HeroNamesPicker({
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(style.key)}
-            className={`flex min-w-0 flex-1 flex-col gap-0.5 rounded-[6px] bg-surface px-3 py-2.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+            className={`flex min-w-0 flex-1 flex-col gap-0.5 rounded-[6px] bg-card px-3 py-2.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
               selected ? "ring-2 ring-ink" : "ring-1 ring-(--m-mist) hover:ring-ink/40"
             }`}
           >
@@ -299,7 +301,7 @@ export function SectionsEditor({
   const rsvpHidden = value.some((s) => s.id === "rsvp" && !s.visible);
 
   const fixedRow = (label: string, note: string) => (
-    <li className="flex items-center gap-3 rounded-[6px] border border-dashed border-line bg-paper px-3 py-2.5 text-sm text-ink/60">
+    <li className="flex items-center gap-3 rounded-[6px] border border-dashed border-border bg-paper px-3 py-2.5 text-sm text-ink/60">
       <span className="w-5" aria-hidden />
       <span className="font-medium">{label}</span>
       <span className="text-xs">{note}</span>
@@ -333,50 +335,42 @@ export function SectionsEditor({
                 if (dragging) setAnnouncement(`${info(dragging).name} moved to position ${at + 1} of ${value.length}.`);
               }}
               onDragEnd={() => setDragging(null)}
-              className={`grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 rounded-[6px] border bg-surface px-3 py-2.5 ${
-                dragging === s.id ? "border-ink opacity-60" : "border-line"
+              className={`grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 rounded-[6px] border bg-card px-3 py-2.5 ${
+                dragging === s.id ? "border-ink opacity-60" : "border-border"
               }`}
             >
               <GripVertical aria-hidden size={18} className="cursor-grab text-ink/40 active:cursor-grabbing" />
               <span className={s.visible ? "" : "opacity-50"}>
                 <span className={`block text-sm font-semibold ${s.visible ? "" : "line-through decoration-ink/40"}`}>{name}</span>
                 <span className="block text-xs text-ink/60">
-                  {s.visible && empty.includes(s.id) ? <span className="text-danger">{EMPTY_HINTS[s.id]}</span> : description}
+                  {s.visible && empty.includes(s.id) ? <span className="text-destructive">{EMPTY_HINTS[s.id]}</span> : description}
                 </span>
               </span>
               <span className="flex gap-1">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="icon-sm"
                   aria-label={`Move ${name} up`}
                   disabled={i === 0}
                   onClick={() => move(i, i - 1)}
-                  className="grid size-8 place-items-center rounded-full border border-line hover:border-ink disabled:opacity-30"
+                  className="border-mist disabled:opacity-30"
                 >
-                  <ArrowUp aria-hidden size={15} />
-                </button>
-                <button
+                  <ArrowUp aria-hidden className="size-[15px]" />
+                </Button>
+                <Button
                   type="button"
+                  variant="outline"
+                  size="icon-sm"
                   aria-label={`Move ${name} down`}
                   disabled={i === value.length - 1}
                   onClick={() => move(i, i + 1)}
-                  className="grid size-8 place-items-center rounded-full border border-line hover:border-ink disabled:opacity-30"
+                  className="border-mist disabled:opacity-30"
                 >
-                  <ArrowDown aria-hidden size={15} />
-                </button>
+                  <ArrowDown aria-hidden className="size-[15px]" />
+                </Button>
               </span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={s.visible}
-                aria-label={`Show ${name}`}
-                onClick={() => toggle(i)}
-                className={`relative h-6 w-11 rounded-full transition-colors motion-reduce:transition-none ${s.visible ? "bg-success" : "bg-line"}`}
-              >
-                <span
-                  aria-hidden
-                  className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-surface shadow transition-transform motion-reduce:transition-none ${s.visible ? "translate-x-5" : ""}`}
-                />
-              </button>
+              <Switch size="lg" checked={s.visible} onCheckedChange={() => toggle(i)} aria-label={`Show ${name}`} />
             </li>
           );
         })}
@@ -386,7 +380,7 @@ export function SectionsEditor({
         {announcement}
       </p>
       {rsvpHidden && (
-        <p className="text-sm text-danger">RSVP is hidden, so guests can&apos;t reply on the site. You can still add RSVPs yourself.</p>
+        <p className="text-sm text-destructive">RSVP is hidden, so guests can&apos;t reply on the site. You can still add RSVPs yourself.</p>
       )}
       <p className="text-xs text-ink/60">Hidden sections keep their content, so you can bring them back any time.</p>
     </div>

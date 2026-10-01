@@ -1,9 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { setCustomDomain } from "@/lib/actions/super";
-import { buttonClass } from "@/components/ui/button";
-import { inputClass } from "@/components/ui/field";
+import { ResultText } from "@/components/result-text";
 
 export default function DomainForm({ weddingId, domain }: { weddingId: string; domain: string | null }) {
   const [state, formAction, pending] = useActionState(setCustomDomain.bind(null, weddingId), undefined);
@@ -11,27 +13,22 @@ export default function DomainForm({ weddingId, domain }: { weddingId: string; d
   return (
     <form action={formAction} className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
-        <label className="sr-only" htmlFor={`domain-${weddingId}`}>
+        <Label className="sr-only" htmlFor={`domain-${weddingId}`}>
           Custom domain
-        </label>
-        <input
+        </Label>
+        <Input
           id={`domain-${weddingId}`}
           name="domain"
           defaultValue={domain ?? ""}
           placeholder="amaraanddavid.com"
-          className={`${inputClass} min-w-0 flex-1`}
+          className="w-auto min-w-0 flex-1"
         />
-        <button
-          type="submit"
-          disabled={pending}
-          className={buttonClass("inverse", "md")}
-        >
+        <Button type="submit" variant="ink" size="sm" disabled={pending} className="text-sm">
           {pending ? "Saving…" : "Save domain"}
-        </button>
+        </Button>
       </div>
       <p className="text-xs text-ink/55">Leave empty and save to disconnect.</p>
-      {state?.error && <p className="text-xs text-danger">{state.error}</p>}
-      {state?.message && <p className="text-xs text-success">{state.message}</p>}
+      <ResultText error={state?.error} message={state?.message} />
     </form>
   );
 }

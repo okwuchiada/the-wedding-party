@@ -2,15 +2,15 @@ import Link from "next/link";
 import ActionButton from "@/components/super/action-button";
 import { RoleBadge } from "@/components/super/role-badge";
 import { Pagination } from "@/components/super/pagination";
-import { SearchForm } from "@/components/super/search-form";
+import { FilterSelect, SearchForm } from "@/components/super/search-form";
 import { date, Table } from "@/components/super/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { impersonateUser, sendUserPasswordReset } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
 import { can, isStaff, ROLE_LABELS } from "@/lib/permissions";
 import { readPagination } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import type { Prisma, UserRole } from "@/lib/generated/prisma/client";
-import { inputClass } from "@/components/ui/field";
 
 const ROLES = Object.keys(ROLE_LABELS) as UserRole[];
 
@@ -59,51 +59,43 @@ export default async function StaffUsersPage({
   return (
     <div className="flex flex-col gap-5">
       <SearchForm q={term} placeholder="Email or name">
-        <select name="role" defaultValue={role ?? ""} aria-label="Access level" className={`${inputClass} w-auto`}>
-          <option value="">All access levels</option>
-          <option value="staff">All staff</option>
-          {ROLES.map((r) => (
-            <option key={r} value={r}>
-              {ROLE_LABELS[r]}
-            </option>
-          ))}
-        </select>
-        <select name="sort" defaultValue={sortKey} aria-label="Sort" className={`${inputClass} w-auto`}>
-          {Object.entries(SORTS).map(([key, { label }]) => (
-            <option key={key} value={key}>
-              {label}
-            </option>
-          ))}
-        </select>
+        <FilterSelect
+          name="role"
+          defaultValue={role ?? ""}
+          allLabel="All access levels"
+          label="Access level"
+          options={[{ value: "staff", label: "All staff" }, ...ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))]}
+        />
+        <FilterSelect name="sort" defaultValue={sortKey} label="Sort" options={Object.entries(SORTS).map(([key, { label }]) => ({ value: key, label }))} />
       </SearchForm>
       <Table head={["User", "Access", "Weddings", "Joined", "Actions"]}>
         {users.map((u) => (
-          <tr key={u.id}>
-            <td className="px-3 py-3">
+          <TableRow key={u.id}>
+            <TableCell>
               <p>{u.email}</p>
-              <p className="text-xs text-muted">
+              <p className="text-xs text-muted-foreground">
                 {u.name ?? "—"}
                 {u.phone && ` · ${u.phone}`}
                 {!u.passwordHash && " · hasn't set a password"}
               </p>
-            </td>
-            <td className="px-3 py-3">
+            </TableCell>
+            <TableCell>
               <RoleBadge role={u.role} />
-            </td>
-            <td className="px-3 py-3 text-xs text-muted">
+            </TableCell>
+            <TableCell className="text-xs text-muted-foreground">
               {u.memberships.map((m) => (
                 <div key={m.id}>
                   <Link href={`/super/weddings/${m.wedding.id}`} className="underline underline-offset-4">
                     /w/{m.wedding.slug}
                   </Link>{" "}
-                  <span className="text-muted">({m.role.toLowerCase()})</span>
+                  <span className="text-muted-foreground">({m.role.toLowerCase()})</span>
                 </div>
               ))}
-            </td>
-            <td className="px-3 py-3 text-muted">{date(u.createdAt)}</td>
-            <td className="px-3 py-3">
+            </TableCell>
+            <TableCell className="text-muted-foreground">{date(u.createdAt)}</TableCell>
+            <TableCell>
               {u.id === staff.id ? (
-                <span className="text-xs text-muted">You</span>
+                <span className="text-xs text-muted-foreground">You</span>
               ) : (
                 <div className="flex flex-wrap gap-1">
                   {allowed.impersonate && !isStaff(u.role) && (
@@ -118,8 +110,8 @@ export default async function StaffUsersPage({
                   )}
                 </div>
               )}
-            </td>
-          </tr>
+            </TableCell>
+          </TableRow>
         ))}
       </Table>
       <Pagination page={page} pageSize={pageSize} total={total} />

@@ -20,8 +20,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
 import { SectionHeading } from "@/components/ui/section-heading";
 import MoveButtons from "./move-buttons";
-import { buttonClass } from "@/components/ui/button";
-import { inputClass } from "@/components/ui/field";
+import { FIELD, FILE_INPUT, TEXT_ACTION } from "@/components/admin/form-styles";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 export type StoryBeatView = {
   id: string;
@@ -93,59 +96,56 @@ function BeatForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 bg-surface-muted p-4 sm:grid-cols-2">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 bg-accent p-4 sm:grid-cols-2">
       {initialValues?.id && <input type="hidden" name="id" defaultValue={initialValues.id} />}
       {initialValues?.photoUrl && (
         <input type="hidden" name="existingPhotoUrl" defaultValue={initialValues.photoUrl} />
       )}
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
+      <Label className="flex-col items-stretch gap-1.5">
         Label (e.g. &ldquo;The Drawing&rdquo;)
-        <input
+        <Input
           name="year"
           defaultValue={initialValues?.year}
-          className={`${inputClass}`}
         />
-      </label>
-      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
+      </Label>
+      <Label className="flex-col items-stretch gap-1.5">
         Order
-        <input
+        <Input
           name="order"
           type="number"
           defaultValue={initialValues?.order ?? 0}
-          className={`${inputClass}`}
         />
-      </label>
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink sm:col-span-2">
+      <Label className="flex-col items-stretch gap-1.5 sm:col-span-2">
         Title
-        <input
+        <Input
           name="title"
           defaultValue={initialValues?.title}
-          className={`${inputClass}`}
         />
-      </label>
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink sm:col-span-2">
+      <Label className="flex-col items-stretch gap-1.5 sm:col-span-2">
         Story text
-        <textarea
+        <Textarea
           name="text"
           rows={3}
           defaultValue={initialValues?.text}
-          className={`${inputClass} resize-none`}
+          className="resize-none"
         />
-      </label>
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink sm:col-span-2">
+      <Label className="flex-col items-stretch gap-1.5 sm:col-span-2">
         Photo (optional)
-        <input
+        <Input
           name="file"
           type="file"
           accept="image/*,.heic,.heif"
-          className={`${inputClass} file:mr-3 file:rounded-full file:border-0 file:bg-ink file:px-3 file:py-1.5 file:text-[13px] file:font-medium file:text-paper`}
+          className={cn(FIELD, FILE_INPUT)}
         />
         {initialValues?.photoUrl && (
-          <span className="mt-1 flex items-center gap-2 text-[13px] text-muted">
+          <span className="mt-1 flex items-center gap-2 text-[13px] text-muted-foreground">
             <Image
               src={initialValues.photoUrl}
               alt=""
@@ -156,27 +156,28 @@ function BeatForm({
             Leave blank to keep the current photo
           </span>
         )}
-      </label>
+      </Label>
 
       {(uploadError || state?.error) && (
-        <p className="text-[13px] text-danger sm:col-span-2">{uploadError || state?.error}</p>
+        <p className="text-[13px] text-destructive sm:col-span-2">{uploadError || state?.error}</p>
       )}
 
       <div className="flex gap-2 sm:col-span-2">
-        <button
+        <Button
           type="button"
           onClick={onCancel}
-          className={buttonClass("secondary", "sm")}
+          variant="outline"
+          size="sm"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
           disabled={pending || uploading}
-          className={buttonClass("primary", "sm")}
+          size="sm"
         >
           {uploading ? "Uploading…" : pending ? "Saving…" : submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -249,16 +250,16 @@ export default function StoryBeatsSection({ beats }: { beats: StoryBeatView[] })
                 />
               </li>
             ) : (
-              <li key={beat.id} className="flex items-center gap-4 rounded-[8px] border border-line bg-surface p-3">
+              <li key={beat.id} className="flex items-center gap-4 rounded-[8px] border border-border bg-card p-3">
                 {beat.photoUrl ? (
                   <Image src={beat.photoUrl} alt="" width={56} height={56} className="size-14 shrink-0 rounded-[6px] object-cover" />
                 ) : (
-                  <span className="size-14 shrink-0 rounded-[6px] bg-surface-muted" aria-hidden />
+                  <span className="size-14 shrink-0 rounded-[6px] bg-accent" aria-hidden />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-semibold text-muted">{beat.year}</p>
+                  <p className="text-[13px] font-semibold text-muted-foreground">{beat.year}</p>
                   <p className="font-semibold text-ink">{beat.title}</p>
-                  {beat.text && <p className="truncate text-[13px] text-muted">{beat.text}</p>}
+                  {beat.text && <p className="truncate text-[13px] text-muted-foreground">{beat.text}</p>}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <MoveButtons
@@ -268,10 +269,10 @@ export default function StoryBeatsSection({ beats }: { beats: StoryBeatView[] })
                     disabled={isPending(beat.id)}
                     onMove={(direction) => move(beat.id, direction)}
                   />
-                  <Button variant="text" size="sm" className="ml-2" disabled={isPending(beat.id)} onClick={() => setEditingId(beat.id)}>
+                  <Button size="xs" variant="link" className={cn(TEXT_ACTION, "ml-2")} disabled={isPending(beat.id)} onClick={() => setEditingId(beat.id)}>
                     Edit
                   </Button>
-                  <Button variant="text" size="sm" className="ml-3" disabled={isPending(beat.id)} onClick={() => handleDelete(beat.id)}>
+                  <Button size="xs" variant="link" className={cn(TEXT_ACTION, "ml-3")} disabled={isPending(beat.id)} onClick={() => handleDelete(beat.id)}>
                     {isPending(beat.id, "delete") ? "Removing…" : "Remove"}
                   </Button>
                 </div>

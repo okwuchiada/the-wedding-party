@@ -1,9 +1,12 @@
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+
+/** What an empty list shows: a dashed shadcn Card with a title, a line of help and an optional action. */
 export function EmptyState({ title, body, action }: { title: string; body?: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-[8px] border border-dashed border-ink/20 bg-surface px-6 py-10 text-center">
-      <p className="font-(family-name:--m-display) text-lg font-bold text-ink">{title}</p>
-      {body && <p className="max-w-md text-sm text-muted">{body}</p>}
+    <Card className="items-center gap-2 border-dashed border-ink/20 px-6 py-10 text-center shadow-none">
+      <CardTitle className="font-(family-name:--m-display) text-lg font-bold">{title}</CardTitle>
+      {body && <CardDescription className="max-w-md">{body}</CardDescription>}
       {action && <div className="mt-2">{action}</div>}
-    </div>
+    </Card>
   );
 }

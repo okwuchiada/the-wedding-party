@@ -1,13 +1,13 @@
 import type { PaymentStatus, WeddingStatus } from "@/lib/generated/prisma/client";
 
 const STATUS_STYLES: Record<WeddingStatus | PaymentStatus, string> = {
-  DRAFT: "bg-line/60 text-ink/75",
-  ACTIVE: "bg-success/15 text-success",
-  SUSPENDED: "bg-danger/15 text-danger",
+  DRAFT: "bg-border/60 text-ink/75",
+  ACTIVE: "bg-emerald/15 text-emerald",
+  SUSPENDED: "bg-destructive/15 text-destructive",
   ARCHIVED: "bg-ink/10 text-ink/75",
-  PENDING: "bg-action/30 text-ink",
-  SUCCESS: "bg-success/15 text-success",
-  FAILED: "bg-danger/15 text-danger",
+  PENDING: "bg-gold/30 text-ink",
+  SUCCESS: "bg-emerald/15 text-emerald",
+  FAILED: "bg-destructive/15 text-destructive",
 };
 
 /** A colour-coded pill for a wedding or payment status. */

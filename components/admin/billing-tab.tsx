@@ -6,10 +6,13 @@ import PlanCard, { type PlanCardPlan } from "@/components/marketing/plan-card";
 import { formatMoney } from "@/lib/money";
 import { useAdminWeddingId } from "./wedding-context";
 import { StatusBadge } from "@/components/super/status-badge";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { TableShell, Td, Th } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { shortDate } from "@/lib/format-date";
 import type { PaymentStatus } from "@/lib/generated/prisma/client";
 
@@ -48,16 +51,16 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
 
   return (
     <div className="flex flex-col gap-8">
-      <Card as="section" className={billing.currentPlan && !billing.currentPlan.free ? "border-action" : ""}>
+      <Card className={cn("block gap-0 rounded-md p-5 shadow-none", billing.currentPlan && !billing.currentPlan.free && "border-gold")}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-(family-name:--m-display) text-2xl font-bold tracking-tight text-ink">
             {billing.currentPlan ? billing.currentPlan.name : "Free draft"}
           </h2>
-          <span className="rounded-full bg-success/12 px-2.5 py-1 text-[13px] font-semibold text-success">
+          <Badge className="bg-emerald/12 px-2.5 py-1 text-[13px] font-semibold text-emerald">
             {billing.currentPlan?.comped ? "Complimentary" : "Current plan"}
-          </span>
+          </Badge>
         </div>
-        <p className="mt-2 text-sm text-muted">
+        <p className="mt-2 text-sm text-muted-foreground">
           {!billing.currentPlan
             ? "Choose a plan to publish your site for guests."
             : billing.currentPlan.free
@@ -68,7 +71,7 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
         {currentHighlights.length > 0 && (
           <ul className="mt-3 flex flex-wrap gap-2" aria-label="Included in your plan">
             {currentHighlights.map((h) => (
-              <li key={h} className="rounded-full bg-surface-muted px-2.5 py-1 text-[13px] text-ink">
+              <li key={h} className="rounded-full bg-accent px-2.5 py-1 text-[13px] text-ink">
                 {h}
               </li>
             ))}
@@ -87,7 +90,7 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
             current={plan.current}
             action={
               plan.current ? (
-                <p className={`text-sm font-semibold ${plan.popular ? "text-action" : "text-success"}`}>Your current plan</p>
+                <p className={`text-sm font-semibold ${plan.popular ? "text-gold" : "text-emerald"}`}>Your current plan</p>
               ) : plan.chargeKobo === null ? (
                 <p className={`text-sm ${plan.popular ? "text-paper/70" : "text-ink/60"}`}>
                   {plan.priceKobo === 0 ? "Included free" : "Included in your plan"}
@@ -95,21 +98,19 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
               ) : (
                 <form action={formAction}>
                   <input type="hidden" name="planKey" value={plan.key} />
-                  <button
+                  <Button
                     type="submit"
+                    variant={plan.popular ? "default" : "ink"}
                     disabled={pending || !billing.paymentsEnabled}
-                    className={`w-full rounded-full px-4 py-3 text-sm font-semibold disabled:opacity-50 ${
-                      plan.popular
-                        ? "bg-action text-ink hover:bg-paper"
-                        : "bg-ink text-paper hover:bg-success"
-                    }`}
+                    // The popular plan sits on an ink card, so its gold button lightens on hover instead.
+                    className={cn("w-full py-3", plan.popular && "hover:bg-paper hover:text-ink")}
                   >
                     {pending
                       ? "Redirecting…"
                       : billing.currentPlan
                         ? `Upgrade, pay ${formatMoney(plan.chargeKobo, NAIRA)}`
                         : `Choose ${plan.name}`}
-                  </button>
+                  </Button>
                 </form>
               )
             }
@@ -120,28 +121,30 @@ export default function BillingTab({ billing }: { billing: BillingView }) {
       {billing.payments.length > 0 && (
         <section>
           <SectionHeading title="Payments" />
-          <TableShell minWidth="min-w-0">
-            <thead>
-              <tr>
-                <Th>Date</Th>
-                <Th>Plan</Th>
-                <Th numeric>Amount</Th>
-                <Th>Status</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {billing.payments.map((p) => (
-                <tr key={p.reference}>
-                  <Td className="text-muted">{shortDate(p.date)}</Td>
-                  <Td>{p.planName}</Td>
-                  <Td numeric>{formatMoney(p.amountKobo, NAIRA)}</Td>
-                  <Td>
-                    <StatusBadge status={p.status as PaymentStatus} />
-                  </Td>
-                </tr>
-              ))}
-            </tbody>
-          </TableShell>
+          <div className="overflow-hidden rounded-md border bg-card">
+            <Table className="min-w-0">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {billing.payments.map((p) => (
+                  <TableRow key={p.reference}>
+                    <TableCell className="text-muted-foreground">{shortDate(p.date)}</TableCell>
+                    <TableCell>{p.planName}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoney(p.amountKobo, NAIRA)}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={p.status as PaymentStatus} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </section>
       )}
     </div>

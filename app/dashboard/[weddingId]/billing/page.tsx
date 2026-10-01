@@ -6,7 +6,8 @@ import { fulfillPayment } from "@/lib/payments";
 import { PAYSTACK_CURRENCY, verifyTransaction } from "@/lib/paystack";
 import { prisma } from "@/lib/prisma";
 import { dashboardTabHref } from "@/lib/dashboard-tabs";
-import { buttonClass } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const MESSAGES = {
   success: { title: "Payment received", body: "Your plan is active. You can publish your site from Settings." },
@@ -50,7 +51,7 @@ export default async function BillingReturnPage({
   const message = MESSAGES[status];
   return (
     <div className="flex min-h-screen items-center justify-center px-5 py-12">
-      <div className="w-full max-w-md overflow-hidden rounded-[6px] border border-line bg-surface shadow-[0_30px_60px_-40px_rgb(22_32_74/0.45)]">
+      <Card className="w-full max-w-md gap-0 overflow-hidden rounded-md py-0 shadow-[0_30px_60px_-40px_rgb(22_32_74/0.45)]">
         <WovenBand className="h-2" />
         <div className="p-8">
           <h1 className="font-(family-name:--m-display) text-3xl font-extrabold tracking-[-0.02em]">{message.title}</h1>
@@ -60,14 +61,11 @@ export default async function BillingReturnPage({
             </p>
           )}
           <p className="mt-4 leading-relaxed text-ink/80">{message.body}</p>
-          <Link
-            href={dashboardTabHref(wedding.id, "billing")}
-            className={`mt-7 ${buttonClass("primary", "lg")}`}
-          >
-            Back to billing
-          </Link>
+          <Button asChild size="lg" className="mt-7 py-3">
+            <Link href={dashboardTabHref(wedding.id, "billing")}>Back to billing</Link>
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

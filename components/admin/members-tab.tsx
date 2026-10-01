@@ -1,12 +1,14 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { ResultText } from "@/components/result-text";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { inviteMember, removeMember } from "@/lib/actions/members";
 import { useActionPending } from "./use-action-pending";
 import { useConfirm } from "./use-confirm";
 import { useAdminWeddingId } from "./wedding-context";
-import { buttonClass } from "@/components/ui/button";
-import { inputClass } from "@/components/ui/field";
 import { useSuccessToast } from "@/components/ui/toast";
 
 export type MemberView = {
@@ -26,26 +28,21 @@ function InviteForm() {
   useSuccessToast(state, "Invite sent");
 
   return (
-    <form action={formAction} className="grid grid-cols-1 gap-3 rounded-[6px] bg-surface p-4 sm:grid-cols-[1fr_auto_auto]">
-      <input
-        type="email"
-        name="email"
-        required
-        placeholder="partner@example.com"
-        className={`${inputClass}`}
-      />
-      <select name="role" defaultValue="EDITOR" className={`${inputClass} w-auto`}>
-        <option value="EDITOR">Editor</option>
-        <option value="OWNER">Owner</option>
-      </select>
-      <button
-        type="submit"
-        disabled={pending}
-        className={buttonClass("primary", "sm")}
-      >
+    <form action={formAction} className="grid grid-cols-1 gap-3 rounded-md bg-white p-4 sm:grid-cols-[1fr_auto_auto]">
+      <Input type="email" name="email" required aria-label="Email" placeholder="partner@example.com" className="h-auto py-2" />
+      <Select name="role" defaultValue="EDITOR">
+        <SelectTrigger aria-label="Role" className="h-auto py-2 data-[size=default]:h-auto">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="EDITOR">Editor</SelectItem>
+          <SelectItem value="OWNER">Owner</SelectItem>
+        </SelectContent>
+      </Select>
+      <Button type="submit" size="sm" disabled={pending}>
         {pending ? "Inviting…" : "Invite"}
-      </button>
-      {state?.error && <p className="text-[13px] text-danger sm:col-span-3">{state.error}</p>}
+      </Button>
+      <ResultText error={state?.error} className="sm:col-span-3" />
     </form>
   );
 }
@@ -75,37 +72,39 @@ export default function MembersTab({ members, isOwner }: { members: MemberView[]
       {confirmDialog}
       <div>
         <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-ink">People</h2>
-        <p className="mt-1 text-sm text-muted">
+        <p className="mt-1 text-sm text-ink/60">
           Owners can invite and remove people. Editors can manage everything else.
         </p>
       </div>
 
       {isOwner && <InviteForm />}
-      {error && <p className="text-[13px] text-danger">{error}</p>}
+      {error && <ResultText error={error} className="block" />}
 
-      <ul className="flex flex-col divide-y divide-line rounded-[6px] bg-surface">
+      <ul className="flex flex-col divide-y divide-mist rounded-md bg-white">
         {members.map((member) => (
           <li key={member.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div>
               <p className="text-sm text-ink">
                 {member.name || member.email}
-                {member.isYou && <span className="text-muted"> (you)</span>}
+                {member.isYou && <span className="text-ink/50"> (you)</span>}
               </p>
-              <p className="text-xs text-muted">
+              <p className="text-xs text-ink/60">
                 {member.name ? `${member.email} · ` : ""}
                 {ROLE_LABELS[member.role]}
                 {member.pendingInvite && " · invite pending"}
               </p>
             </div>
             {isOwner && (
-              <button
+              <Button
                 type="button"
+                variant="link"
+                size="xs"
                 disabled={isPending(member.id, "remove")}
                 onClick={() => handleRemove(member)}
-                className={buttonClass("text", "sm")}
+                className="px-0 font-normal text-ink/60 hover:text-coral-deep hover:no-underline disabled:opacity-50"
               >
                 {isPending(member.id, "remove") ? "Removing…" : "Remove"}
-              </button>
+              </Button>
             )}
           </li>
         ))}

@@ -7,6 +7,8 @@ import SitePreview from "@/components/marketing/site-preview";
 import { checkSlugAvailable, createWedding } from "@/lib/actions/weddings";
 import { suggestWeddingSlug } from "@/lib/slug";
 import { getPreset, THEME_PRESETS } from "@/lib/themes";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { defaultPresetKey, isPresetIncluded } from "@/lib/theme-default";
 
 type SlugCheck = { slug: string; available: boolean; reason?: string };
@@ -22,8 +24,8 @@ function formatDateLabel(date: string) {
 
 function Step({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
   return (
-    <fieldset className="grid grid-cols-[2.5rem_1fr] gap-x-4 border-t border-line pt-8 sm:grid-cols-[3.5rem_1fr]">
-      <span aria-hidden className="font-(family-name:--m-display) text-4xl leading-none font-extrabold text-action sm:text-5xl">
+    <fieldset className="grid grid-cols-[2.5rem_1fr] gap-x-4 border-t border-border pt-8 sm:grid-cols-[3.5rem_1fr]">
+      <span aria-hidden className="font-(family-name:--m-display) text-4xl leading-none font-extrabold text-gold sm:text-5xl">
         {number}
       </span>
       <div>
@@ -84,9 +86,9 @@ export default function CreateWeddingForm({
       <div className="flex flex-col gap-10 lg:col-start-1 lg:row-start-1">
         <Step number={1} title="Who's getting married?">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className="flex flex-col gap-1.5 text-sm font-medium">
+            <Label className="flex-col items-stretch gap-1.5">
               Your name
-              <input
+              <Input
                 name="brideName"
                 required
                 autoComplete="name"
@@ -94,11 +96,11 @@ export default function CreateWeddingForm({
                 onChange={(e) => updateName("bride", e.target.value)}
                 className={authInputClass}
               />
-            </label>
-            <label className="flex flex-col gap-1.5 text-sm font-medium">
+            </Label>
+            <Label className="flex-col items-stretch gap-1.5">
               Your partner&apos;s name
-              <input name="groomName" required value={names.groom} onChange={(e) => updateName("groom", e.target.value)} className={authInputClass} />
-            </label>
+              <Input name="groomName" required value={names.groom} onChange={(e) => updateName("groom", e.target.value)} className={authInputClass} />
+            </Label>
             <div className="flex flex-col gap-1.5 text-sm font-medium sm:col-span-2 sm:max-w-sm">
               <span id="wedding-date-label">Wedding date</span>
               <DatePicker name="weddingDate" value={date} onChange={setDate} labelledBy="wedding-date-label" />
@@ -108,9 +110,9 @@ export default function CreateWeddingForm({
 
         <Step number={2} title="Your web address">
           <p className="mb-3 text-ink/70">This is the link you&apos;ll share with guests. You can change it later.</p>
-          <div className="flex items-center rounded-[6px] border border-line bg-surface focus-within:border-ink/50 focus-within:ring-3 focus-within:ring-action/35">
+          <div className="flex items-center rounded-[6px] border border-input bg-white focus-within:border-ink/50 focus-within:ring-[3px] focus-within:ring-gold/35">
             <span className="pl-3.5 text-base text-ink/50">/w/</span>
-            <input
+            <Input
               name="slug"
               required
               aria-label="Web address"
@@ -120,13 +122,13 @@ export default function CreateWeddingForm({
                 setSlugEdited(true);
                 setSlug(e.target.value.toLowerCase());
               }}
-              className="w-full rounded-[6px] px-1 py-3 text-base outline-none"
+              className="h-auto border-0 px-1 py-3 text-base focus-visible:ring-0 md:text-base"
             />
           </div>
           <p
             id="slug-status"
             aria-live="polite"
-            className={`mt-2 min-h-5 text-sm ${status?.available === false ? "text-danger" : "text-success"}`}
+            className={`mt-2 min-h-5 text-sm ${status?.available === false ? "text-destructive" : "text-emerald"}`}
           >
             {status ? (status.available ? "That address is free" : status.reason) : ""}
           </p>
@@ -145,7 +147,7 @@ export default function CreateWeddingForm({
                   role="radio"
                   aria-checked={selected}
                   onClick={() => setPresetKey(p.key)}
-                  className={`flex flex-col gap-2 rounded-[6px] bg-surface p-2 text-left text-xs font-medium outline-offset-2 focus-visible:outline-2 focus-visible:outline-ink ${
+                  className={`flex flex-col gap-2 rounded-[6px] bg-card p-2 text-left text-xs font-medium outline-offset-2 focus-visible:outline-2 focus-visible:outline-ink ${
                     selected ? "ring-2 ring-ink" : "ring-1 ring-(--m-mist) hover:ring-ink/40"
                   }`}
                 >
@@ -155,7 +157,7 @@ export default function CreateWeddingForm({
                     ))}
                   </span>
                   {p.name}
-                  {!isPresetIncluded(includedThemes, p.key) && <span className="text-[13px] font-normal text-muted">Needs an upgrade to publish</span>}
+                  {!isPresetIncluded(includedThemes, p.key) && <span className="text-[13px] font-normal text-muted-foreground">Needs an upgrade to publish</span>}
                 </button>
               );
             })}
@@ -164,7 +166,7 @@ export default function CreateWeddingForm({
 
       </div>
 
-      <div className="flex flex-col gap-4 border-t border-line pt-8 sm:max-w-sm lg:col-start-1 lg:row-start-2 lg:self-start">
+      <div className="flex flex-col gap-4 border-t border-border pt-8 sm:max-w-sm lg:col-start-1 lg:row-start-2 lg:self-start">
         <AuthMessage error={state?.error} />
         <AuthSubmit pending={pending} label="Create my site" pendingLabel="Creating your site…" />
       </div>

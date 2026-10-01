@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { MediaView } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Segmented } from "@/components/ui/segmented";
@@ -24,7 +25,7 @@ const EMPTY: Record<ReviewStatus, { title: string; body: string }> = {
 function Thumb({ media }: { media: MediaView }) {
   const label = `${media.type === "VIDEO" ? "Video" : "Photo"} from ${media.guestName}`;
   return (
-    <a href={media.url} target="_blank" rel="noopener noreferrer" className="relative block aspect-square w-full overflow-hidden rounded-t-[8px] bg-surface-muted" aria-label={`Open ${label.toLowerCase()} in a new tab`}>
+    <a href={media.url} target="_blank" rel="noopener noreferrer" className="relative block aspect-square w-full overflow-hidden rounded-t-[8px] bg-accent" aria-label={`Open ${label.toLowerCase()} in a new tab`}>
       {media.type === "VIDEO" ? (
         <>
           <video src={media.url} muted playsInline preload="metadata" className="h-full w-full object-cover" />
@@ -95,7 +96,7 @@ export default function MediaTab({
     await run(media.id, "delete", () => onDeleteApproved(media));
   };
 
-  const move = (media: MediaView, to: ReviewStatus, label: string, pendingLabel: string, variant: "primary" | "secondary") => (
+  const move = (media: MediaView, to: ReviewStatus, label: string, pendingLabel: string, variant: "default" | "outline") => (
     <Button
       size="sm"
       variant={variant}
@@ -109,17 +110,17 @@ export default function MediaTab({
 
   return (
     <div className="flex flex-col gap-10">
-      <Card className="flex flex-wrap items-center justify-between gap-4">
+      <Card className="flex-row flex-wrap items-center justify-between gap-4 rounded-md p-5 shadow-none">
         <div>
           <h2 className="font-(family-name:--m-display) text-xl font-bold tracking-tight text-ink">Photo wall</h2>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1 text-sm text-muted-foreground">
             {galleryEnabled
               ? "On: guests can see the wall and upload photos."
               : "Off: guests can't see it yet. Turn it on when it's time, such as on the wedding day."}
           </p>
         </div>
         <Button
-          variant={galleryEnabled ? "secondary" : "primary"}
+          variant={galleryEnabled ? "outline" : "default"}
           size="sm"
           disabled={isPending("gallery")}
           onClick={() => run("gallery", "toggle", onToggleGallery)}
@@ -146,13 +147,13 @@ export default function MediaTab({
         />
 
         {view === "PENDING" && selected.size > 0 && (
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[8px] bg-action/20 px-4 py-3 text-sm font-semibold text-ink" role="status">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[8px] bg-gold/20 px-4 py-3 text-sm font-semibold text-ink" role="status">
             <span>{selected.size} selected</span>
             <span className="flex gap-2">
               <Button size="sm" disabled={isPending("bulk")} onClick={() => bulk("APPROVED")}>
                 {isPending("bulk", "APPROVED") ? "Approving…" : "Approve"}
               </Button>
-              <Button size="sm" variant="secondary" disabled={isPending("bulk")} onClick={() => bulk("HIDDEN")}>
+              <Button size="sm" variant="outline" disabled={isPending("bulk")} onClick={() => bulk("HIDDEN")}>
                 {isPending("bulk", "HIDDEN") ? "Hiding…" : "Hide"}
               </Button>
             </span>
@@ -165,39 +166,37 @@ export default function MediaTab({
           <>
             <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
               {paged.pageItems.map((media) => (
-                <li key={media.id} className={`relative rounded-[8px] border border-line bg-surface ${view === "HIDDEN" ? "opacity-75" : ""}`}>
+                <li key={media.id} className={`relative rounded-[8px] border border-border bg-card ${view === "HIDDEN" ? "opacity-75" : ""}`}>
                   <Thumb media={media} />
                   {view === "PENDING" && (
-                    <label className="absolute top-2 left-2 grid size-8 cursor-pointer place-items-center rounded-full bg-surface/90">
-                      <input
-                        type="checkbox"
-                        className="size-4 accent-[var(--success)]"
+                    <span className="absolute top-2 left-2 grid size-8 place-items-center rounded-full bg-card/90">
+                      <Checkbox
                         checked={selected.has(media.id)}
-                        onChange={() => toggleSelected(media.id)}
+                        onCheckedChange={() => toggleSelected(media.id)}
                         aria-label={`Select ${media.type === "VIDEO" ? "video" : "photo"} from ${media.guestName}`}
                       />
-                    </label>
+                    </span>
                   )}
                   <div className="p-3">
-                    <p className="truncate text-[13px] text-muted">
+                    <p className="truncate text-[13px] text-muted-foreground">
                       {media.guestName} &middot; {media.dateUploaded}
                     </p>
                     <div className="mt-2 flex gap-2">
                       {view === "PENDING" && (
                         <>
-                          {move(media, "APPROVED", "Approve", "Approving…", "primary")}
-                          {move(media, "HIDDEN", "Hide", "Hiding…", "secondary")}
+                          {move(media, "APPROVED", "Approve", "Approving…", "default")}
+                          {move(media, "HIDDEN", "Hide", "Hiding…", "outline")}
                         </>
                       )}
                       {view === "APPROVED" && (
                         <>
-                          {move(media, "HIDDEN", "Hide", "Hiding…", "secondary")}
-                          <Button size="sm" variant="secondary" className="flex-1" disabled={isPending(media.id)} onClick={() => handleDelete(media)}>
+                          {move(media, "HIDDEN", "Hide", "Hiding…", "outline")}
+                          <Button size="sm" variant="outline" className="flex-1" disabled={isPending(media.id)} onClick={() => handleDelete(media)}>
                             {isPending(media.id, "delete") ? "Deleting…" : "Delete"}
                           </Button>
                         </>
                       )}
-                      {view === "HIDDEN" && move(media, "APPROVED", "Restore", "Restoring…", "secondary")}
+                      {view === "HIDDEN" && move(media, "APPROVED", "Restore", "Restoring…", "outline")}
                     </div>
                   </div>
                 </li>

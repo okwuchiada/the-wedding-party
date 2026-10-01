@@ -1,15 +1,13 @@
-const TONES = {
-  info: "bg-surface-muted text-ink",
-  success: "bg-success/10 text-success",
-  error: "bg-danger/10 text-danger",
-  warning: "bg-action/20 text-warning",
-} as const;
+import { Alert } from "@/components/ui/alert";
 
-export function Notice({ tone = "info", children, action }: { tone?: keyof typeof TONES; children: React.ReactNode; action?: React.ReactNode }) {
+const VARIANT = { info: "default", success: "success", error: "destructive", warning: "warning" } as const;
+
+/** A shadcn Alert with an optional action on the right. Only errors interrupt screen readers. */
+export function Notice({ tone = "info", children, action }: { tone?: keyof typeof VARIANT; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div role={tone === "error" ? "alert" : "status"} className={`flex flex-wrap items-center justify-between gap-3 rounded-[6px] px-4 py-3 text-sm font-medium ${TONES[tone]}`}>
+    <Alert variant={VARIANT[tone]} role={tone === "error" ? "alert" : "status"} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 font-medium">
       <div className="min-w-0">{children}</div>
       {action}
-    </div>
+    </Alert>
   );
 }

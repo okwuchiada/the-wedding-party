@@ -20,17 +20,20 @@ import TimePicker from "@/components/marketing/time-picker";
 import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
 import StoryBeatsSection, { type StoryBeatView } from "./story-beats-section";
-import { buttonClass } from "@/components/ui/button";
-import { inputClass } from "@/components/ui/field";
+import { Button } from "@/components/ui/button";
 import { useSuccessToast } from "@/components/ui/toast";
 
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { TextArea, TextInput } from "@/components/ui/field";
+import { PhoneField, TextArea, TextInput } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { SectionHeading } from "@/components/ui/section-heading";
 import MoveButtons from "./move-buttons";
+import { FIELD, FILE_INPUT, TEXT_ACTION } from "@/components/admin/form-styles";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export type StoryContentView = {
   brideName: string;
@@ -120,21 +123,21 @@ function PhotoForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 bg-surface-muted p-4 sm:grid-cols-3">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 bg-accent p-4 sm:grid-cols-3">
       {initialValues?.id && <input type="hidden" name="id" defaultValue={initialValues.id} />}
       {initialValues?.url && (
         <input type="hidden" name="existingUrl" defaultValue={initialValues.url} />
       )}
-      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
+      <Label className="flex-col items-stretch gap-1.5">
         Photo
-        <input
+        <Input
           name="file"
           type="file"
           accept="image/*,.heic,.heif"
-          className={`${inputClass} file:mr-3 file:rounded-full file:border-0 file:bg-ink file:px-3 file:py-1.5 file:text-[13px] file:font-medium file:text-paper`}
+          className={cn(FIELD, FILE_INPUT)}
         />
         {initialValues?.url && (
-          <span className="mt-1 flex items-center gap-2 text-[13px] text-muted">
+          <span className="mt-1 flex items-center gap-2 text-[13px] text-muted-foreground">
             <Image
               src={initialValues.url}
               alt=""
@@ -145,54 +148,48 @@ function PhotoForm({
             Leave blank to keep the current photo
           </span>
         )}
-      </label>
-      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
+      </Label>
+      <Label className="flex-col items-stretch gap-1.5">
         Caption
-        <input
+        <Input
           name="caption"
           defaultValue={initialValues?.caption}
-          className={`${inputClass}`}
         />
-      </label>
-      <label className="flex flex-col gap-1.5 text-sm font-medium text-ink">
+      </Label>
+      <Label className="flex-col items-stretch gap-1.5">
         Order
-        <input
+        <Input
           name="order"
           type="number"
           defaultValue={initialValues?.order ?? 0}
-          className={`${inputClass}`}
         />
-      </label>
+      </Label>
 
-      <label className="flex items-center gap-2 text-xs text-muted sm:col-span-3">
-        <input
-          name="showInHero"
-          type="checkbox"
-          defaultChecked={initialValues?.showInHero ?? false}
-          className="h-4 w-4 border border-line"
-        />
+      <Label className="flex items-center gap-2 text-xs text-muted-foreground sm:col-span-3">
+        <Checkbox name="showInHero" defaultChecked={initialValues?.showInHero ?? false} />
         Show in Hero section
-      </label>
+      </Label>
 
       {(uploadError || state?.error) && (
-        <p className="text-[13px] text-danger sm:col-span-3">{uploadError || state?.error}</p>
+        <p className="text-[13px] text-destructive sm:col-span-3">{uploadError || state?.error}</p>
       )}
 
       <div className="flex gap-2 sm:col-span-3">
-        <button
+        <Button
           type="button"
           onClick={onCancel}
-          className={buttonClass("secondary", "sm")}
+          variant="outline"
+          size="sm"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
           disabled={pending || uploading}
-          className={buttonClass("primary", "sm")}
+          size="sm"
         >
           {uploading ? "Uploading…" : pending ? "Saving…" : submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -253,14 +250,15 @@ function BulkUploadButton() {
 
   return (
     <div>
-      <button
+      <Button
         type="button"
         disabled={uploading}
         onClick={() => inputRef.current?.click()}
-        className={buttonClass("secondary", "sm")}
+        variant="outline"
+        size="sm"
       >
         {uploading ? `Uploading ${progress.done}/${progress.total}…` : "Upload several"}
-      </button>
+      </Button>
       <input
         ref={inputRef}
         type="file"
@@ -271,7 +269,7 @@ function BulkUploadButton() {
           void handleFiles(e.target.files);
         }}
       />
-      {error && <p className="mt-2 text-[13px] text-danger">{error}</p>}
+      {error && <p className="mt-2 text-[13px] text-destructive">{error}</p>}
     </div>
   );
 }
@@ -347,15 +345,15 @@ function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
       ) : (
         <ol className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {photos.map((photo, index) => (
-            <li key={photo.id} className={`overflow-hidden rounded-[8px] border bg-surface ${editingId === photo.id ? "border-ink" : "border-line"}`}>
-              <div className="relative aspect-square bg-surface-muted">
+            <li key={photo.id} className={`overflow-hidden rounded-[8px] border bg-card ${editingId === photo.id ? "border-ink" : "border-border"}`}>
+              <div className="relative aspect-square bg-accent">
                 <Image src={photo.url} alt={photo.caption || `Story photo ${index + 1}`} fill sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw" className="object-cover" />
                 {photo.showInHero && (
                   <span className="absolute top-2 left-2 rounded-full bg-ink/80 px-2 py-0.5 text-[13px] font-semibold text-paper">Cover</span>
                 )}
               </div>
               <div className="flex flex-col gap-1 p-2">
-                {photo.caption && <p className="truncate text-[13px] text-muted">{photo.caption}</p>}
+                {photo.caption && <p className="truncate text-[13px] text-muted-foreground">{photo.caption}</p>}
                 <div className="flex items-center justify-between">
                   <MoveButtons
                     name={photo.caption || `photo ${index + 1}`}
@@ -365,10 +363,10 @@ function StoryPhotosSection({ photos }: { photos: StoryPhotoView[] }) {
                     onMove={(direction) => move(photo.id, direction)}
                   />
                   <span className="flex gap-2">
-                    <Button variant="text" size="sm" disabled={isPending(photo.id)} onClick={() => setEditingId(photo.id)}>
+                    <Button size="xs" className={TEXT_ACTION} variant="link" disabled={isPending(photo.id)} onClick={() => setEditingId(photo.id)}>
                       Edit
                     </Button>
-                    <Button variant="text" size="sm" disabled={isPending(photo.id)} onClick={() => handleDelete(photo.id)}>
+                    <Button size="xs" className={TEXT_ACTION} variant="link" disabled={isPending(photo.id)} onClick={() => handleDelete(photo.id)}>
                       {isPending(photo.id, "delete") ? "Removing…" : "Remove"}
                     </Button>
                   </span>
@@ -404,7 +402,7 @@ export default function StoryTab({
       <SectionHeading title="Our story" description="Changes here show on your site as soon as you save." />
 
       <form action={formAction} className="flex flex-col gap-5 lg:max-w-3xl">
-        <Card as="section">
+        <Card className="gap-0 rounded-md p-5 shadow-none block">
           <SectionHeading as="h3" title="The basics" />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TextInput label="First partner's name" name="brideName" defaultValue={story.brideName} required />
@@ -415,7 +413,7 @@ export default function StoryTab({
           </div>
         </Card>
 
-        <Card as="section">
+        <Card className="gap-0 rounded-md p-5 shadow-none block">
           <SectionHeading as="h3" title="When and where" />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5 text-sm font-medium text-ink">
@@ -441,7 +439,7 @@ export default function StoryTab({
           </div>
         </Card>
 
-        <Card as="section">
+        <Card className="gap-0 rounded-md p-5 shadow-none block">
           <SectionHeading as="h3" title="Your story" />
           <div className="flex flex-col gap-4">
             <TextArea label="How you met" name="howWeMet" rows={4} defaultValue={story.howWeMet ?? ""} placeholder="Tell your guests how your story began" className="resize-y" />
@@ -454,21 +452,23 @@ export default function StoryTab({
           </div>
         </Card>
 
-        <Card as="section">
+        <Card className="gap-0 rounded-md p-5 shadow-none block">
           <SectionHeading as="h3" title="Contact" description="Guests use these to reach you. The first partner's phone is also used for the asoebi WhatsApp button." />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <TextInput label="Contact email" name="contactEmail" type="email" defaultValue={story.contactEmail ?? ""} placeholder="hello@example.com" />
             </div>
-            <TextInput label="First partner's phone" name="bridePhone" type="tel" defaultValue={story.bridePhone ?? ""} placeholder="+234…" />
-            <TextInput label="Second partner's phone" name="groomPhone" type="tel" defaultValue={story.groomPhone ?? ""} placeholder="+234…" />
+            <PhoneField label="First partner's phone" name="bridePhone" defaultValue={story.bridePhone ?? ""} placeholder="+234…" />
+            <PhoneField label="Second partner's phone" name="groomPhone" defaultValue={story.groomPhone ?? ""} placeholder="+234…" />
           </div>
         </Card>
 
         {state?.error && <Notice tone="error">{state.error}</Notice>}
 
-        <Button type="submit" size="lg" className="self-start" pending={pending} pendingLabel="Saving…">
-          Save story
+        <Button type="submit" size="lg" className="self-start" disabled={pending}>
+
+          {pending ? "Saving…" : "Save story"}
+
         </Button>
       </form>
 

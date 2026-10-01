@@ -1,9 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  Pagination as UiPagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PAGE_SIZE_OPTIONS, pageWindow } from "@/lib/pagination";
-import { inputClass } from "@/components/ui/field";
 
 /**
  * A total count, page-size picker and numbered pager for one staff-console table.
@@ -34,9 +42,9 @@ export function Pagination({
     return `${pathname}?${params.toString()}`;
   };
 
-  const onPageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const onPageSizeChange = (value: string) => {
     const params = new URLSearchParams(searchParams);
-    params.set(sizeKey, e.target.value);
+    params.set(sizeKey, value);
     params.set(pageKey, "1");
     router.push(`${pathname}?${params.toString()}`);
   };
@@ -48,57 +56,57 @@ export function Pagination({
   if (total === 0) return null;
 
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-muted">
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-ink/70">
       <p>
         Showing {from}–{to} of {total}
       </p>
       <div className="flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-1.5">
-          Per page
-          <select
-            value={pageSize}
-            onChange={onPageSizeChange}
-            className={`${inputClass} w-auto py-1.5 text-[13px]`}
-          >
-            {PAGE_SIZE_OPTIONS.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </label>
-        <nav aria-label="Pagination" className="flex items-center gap-2">
-          {page > 1 ? (
-            <Link href={hrefForPage(page - 1)} className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-full px-2 text-[13px] hover:bg-surface-muted aria-[current=page]:bg-ink aria-[current=page]:text-paper">
-              Previous
-            </Link>
-          ) : (
-            <span className="opacity-40">Previous</span>
-          )}
-          {pageWindow(page, totalPages).map((p, i) =>
-            p === "…" ? (
-              <span key={`gap-${i}`} className="text-muted">
-                …
-              </span>
-            ) : (
-              <Link
-                key={p}
-                href={hrefForPage(p)}
-                aria-current={p === page ? "page" : undefined}
-                className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-full px-2 text-[13px] hover:bg-surface-muted aria-[current=page]:bg-ink aria-[current=page]:text-paper"
-              >
-                {p}
-              </Link>
-            )
-          )}
-          {page < totalPages ? (
-            <Link href={hrefForPage(page + 1)} className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-full px-2 text-[13px] hover:bg-surface-muted aria-[current=page]:bg-ink aria-[current=page]:text-paper">
-              Next
-            </Link>
-          ) : (
-            <span className="opacity-40">Next</span>
-          )}
-        </nav>
+        <div className="flex items-center gap-1.5">
+          <span id={`${pageKey}-size`}>Per page</span>
+          <Select value={String(pageSize)} onValueChange={onPageSizeChange}>
+            <SelectTrigger size="sm" aria-labelledby={`${pageKey}-size`} className="gap-1 px-1.5 text-xs data-[size=sm]:h-6">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <SelectItem key={n} value={String(n)} className="text-xs">
+                  {n}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <UiPagination className="mx-0 w-auto">
+          <PaginationContent>
+            <PaginationItem>
+              {page > 1 ? (
+                <PaginationPrevious href={hrefForPage(page - 1)} size="xs" />
+              ) : (
+                <span className="px-3 opacity-40">Previous</span>
+              )}
+            </PaginationItem>
+            {pageWindow(page, totalPages).map((p, i) =>
+              p === "…" ? (
+                <PaginationItem key={`gap-${i}`}>
+                  <PaginationEllipsis className="size-7" />
+                </PaginationItem>
+              ) : (
+                <PaginationItem key={p}>
+                  <PaginationLink href={hrefForPage(p)} isActive={p === page} size="icon-xs" className="size-7 text-xs">
+                    {p}
+                  </PaginationLink>
+                </PaginationItem>
+              )
+            )}
+            <PaginationItem>
+              {page < totalPages ? (
+                <PaginationNext href={hrefForPage(page + 1)} size="xs" />
+              ) : (
+                <span className="px-3 opacity-40">Next</span>
+              )}
+            </PaginationItem>
+          </PaginationContent>
+        </UiPagination>
       </div>
     </div>
   );

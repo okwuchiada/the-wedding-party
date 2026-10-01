@@ -1,17 +1,14 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { Button } from "@/components/ui/button";
 
 export default function SignOutButton() {
   const { pending } = useFormStatus();
 
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink) disabled:opacity-60"
-    >
+    <Button type="submit" variant="outline" size="sm" disabled={pending}>
       {pending ? "Signing out…" : "Sign out"}
-    </button>
+    </Button>
   );
 }

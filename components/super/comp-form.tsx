@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { compWedding, type SuperActionResult } from "@/lib/actions/super";
-import { buttonClass } from "@/components/ui/button";
-import { inputClass } from "@/components/ui/field";
+import { ResultText } from "@/components/result-text";
 
 export default function CompForm({
   weddingId,
@@ -24,38 +25,28 @@ export default function CompForm({
   return (
     <span className="inline-flex flex-col items-start gap-1">
       <span className="inline-flex gap-1">
-        <select
-          value={planKey}
-          onChange={(e) => setPlanKey(e.target.value)}
-          className={`${inputClass} w-auto py-1.5 text-[13px]`}
-        >
-          {plans.map((p) => (
-            <option key={p.key} value={p.key}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          disabled={pending || !planKey}
-          onClick={() => run(planKey)}
-          className={buttonClass("secondary", "sm")}
-        >
+        <Select value={planKey} onValueChange={setPlanKey}>
+          <SelectTrigger size="sm" aria-label="Plan to comp" className="gap-1 px-1.5 text-[11px] data-[size=sm]:h-6">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {plans.map((p) => (
+              <SelectItem key={p.key} value={p.key} className="text-xs">
+                {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button type="button" variant="outline" size="xs" disabled={pending || !planKey} onClick={() => run(planKey)} className="px-2.5 py-1 text-[11px]">
           Comp
-        </button>
+        </Button>
         {comped && (
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => run(null)}
-            className={buttonClass("secondary", "sm")}
-          >
+          <Button type="button" variant="outline" size="xs" disabled={pending} onClick={() => run(null)} className="px-2.5 py-1 text-[11px]">
             Uncomp
-          </button>
+          </Button>
         )}
       </span>
-      {result?.error && <span className="text-[13px] text-danger">{result.error}</span>}
-      {result?.message && <span className="text-[13px] text-success">{result.message}</span>}
+      <ResultText error={result?.error} message={result?.message} className="text-[11px]" />
     </span>
   );
 }

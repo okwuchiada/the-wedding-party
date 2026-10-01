@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { DASHBOARD_TABS, dashboardTabHref, type TabId } from "@/lib/dashboard-tabs";
 import LiveRefresh from "@/components/live-refresh";
 import { useSyncedState } from "./use-synced-state";
@@ -41,7 +41,9 @@ import { deleteMedia, setMediaStatusMany } from "@/lib/actions/media";
 import { useToast } from "@/components/ui/toast";
 import { reviewMessage, type ReviewStatus } from "./review";
 import { setGalleryEnabled } from "@/lib/actions/story";
-import { buttonClass } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 
@@ -115,7 +117,6 @@ export default function AdminHome({
   bankDetails: BankDetailsView;
 }) {
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
-  const tabRefs = useRef<Partial<Record<TabId, HTMLButtonElement | null>>>({});
   const visibleTabs = DASHBOARD_TABS.filter((t) => isOwner || !("ownerOnly" in t && t.ownerOnly));
 
   // Keep the open tab in the URL without a navigation, so a reload or a shared link opens it.
@@ -124,20 +125,6 @@ export default function AdminHome({
     window.history.replaceState(null, "", dashboardTabHref(weddingId, id));
   };
 
-  const onTabKeyDown = (e: React.KeyboardEvent, index: number) => {
-    const last = visibleTabs.length - 1;
-    const next =
-      e.key === "ArrowRight" ? (index === last ? 0 : index + 1)
-      : e.key === "ArrowLeft" ? (index === 0 ? last : index - 1)
-      : e.key === "Home" ? 0
-      : e.key === "End" ? last
-      : null;
-    if (next === null) return;
-    e.preventDefault();
-    const id = visibleTabs[next].id;
-    selectTab(id);
-    tabRefs.current[id]?.focus();
-  };
 
   const [pendingContributions, setPendingContributions] = useSyncedState(initialPendingContributions);
   const [confirmedContributions, setConfirmedContributions] = useSyncedState(initialConfirmedContributions);
@@ -266,7 +253,7 @@ export default function AdminHome({
             href={guestUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={buttonClass("inverse", "md")}
+            className={buttonVariants({ variant: "ink" })}
           >
             View guest site
           </a>
@@ -274,42 +261,32 @@ export default function AdminHome({
 
         <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {stats.map((stat) => (
-            <div key={stat.label} className="rounded-[6px] border border-line bg-surface p-4">
+            <Card key={stat.label} className="gap-0 rounded-md p-4 shadow-none">
               <p className="text-sm text-ink/60">{stat.label}</p>
               <p className="mt-1 font-(family-name:--m-display) text-3xl font-extrabold tracking-tight">{stat.value}</p>
-            </div>
+            </Card>
           ))}
         </div>
 
-        <div role="tablist" aria-label="Dashboard sections" className="mt-10 mb-8 flex gap-1.5 overflow-x-auto pb-1">
-          {visibleTabs.map((tab, index) => {
-            const isActive = tab.id === activeTab;
-            return (
-              <button
+        {/* shadcn Tabs: arrow keys, Home and End move between sections. */}
+        <Tabs value={activeTab} onValueChange={(v) => selectTab(v as TabId)} className="gap-0">
+          <TabsList
+            aria-label="Dashboard sections"
+            className="mt-10 mb-8 h-auto w-full justify-start gap-1.5 overflow-x-auto rounded-none bg-transparent p-0 pb-1 group-data-[orientation=horizontal]/tabs:h-auto"
+          >
+            {visibleTabs.map((tab) => (
+              <TabsTrigger
                 key={tab.id}
-                ref={(el) => {
-                  tabRefs.current[tab.id] = el;
-                }}
-                id={`tab-${tab.id}`}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                aria-controls="dashboard-panel"
-                tabIndex={isActive ? 0 : -1}
-                onClick={() => selectTab(tab.id)}
-                onKeyDown={(e) => onTabKeyDown(e, index)}
-                className={`rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
-                  isActive ? "bg-ink text-paper" : "text-muted hover:bg-line hover:text-ink"
-                }`}
+                value={tab.id}
+                className="h-auto flex-none rounded-full border-0 px-4 py-2 text-ink/70 hover:bg-mist hover:text-ink focus-visible:ring-ink/40 data-[state=active]:bg-ink data-[state=active]:text-paper data-[state=active]:shadow-none"
               >
                 {tab.label}
-              </button>
-            );
-          })}
-        </div>
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        {/* A disabled fieldset disables every control inside it; the server refuses changes too. */}
-        <div id="dashboard-panel" role="tabpanel" aria-labelledby={`tab-${activeTab}`}>
+        {/* One panel for whichever section is open. A disabled fieldset disables every control inside it; the server refuses changes too. */}
+        <TabsContent value={activeTab}>
         <fieldset disabled={readOnly} className="min-w-0 disabled:opacity-80">
         {activeTab === "registry" && <RegistryTab items={registryItems} bankDetails={bankDetails} />}
         {activeTab === "contributions" && (
@@ -348,7 +325,8 @@ export default function AdminHome({
         {activeTab === "settings" && isOwner && <SettingsTab settings={settings} guestUrl={guestUrl} />}
         {activeTab === "billing" && isOwner && <BillingTab billing={billing} />}
         </fieldset>
-        </div>
+        </TabsContent>
+        </Tabs>
       </div>
     </div>
     </AdminWeddingProvider>
