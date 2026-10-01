@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_PARTY_SIZE, parseAdminRsvp, parseGuestRsvp } from "@/lib/rsvp-rules";
+import { MAX_PARTY_SIZE, parseAdminRsvp, parseGuestRsvp, parsePartySizeLimit } from "@/lib/rsvp-rules";
 
 const base = { name: "Ngozi Adeyemi", email: "ngozi@example.com", attending: "yes", partySize: "2", message: "" };
 
@@ -47,5 +47,38 @@ describe("parseAdminRsvp", () => {
     expect(parseAdminRsvp({ ...row, guestName: " " })).toEqual({ error: "Name is required" });
     expect(parseAdminRsvp({ ...row, email: "x@" })).toEqual({ error: 'Invalid email "x@"' });
     expect(parseAdminRsvp({ ...row, attending: "maybe" })).toEqual({ error: "Attending must be yes or no" });
+  });
+});
+
+describe("parseGuestRsvp with the couple's guests-per-RSVP limit", () => {
+  it("accepts a party within the limit", () => {
+    const result = parseGuestRsvp({ ...base, partySize: "3" }, 3);
+    expect("data" in result && result.data.guestCount).toBe(3);
+  });
+  it("refuses a party over the limit", () => {
+    expect(parseGuestRsvp({ ...base, partySize: "4" }, 3)).toEqual({ error: "Each reply can include up to 3 people, including you" });
+  });
+  it("says a one-guest invitation plainly", () => {
+    expect(parseGuestRsvp({ ...base, partySize: "2" }, 1)).toEqual({ error: "This invitation is for one guest" });
+  });
+  it("counts a one-guest reply with no party size as one", () => {
+    const result = parseGuestRsvp({ ...base, partySize: "" }, 1);
+    expect("data" in result && result.data.guestCount).toBe(1);
+  });
+  it("still lets a guest decline whatever the limit", () => {
+    const result = parseGuestRsvp({ ...base, attending: "no", partySize: "1" }, 1);
+    expect("data" in result && result.data.attending).toBe(false);
+  });
+});
+
+describe("parsePartySizeLimit", () => {
+  it("accepts 1 to the maximum", () => {
+    expect(parsePartySizeLimit("1")).toEqual({ value: 1 });
+    expect(parsePartySizeLimit(String(MAX_PARTY_SIZE))).toEqual({ value: MAX_PARTY_SIZE });
+  });
+  it("refuses anything else", () => {
+    for (const bad of ["0", "11", "2.5", "", "abc"]) {
+      expect(parsePartySizeLimit(bad)).toEqual({ error: `Guests per RSVP should be a whole number from 1 to ${MAX_PARTY_SIZE}` });
+    }
   });
 });

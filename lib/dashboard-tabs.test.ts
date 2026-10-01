@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dashboardTabHref, tabFromParam } from "@/lib/dashboard-tabs";
+import { DASHBOARD_TABS, dashboardTabHref, tabFromParam } from "@/lib/dashboard-tabs";
 
 describe("tabFromParam", () => {
   it("returns a known tab", () => {
@@ -13,6 +13,19 @@ describe("tabFromParam", () => {
   it("hides owner-only tabs from editors", () => {
     expect(tabFromParam("billing", false)).toBe("registry");
     expect(tabFromParam("billing", true)).toBe("billing");
+  });
+});
+
+describe("People inside Settings", () => {
+  it("sends old People links to Settings", () => {
+    expect(tabFromParam("people", false)).toBe("settings");
+    expect(tabFromParam("people", true)).toBe("settings");
+  });
+  it("lets editors open Settings, where they see People", () => {
+    expect(tabFromParam("settings", false)).toBe("settings");
+  });
+  it("no longer has a People tab of its own", () => {
+    expect(DASHBOARD_TABS.map((t) => t.id)).not.toContain("people");
   });
 });
 

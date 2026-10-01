@@ -14,6 +14,7 @@ import { resolveTheme } from "@/lib/themes";
 import { getCountries } from "@/lib/countries";
 import { guestCapacity } from "@/lib/capacity";
 import { tabFromParam } from "@/lib/dashboard-tabs";
+import { guestShareUrl } from "@/lib/share-url";
 
 export default async function WeddingDashboardPage({
   params,
@@ -162,6 +163,7 @@ export default async function WeddingDashboardPage({
       })}
       settings={{
         slug: wedding.slug,
+        shareUrl: guestShareUrl(wedding, process.env.SITE_URL),
         status: wedding.status,
         // Weddings from before the free plan join it when they publish.
         canPublish: Boolean(wedding.paidAt || wedding.comped || !wedding.plan || wedding.plan.priceKobo === 0),
@@ -169,6 +171,7 @@ export default async function WeddingDashboardPage({
         locale: wedding.locale,
         phoneCountryCode: wedding.phoneCountryCode,
         maxGuests: wedding.maxGuests,
+        maxPartySize: wedding.maxPartySize,
         guestLimit: wedding.plan?.maxGuests ?? 10_000,
         allowedCountries: wedding.allowedCountries,
         geoBypassToken: isOwner ? wedding.geoBypassToken : null,

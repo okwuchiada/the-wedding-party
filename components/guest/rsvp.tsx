@@ -15,7 +15,7 @@ export default async function Rsvp({ weddingId, frame }: { weddingId: string; fr
       intro={copyText(wedding.copy, "rsvpIntro")}
       width="max-w-5xl"
     >
-      <RsvpForm />
+      <RsvpForm maxPartySize={wedding.maxPartySize} />
     </SectionShell>
   );
 }

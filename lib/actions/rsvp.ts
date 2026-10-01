@@ -77,7 +77,7 @@ export async function submitRsvp(
     attending: attendingRaw,
     partySize: formData.get("partySize"),
     message: formData.get("message"),
-  });
+  }, wedding.maxPartySize);
   if ("error" in parsed) return { error: parsed.error };
   const { guestName, email, attending, guestCount, message } = parsed.data;
 

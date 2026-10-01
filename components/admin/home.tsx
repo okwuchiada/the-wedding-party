@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DASHBOARD_TABS, dashboardTabHref, type TabId } from "@/lib/dashboard-tabs";
 import LiveRefresh from "@/components/live-refresh";
 import { useSyncedState } from "./use-synced-state";
@@ -44,6 +44,8 @@ import { setGalleryEnabled } from "@/lib/actions/story";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { attentionItems, newArrivals } from "@/lib/attention";
+import AttentionBar from "./attention-bar";
 
 
 
@@ -146,6 +148,18 @@ export default function AdminHome({
   };
 
   const toast = useToast();
+
+  const attention = attentionItems({ contributions: pendingContributions.length, media: pendingMedia.length, wishes: pendingWishes.length });
+  const waiting: Partial<Record<TabId, number>> = Object.fromEntries(attention.map((a) => [a.tab, a.count]));
+
+  // A transfer that arrives while the dashboard is open (it refreshes every 15s) gets a toast.
+  const seenTransfers = useRef(new Set(initialPendingContributions.map((c) => c.id)));
+  useEffect(() => {
+    for (const c of newArrivals(seenTransfers.current, pendingContributions)) {
+      seenTransfers.current.add(c.id);
+      toast({ message: `New transfer to confirm: ${formatMoney(c.amountCents, money)} from ${c.guestName} for ${c.itemName}` });
+    }
+  }, [pendingContributions, money, toast]);
 
   const handleConfirmContribution = async (contribution: PendingContributionView) => {
     if (!(await attempt(() => confirmContribution(weddingId, contribution.id)))) return;
@@ -268,11 +282,13 @@ export default function AdminHome({
           ))}
         </div>
 
+        <AttentionBar items={attention} onGo={selectTab} />
+
         {/* shadcn Tabs: arrow keys, Home and End move between sections. */}
         <Tabs value={activeTab} onValueChange={(v) => selectTab(v as TabId)} className="gap-0">
           <TabsList
             aria-label="Dashboard sections"
-            className="mt-10 mb-8 h-auto w-full justify-start gap-1.5 overflow-x-auto rounded-none bg-transparent p-0 pb-1 group-data-[orientation=horizontal]/tabs:h-auto"
+            className="mt-6 mb-8 h-auto w-full justify-start gap-1.5 overflow-x-auto rounded-none bg-transparent p-0 pb-1 group-data-[orientation=horizontal]/tabs:h-auto"
           >
             {visibleTabs.map((tab) => (
               <TabsTrigger
@@ -281,6 +297,12 @@ export default function AdminHome({
                 className="h-auto flex-none rounded-full border-0 px-4 py-2 text-ink/70 hover:bg-mist hover:text-ink focus-visible:ring-ink/40 data-[state=active]:bg-ink data-[state=active]:text-paper data-[state=active]:shadow-none"
               >
                 {tab.label}
+                {waiting[tab.id] ? (
+                  <span className="ml-1.5 inline-grid min-w-5 place-items-center rounded-full bg-coral-deep px-1.5 text-xs font-semibold text-white tabular-nums">
+                    {waiting[tab.id]}
+                    <span className="sr-only"> waiting</span>
+                  </span>
+                ) : null}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -321,8 +343,13 @@ export default function AdminHome({
         )}
         {activeTab === "design" && <DesignTab {...design} guestUrl={guestUrl} names={[story.brideName, story.groomName]} />}
         {activeTab === "wording" && <WordingTab copy={copy} canCustomCredit={copy.canCustomCredit} brandingRemoved={copy.brandingRemoved} plans={{ brandingPlan: copy.brandingPlan, creditPlan: copy.creditPlan }} />}
-        {activeTab === "people" && <MembersTab members={members} isOwner={isOwner} />}
-        {activeTab === "settings" && isOwner && <SettingsTab settings={settings} guestUrl={guestUrl} />}
+        {/* People lives in Settings; editors see only that part. */}
+        {activeTab === "settings" && (
+          <div className="flex flex-col gap-12">
+            {isOwner && <SettingsTab settings={settings} guestUrl={guestUrl} />}
+            <MembersTab members={members} isOwner={isOwner} />
+          </div>
+        )}
         {activeTab === "billing" && isOwner && <BillingTab billing={billing} />}
         </fieldset>
         </TabsContent>

@@ -6,10 +6,11 @@ import { requireWeddingAccess } from "@/lib/dal";
 import { CURRENCIES, LOCALES } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 import { planAllowsTheme, siteClosesAt } from "@/lib/plans";
-import { slugError } from "@/lib/slug";
+import { slugError, slugFromInput } from "@/lib/slug";
 import { getStarterPlan } from "@/lib/starter-plan";
 import { getPreset } from "@/lib/themes";
 import { guestPath, revalidateWedding } from "@/lib/tenant";
+import { parsePartySizeLimit } from "@/lib/rsvp-rules";
 
 export type SettingsFormState = { error?: string; success?: boolean } | undefined;
 
@@ -28,7 +29,8 @@ export async function saveSettings(
 ): Promise<SettingsFormState> {
   const { wedding } = await requireWeddingAccess(weddingId, "owner", "saveSettings");
 
-  const slug = text(formData, "slug").toLowerCase();
+  // A pasted full link keeps just its address part (see slugFromInput).
+  const slug = slugFromInput(text(formData, "slug")).slug;
   const invalidSlug = slugError(slug);
   if (invalidSlug) return { error: `Web address: ${invalidSlug}` };
   if (slug !== wedding.slug && (await prisma.wedding.findUnique({ where: { slug }, select: { id: true } }))) {
@@ -47,6 +49,9 @@ export async function saveSettings(
   const maxGuests = Number(text(formData, "maxGuests"));
   if (!Number.isInteger(maxGuests) || maxGuests < 1) return { error: "Guest limit must be a whole number" };
   if (maxGuests > limit) return { error: `Your plan allows up to ${limit} guests` };
+
+  const partySize = parsePartySizeLimit(formData.get("maxPartySize"));
+  if ("error" in partySize) return { error: partySize.error };
 
   const allowedCountries = [
     ...new Set(
@@ -74,6 +79,7 @@ export async function saveSettings(
       locale,
       phoneCountryCode,
       maxGuests,
+      maxPartySize: partySize.value,
       allowedCountries,
       geoBypassToken: geoBypassToken || null,
     },
