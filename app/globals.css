@@ -1,4 +1,41 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+/* The platform has no dark mode; `dark:` only applies under a .dark class, which nothing sets. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Platform brand colors (keep in sync with components/marketing/brand-colors.ts,
+ * checked by lib/brand-tokens.test.ts) and the shadcn/ui tokens drawn from them.
+ * Guest sites never use these names, so they can live on :root, where the
+ * dialogs and menus shadcn portals to <body> can still reach them.
+ */
+:root {
+  --brand-ink: #16204a;
+  --brand-paper: #f4f5f9;
+  --brand-gold: #e3a81f;
+  --brand-emerald: #0e6e55;
+  --brand-coral: #d9475e;
+  --brand-coral-deep: #b3334a;
+  --brand-mist: #dce0ee;
+
+  --card: #ffffff;
+  --card-foreground: var(--brand-ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--brand-ink);
+  --primary: var(--brand-ink);
+  --primary-foreground: #ffffff;
+  --secondary: var(--brand-mist);
+  --secondary-foreground: var(--brand-ink);
+  --muted: var(--brand-paper);
+  --muted-foreground: color-mix(in srgb, var(--brand-ink) 65%, white);
+  --accent: #e8ebf4;
+  --accent-foreground: var(--brand-ink);
+  --destructive: var(--brand-coral-deep);
+  --border: var(--brand-mist);
+  --input: var(--brand-mist);
+  --ring: var(--brand-gold);
+}
 
 :root {
   --background: #fdf6ec;
@@ -24,19 +61,58 @@
   --color-cream: var(--cream);
   --font-sans: var(--sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-ink: var(--brand-ink);
+  --color-paper: var(--brand-paper);
+  --color-gold: var(--brand-gold);
+  --color-emerald: var(--brand-emerald);
+  --color-coral: var(--brand-coral);
+  --color-coral-deep: var(--brand-coral-deep);
+  --color-mist: var(--brand-mist);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 }
 
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #23261c;
-    --foreground: #fdf6ec;
+/* shadcn/ui components expect mist borders by default; scoped to them so guest sites keep currentColor. */
+@layer base {
+  :where([data-slot], [data-slot] *) {
+    border-color: var(--color-border);
   }
-} */
+}
+
+/* Stacking order for fixed layers, lowest to highest. */
+@utility z-nav {
+  z-index: 40;
+}
+@utility z-overlay {
+  z-index: 80;
+}
+@utility z-toast {
+  z-index: 90;
+}
+@utility z-banner {
+  z-index: 95;
+}
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--sans, system-ui), system-ui, sans-serif;
 }
 
 /* Marketing hero: strips weave in once on load. */
@@ -58,16 +134,6 @@ body {
   }
 }
 
-/* Platform UI (landing, auth, dashboard): rounded fields with the brand focus ring. */
-.brand-ui :is(input:not([type="checkbox"], [type="radio"], [type="color"], [type="hidden"]), select, textarea) {
-  border-radius: 6px;
-}
-.brand-ui :is(input:not([type="checkbox"], [type="radio"], [type="color"]), select, textarea):focus-visible {
-  outline: none;
-  border-color: rgb(22 32 74 / 0.5);
-  box-shadow: 0 0 0 3px rgb(227 168 31 / 0.35);
-}
-
 /* Brand loader: threads rise and fall in turn. */
 @keyframes loom {
   0%,
@@ -86,4 +152,69 @@ body {
   .loom-thread {
     animation: none;
   }
+}
+
+/* Guest sites: labelled fields and a visible focus ring in the wedding's own colour. */
+[data-wedding-theme] :focus-visible {
+  outline: 2px solid var(--burnt-orange);
+  outline-offset: 2px;
+}
+[data-wedding-theme] .guest-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+[data-wedding-theme] .guest-input {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid rgb(var(--ink) / 0.3);
+  background: #fff;
+  padding: 0.625rem 0.875rem;
+  font-size: 1rem;
+  color: var(--foreground);
+}
+[data-wedding-theme] .guest-input:focus-visible {
+  border-color: var(--burnt-orange);
+}
+[data-wedding-theme] .guest-btn {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  background: var(--burnt-orange);
+  color: var(--ivory);
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 150ms;
+}
+[data-wedding-theme] .guest-btn:hover {
+  background: var(--burnt-orange-dark);
+}
+[data-wedding-theme] .guest-btn:disabled {
+  opacity: 0.6;
+}
+[data-wedding-theme] .guest-choice {
+  display: flex;
+  min-height: 2.75rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(var(--ink) / 0.3);
+  background: #fff;
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.9375rem;
+}
+[data-wedding-theme] .guest-choice:has(input:checked) {
+  border: 2px solid var(--burnt-orange);
+  color: var(--burnt-orange);
+  font-weight: 600;
+}
+[data-wedding-theme] .guest-choice:has(input:focus-visible) {
+  outline: 2px solid var(--burnt-orange);
+  outline-offset: 2px;
 }

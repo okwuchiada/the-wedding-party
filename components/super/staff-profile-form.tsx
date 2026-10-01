@@ -4,14 +4,18 @@ import { startTransition, useActionState } from "react";
 import { saveStaffProfile } from "@/lib/actions/staff-profile";
 import { GENDERS } from "@/lib/staff-profile";
 import type { StaffProfileView } from "@/lib/staff-profiles";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { FormSelect } from "@/components/ui/form-select";
+import { PhoneInput } from "@/components/ui/phone-input";
 
-const field = "w-full border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-(--m-ink)/50";
-const label = "flex flex-col gap-1.5 text-sm font-medium";
-const hint = "text-xs font-normal text-foreground/55";
+const label = "flex-col items-stretch gap-1.5";
+const hint = "text-xs font-normal text-muted-foreground";
 
 function Section({ title, hint: note, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <fieldset className="grid grid-cols-1 gap-4 border-t border-(--m-mist) pt-5 first-of-type:border-t-0 first-of-type:pt-0 sm:grid-cols-[10rem_1fr] sm:gap-8">
+    <fieldset className="grid grid-cols-1 gap-4 border-t border-border pt-5 first-of-type:border-t-0 first-of-type:pt-0 sm:grid-cols-[10rem_1fr] sm:gap-8">
       <legend className="contents">
         <span className="flex flex-col gap-1">
           <span className="text-base font-semibold">{title}</span>
@@ -25,14 +29,7 @@ function Section({ title, hint: note, children }: { title: string; hint?: string
 
 function CountrySelect({ name, defaultValue, countries }: { name: string; defaultValue: string; countries: { code: string; name: string }[] }) {
   return (
-    <select name={name} defaultValue={defaultValue} className={field}>
-      <option value="">Choose…</option>
-      {countries.map((c) => (
-        <option key={c.code} value={c.code}>
-          {c.name}
-        </option>
-      ))}
-    </select>
+    <FormSelect name={name} defaultValue={defaultValue} emptyLabel="Not set" options={countries.map((c) => ({ value: c.code, label: c.name }))} />
   );
 }
 
@@ -61,92 +58,85 @@ export default function StaffProfileForm({
         const formData = new FormData(e.currentTarget);
         startTransition(() => formAction(formData));
       }}
-      className="flex flex-col gap-6 rounded-[6px] border border-(--m-mist) bg-white p-5 sm:p-6"
+      className="flex flex-col gap-6 rounded-[6px] border border-border bg-card p-5 sm:p-6"
     >
       <Section title="Basics">
-        <label className={label}>
+        <Label className={label}>
           Full name
-          <input name="fullName" defaultValue={v.fullName} required minLength={2} maxLength={100} autoComplete="name" className={field} />
-        </label>
-        <label className={label}>
+          <Input name="fullName" defaultValue={v.fullName} required minLength={2} maxLength={100} autoComplete="name" />
+        </Label>
+        <Label className={label}>
           Preferred name <span className={hint}>What {self ? "you like" : "they like"} to be called, if different</span>
-          <input name="preferredName" defaultValue={v.preferredName} maxLength={50} autoComplete="nickname" className={field} />
-        </label>
-        <label className={label}>
+          <Input name="preferredName" defaultValue={v.preferredName} maxLength={50} autoComplete="nickname" />
+        </Label>
+        <Label className={label}>
           Job title
-          <input name="jobTitle" defaultValue={v.jobTitle} maxLength={80} autoComplete="organization-title" className={field} />
-        </label>
-        <label className={label}>
+          <Input name="jobTitle" defaultValue={v.jobTitle} maxLength={80} autoComplete="organization-title" />
+        </Label>
+        <Label className={label}>
           Phone
-          <input name="phone" type="tel" defaultValue={v.phone} maxLength={20} placeholder="+234 803 123 4567" autoComplete="tel" className={field} />
-        </label>
+          <PhoneInput name="phone" defaultValue={v.phone} maxLength={20} placeholder="+234 803 123 4567" />
+        </Label>
       </Section>
 
       <Section title="Personal" hint="Only you and super admins can see these.">
-        <label className={label}>
+        <Label className={label}>
           Date of birth
-          <input name="dateOfBirth" type="date" defaultValue={v.dateOfBirth} max={maxBirth} autoComplete="bday" className={field} />
-        </label>
-        <label className={label}>
+          <Input name="dateOfBirth" type="date" defaultValue={v.dateOfBirth} max={maxBirth} autoComplete="bday" />
+        </Label>
+        <Label className={label}>
           Gender
-          <select name="gender" defaultValue={v.gender} className={field}>
-            <option value="">Choose…</option>
-            {GENDERS.map((g) => (
-              <option key={g.value} value={g.value}>
-                {g.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={label}>
+          <FormSelect name="gender" defaultValue={v.gender} emptyLabel="Not set" options={GENDERS.map((g) => ({ value: g.value, label: g.label }))} />
+        </Label>
+        <Label className={label}>
           Nationality
           <CountrySelect name="nationality" defaultValue={v.nationality} countries={countries} />
-        </label>
+        </Label>
         <div className="hidden sm:block" />
-        <label className={`${label} sm:col-span-2`}>
+        <Label className={`${label} sm:col-span-2`}>
           Home address
-          <input name="addressLine" defaultValue={v.addressLine} maxLength={200} autoComplete="street-address" className={field} />
-        </label>
-        <label className={label}>
+          <Input name="addressLine" defaultValue={v.addressLine} maxLength={200} autoComplete="street-address" />
+        </Label>
+        <Label className={label}>
           City
-          <input name="city" defaultValue={v.city} maxLength={80} autoComplete="address-level2" className={field} />
-        </label>
-        <label className={label}>
+          <Input name="city" defaultValue={v.city} maxLength={80} autoComplete="address-level2" />
+        </Label>
+        <Label className={label}>
           State / region
-          <input name="state" defaultValue={v.state} maxLength={80} autoComplete="address-level1" className={field} />
-        </label>
-        <label className={label}>
+          <Input name="state" defaultValue={v.state} maxLength={80} autoComplete="address-level1" />
+        </Label>
+        <Label className={label}>
           Country
           <CountrySelect name="country" defaultValue={v.country} countries={countries} />
-        </label>
+        </Label>
       </Section>
 
       <Section title="Emergency contact" hint="Someone we can call if something happens at work. Give a name and number, or leave it all empty.">
-        <label className={label}>
+        <Label className={label}>
           Name
-          <input name="emergencyName" defaultValue={v.emergencyName} maxLength={100} className={field} />
-        </label>
-        <label className={label}>
+          <Input name="emergencyName" defaultValue={v.emergencyName} maxLength={100} />
+        </Label>
+        <Label className={label}>
           Relationship
-          <input name="emergencyRelationship" defaultValue={v.emergencyRelationship} maxLength={50} placeholder="e.g. Sister, Spouse" className={field} />
-        </label>
-        <label className={label}>
+          <Input name="emergencyRelationship" defaultValue={v.emergencyRelationship} maxLength={50} placeholder="e.g. Sister, Spouse" />
+        </Label>
+        <Label className={label}>
           Phone
-          <input name="emergencyPhone" type="tel" defaultValue={v.emergencyPhone} maxLength={20} className={field} />
-        </label>
+          <PhoneInput name="emergencyPhone" defaultValue={v.emergencyPhone} maxLength={20} autoComplete="off" />
+        </Label>
       </Section>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-(--m-mist) pt-5">
-        <button
+      <div className="flex flex-wrap items-center gap-3 border-t border-border pt-5">
+        <Button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-(--m-ink) px-5 py-2.5 text-sm font-semibold text-(--m-paper) hover:bg-(--m-emerald) disabled:opacity-60"
+          variant="ink"
         >
           {pending ? "Saving…" : "Save details"}
-        </button>
+        </Button>
         <span aria-live="polite" className="text-sm">
-          {state?.error && <span className="text-(--m-coral-deep)">{state.error}</span>}
-          {state?.message && <span className="text-(--m-emerald)">{state.message}</span>}
+          {state?.error && <span className="text-destructive">{state.error}</span>}
+          {state?.message && <span className="text-emerald">{state.message}</span>}
         </span>
       </div>
     </form>

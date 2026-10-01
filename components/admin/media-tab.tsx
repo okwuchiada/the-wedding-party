@@ -1,195 +1,212 @@
 "use client";
 
 import Image from "next/image";
-import type { ApprovedMediaView, HiddenMediaView, PendingMediaView } from "@/lib/types";
+import { Play } from "lucide-react";
+import { useState } from "react";
+import type { MediaView } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { Segmented } from "@/components/ui/segmented";
+import { Pagination, usePagination } from "./pagination";
+import type { ReviewStatus } from "./review";
 import { useConfirm } from "./use-confirm";
 import { useActionPending } from "./use-action-pending";
+
+const EMPTY: Record<ReviewStatus, { title: string; body: string }> = {
+  PENDING: { title: "Nothing waiting for you", body: "Photos and videos guests upload appear here for you to approve." },
+  APPROVED: { title: "No approved photos yet", body: "Photos you approve show on your photo wall." },
+  HIDDEN: { title: "Nothing hidden", body: "Hidden uploads stay here, so you can bring any back." },
+};
+
+/** A square preview; videos show a play badge and open in a new tab instead of playing in the grid. */
+function Thumb({ media }: { media: MediaView }) {
+  const label = `${media.type === "VIDEO" ? "Video" : "Photo"} from ${media.guestName}`;
+  return (
+    <a href={media.url} target="_blank" rel="noopener noreferrer" className="relative block aspect-square w-full overflow-hidden rounded-t-[8px] bg-accent" aria-label={`Open ${label.toLowerCase()} in a new tab`}>
+      {media.type === "VIDEO" ? (
+        <>
+          <video src={media.url} muted playsInline preload="metadata" className="h-full w-full object-cover" />
+          <span className="absolute inset-0 grid place-items-center">
+            <span className="grid size-10 place-items-center rounded-full bg-ink/70 text-paper">
+              <Play aria-hidden size={18} />
+            </span>
+          </span>
+        </>
+      ) : (
+        <Image src={media.url} alt={label} fill sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw" className="object-cover" />
+      )}
+    </a>
+  );
+}
 
 export default function MediaTab({
   pending,
   approved,
   hidden,
   galleryEnabled,
-  onApprove,
-  onHide,
-  onHideApproved,
+  onChange,
   onDeleteApproved,
-  onRestore,
   onToggleGallery,
 }: {
-  pending: PendingMediaView[];
-  approved: ApprovedMediaView[];
-  hidden: HiddenMediaView[];
+  pending: MediaView[];
+  approved: MediaView[];
+  hidden: MediaView[];
   galleryEnabled: boolean;
-  onApprove: (media: PendingMediaView) => Promise<void>;
-  onHide: (media: PendingMediaView) => Promise<void>;
-  onHideApproved: (media: ApprovedMediaView) => Promise<void>;
-  onDeleteApproved: (media: ApprovedMediaView) => Promise<void>;
-  onRestore: (media: HiddenMediaView) => Promise<void>;
+  onChange: (items: MediaView[], from: ReviewStatus, to: ReviewStatus) => Promise<void>;
+  onDeleteApproved: (media: MediaView) => Promise<void>;
   onToggleGallery: () => Promise<void>;
 }) {
+  const [view, setView] = useState<ReviewStatus>("PENDING");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const { confirm, confirmDialog } = useConfirm();
   const { run, isPending } = useActionPending();
+  const lists = { PENDING: pending, APPROVED: approved, HIDDEN: hidden };
+  const paged = usePagination(lists[view], 25);
+  const selectedItems = pending.filter((m) => selected.has(m.id));
 
-  const handleDeleteApproved = async (media: ApprovedMediaView) => {
+  const changeView = (next: ReviewStatus) => {
+    setView(next);
+    setSelected(new Set());
+  };
+
+  const toggleSelected = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const bulk = (to: ReviewStatus) =>
+    run("bulk", to, async () => {
+      await onChange(selectedItems, "PENDING", to);
+      setSelected(new Set());
+    });
+
+  const handleDelete = async (media: MediaView) => {
     const ok = await confirm({
       title: `Delete this ${media.type === "VIDEO" ? "video" : "photo"}?`,
       description: "This can't be undone.",
+      confirmLabel: "Delete",
     });
     if (!ok) return;
     await run(media.id, "delete", () => onDeleteApproved(media));
   };
+
+  const move = (media: MediaView, to: ReviewStatus, label: string, pendingLabel: string, variant: "default" | "outline") => (
+    <Button
+      size="sm"
+      variant={variant}
+      className="flex-1"
+      disabled={isPending(media.id)}
+      onClick={() => run(media.id, to, () => onChange([media], view, to))}
+    >
+      {isPending(media.id, to) ? pendingLabel : label}
+    </Button>
+  );
+
   return (
-    <div>
-      <div className="mb-10 flex items-center justify-between gap-4 rounded-[6px] bg-white p-4 border border-(--m-mist)">
+    <div className="flex flex-col gap-10">
+      <Card className="flex-row flex-wrap items-center justify-between gap-4 rounded-md p-5 shadow-none">
         <div>
-          <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-xl text-foreground">Gallery Wall</h2>
-          <p className="mt-1 text-xs text-foreground/60">
+          <h2 className="font-(family-name:--m-display) text-xl font-bold tracking-tight text-ink">Photo wall</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             {galleryEnabled
-              ? "Live — guests can view and upload photos."
-              : "Hidden from guests. Turn this on when it's time (e.g. the wedding day)."}
+              ? "On: guests can see the wall and upload photos."
+              : "Off: guests can't see it yet. Turn it on when it's time, such as on the wedding day."}
           </p>
         </div>
-        <button
-          type="button"
+        <Button
+          variant={galleryEnabled ? "outline" : "default"}
+          size="sm"
           disabled={isPending("gallery")}
           onClick={() => run("gallery", "toggle", onToggleGallery)}
-          className={`shrink-0 px-4 py-2 text-xs font-medium transition-colors disabled:opacity-60 ${
-            galleryEnabled
-              ? "border border-(--m-mist) text-foreground hover:border-burnt-orange hover:text-burnt-orange"
-              : "rounded-full bg-(--m-gold) text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
-          }`}
         >
-          {isPending("gallery", "toggle")
-            ? "Saving…"
-            : galleryEnabled
-              ? "Disable Gallery Wall"
-              : "Enable Gallery Wall"}
-        </button>
-      </div>
+          {isPending("gallery", "toggle") ? "Saving…" : galleryEnabled ? "Turn off photo wall" : "Turn on photo wall"}
+        </Button>
+      </Card>
 
-      <h2 className="mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Pending Uploads</h2>
+      <section>
+        <SectionHeading
+          title="Guest photos"
+          action={
+            <Segmented
+              label="Show"
+              value={view}
+              onChange={changeView}
+              options={[
+                { value: "PENDING", label: "Pending", count: pending.length },
+                { value: "APPROVED", label: "Approved", count: approved.length },
+                { value: "HIDDEN", label: "Hidden", count: hidden.length },
+              ]}
+            />
+          }
+        />
 
-      {pending.length === 0 ? (
-        <p className="text-sm text-foreground/60">No pending uploads right now.</p>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {pending.map((media) => (
-            <div key={media.id} className="rounded-[6px] bg-white border border-(--m-mist)">
-              <div className="relative aspect-square w-full overflow-hidden bg-olive/10">
-                {media.type === "VIDEO" ? (
-                  <video src={media.url} muted playsInline controls className="h-full w-full object-cover" />
-                ) : (
-                  <Image src={media.url} alt={`Upload from ${media.guestName}`} fill sizes="25vw" className="object-cover" />
-                )}
-              </div>
-              <div className="p-3">
-                <p className="text-xs text-foreground/70">
-                  {media.guestName} &middot; {media.dateUploaded}
-                </p>
-                <div className="mt-2 flex gap-2">
-                  <button
-                    type="button"
-                    disabled={isPending(media.id)}
-                    onClick={() => run(media.id, "approve", () => onApprove(media))}
-                    className="flex-1 rounded-full bg-(--m-gold) px-3 py-1.5 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-                  >
-                    {isPending(media.id, "approve") ? "Approving…" : "Approve"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isPending(media.id)}
-                    onClick={() => run(media.id, "hide", () => onHide(media))}
-                    className="flex-1 border rounded-full border-(--m-ink)/25 px-3 py-1.5 text-xs font-medium text-foreground hover:border-(--m-ink) disabled:opacity-60"
-                  >
-                    {isPending(media.id, "hide") ? "Hiding…" : "Hide"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+        {view === "PENDING" && selected.size > 0 && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[8px] bg-gold/20 px-4 py-3 text-sm font-semibold text-ink" role="status">
+            <span>{selected.size} selected</span>
+            <span className="flex gap-2">
+              <Button size="sm" disabled={isPending("bulk")} onClick={() => bulk("APPROVED")}>
+                {isPending("bulk", "APPROVED") ? "Approving…" : "Approve"}
+              </Button>
+              <Button size="sm" variant="outline" disabled={isPending("bulk")} onClick={() => bulk("HIDDEN")}>
+                {isPending("bulk", "HIDDEN") ? "Hiding…" : "Hide"}
+              </Button>
+            </span>
+          </div>
+        )}
 
-      <h2 className="mt-10 mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Approved Media</h2>
+        {paged.total === 0 ? (
+          <EmptyState title={EMPTY[view].title} body={EMPTY[view].body} />
+        ) : (
+          <>
+            <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+              {paged.pageItems.map((media) => (
+                <li key={media.id} className={`relative rounded-[8px] border border-border bg-card ${view === "HIDDEN" ? "opacity-75" : ""}`}>
+                  <Thumb media={media} />
+                  {view === "PENDING" && (
+                    <span className="absolute top-2 left-2 grid size-8 place-items-center rounded-full bg-card/90">
+                      <Checkbox
+                        checked={selected.has(media.id)}
+                        onCheckedChange={() => toggleSelected(media.id)}
+                        aria-label={`Select ${media.type === "VIDEO" ? "video" : "photo"} from ${media.guestName}`}
+                      />
+                    </span>
+                  )}
+                  <div className="p-3">
+                    <p className="truncate text-[13px] text-muted-foreground">
+                      {media.guestName} &middot; {media.dateUploaded}
+                    </p>
+                    <div className="mt-2 flex gap-2">
+                      {view === "PENDING" && (
+                        <>
+                          {move(media, "APPROVED", "Approve", "Approving…", "default")}
+                          {move(media, "HIDDEN", "Hide", "Hiding…", "outline")}
+                        </>
+                      )}
+                      {view === "APPROVED" && (
+                        <>
+                          {move(media, "HIDDEN", "Hide", "Hiding…", "outline")}
+                          <Button size="sm" variant="outline" className="flex-1" disabled={isPending(media.id)} onClick={() => handleDelete(media)}>
+                            {isPending(media.id, "delete") ? "Deleting…" : "Delete"}
+                          </Button>
+                        </>
+                      )}
+                      {view === "HIDDEN" && move(media, "APPROVED", "Restore", "Restoring…", "outline")}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <Pagination page={paged.page} pageSize={paged.pageSize} total={paged.total} onPageChange={paged.setPage} onPageSizeChange={paged.setPageSize} />
+          </>
+        )}
+      </section>
 
-      {approved.length === 0 ? (
-        <p className="text-sm text-foreground/60">Nothing approved yet.</p>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {approved.map((media) => (
-            <div key={media.id} className="rounded-[6px] bg-white border border-(--m-mist)">
-              <div className="relative aspect-square w-full overflow-hidden bg-olive/10">
-                {media.type === "VIDEO" ? (
-                  <video src={media.url} muted playsInline controls className="h-full w-full object-cover" />
-                ) : (
-                  <Image src={media.url} alt={`Photo from ${media.guestName}`} fill sizes="25vw" className="object-cover" />
-                )}
-              </div>
-              <div className="p-3">
-                <p className="text-xs text-foreground/70">
-                  {media.guestName} &middot; {media.dateUploaded}
-                </p>
-                <div className="mt-2 flex gap-2">
-                  <button
-                    type="button"
-                    disabled={isPending(media.id)}
-                    onClick={() => run(media.id, "hide", () => onHideApproved(media))}
-                    className="flex-1 border rounded-full border-(--m-ink)/25 px-3 py-1.5 text-xs font-medium text-foreground hover:border-(--m-ink) disabled:opacity-60"
-                  >
-                    {isPending(media.id, "hide") ? "Hiding…" : "Hide"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isPending(media.id)}
-                    onClick={() => handleDeleteApproved(media)}
-                    className="flex-1 border rounded-full border-(--m-ink)/25 px-3 py-1.5 text-xs font-medium text-foreground hover:border-(--m-ink) disabled:opacity-60"
-                  >
-                    {isPending(media.id, "delete") ? "Deleting…" : "Delete"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <h2 className="mt-10 mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Hidden Media</h2>
-      <p className="mb-5 max-w-2xl text-sm text-foreground/60">
-        Hidden uploads aren&apos;t deleted — they&apos;re kept here so you can
-        bring any of them back if you change your mind.
-      </p>
-
-      {hidden.length === 0 ? (
-        <p className="text-sm text-foreground/60">Nothing hidden right now.</p>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {hidden.map((media) => (
-            <div key={media.id} className="rounded-[6px] bg-white opacity-70 border border-(--m-mist)">
-              <div className="relative aspect-square w-full overflow-hidden bg-olive/10">
-                {media.type === "VIDEO" ? (
-                  <video src={media.url} muted playsInline controls className="h-full w-full object-cover" />
-                ) : (
-                  <Image src={media.url} alt={`Upload from ${media.guestName}`} fill sizes="25vw" className="object-cover" />
-                )}
-              </div>
-              <div className="p-3">
-                <p className="text-xs text-foreground/70">
-                  {media.guestName} &middot; {media.dateUploaded}
-                </p>
-                <button
-                  type="button"
-                  disabled={isPending(media.id)}
-                  onClick={() => run(media.id, "restore", () => onRestore(media))}
-                  className="mt-2 w-full border rounded-full border-(--m-ink)/25 px-3 py-1.5 text-xs font-medium text-foreground hover:border-(--m-ink) disabled:opacity-60"
-                >
-                  {isPending(media.id, "restore") ? "Restoring…" : "Restore"}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
       {confirmDialog}
     </div>
   );

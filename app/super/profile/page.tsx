@@ -15,7 +15,7 @@ export default async function MyProfilePage() {
     <div className="flex max-w-4xl flex-col gap-5">
       <div>
         <h2 className="font-(family-name:--m-display) text-2xl font-bold tracking-tight">My profile</h2>
-        <p className="mt-1 text-sm text-foreground/65">
+        <p className="mt-1 text-sm text-muted-foreground">
           {profile.user.email} · {ROLE_LABELS[profile.user.role]}. To change your email or access level, ask a super admin.
         </p>
         <LastUpdated lastUpdated={profile.lastUpdated} self />

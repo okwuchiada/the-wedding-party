@@ -1,108 +1,99 @@
 "use client";
 
-import type { ApprovedWishView, HiddenWishView, PendingWishView } from "@/lib/types";
+import { useState } from "react";
+import type { WishView } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { Segmented } from "@/components/ui/segmented";
+import { Pagination, usePagination } from "./pagination";
+import type { ReviewStatus } from "./review";
 import { useActionPending } from "./use-action-pending";
+import { cn } from "@/lib/utils";
+
+const EMPTY: Record<ReviewStatus, { title: string; body: string }> = {
+  PENDING: { title: "Nothing waiting for you", body: "New wishes from guests appear here for you to approve." },
+  APPROVED: { title: "No approved wishes yet", body: "Wishes you approve show on your Wall of Wishes." },
+  HIDDEN: { title: "Nothing hidden", body: "Hidden wishes stay here, so you can bring any back." },
+};
 
 export default function WishesTab({
   pending,
   approved,
   hidden,
-  onApprove,
-  onHide,
-  onRestore,
+  onChange,
 }: {
-  pending: PendingWishView[];
-  approved: ApprovedWishView[];
-  hidden: HiddenWishView[];
-  onApprove: (wish: PendingWishView) => Promise<void>;
-  onHide: (wish: PendingWishView) => Promise<void>;
-  onRestore: (wish: HiddenWishView) => Promise<void>;
+  pending: WishView[];
+  approved: WishView[];
+  hidden: WishView[];
+  onChange: (wish: WishView, from: ReviewStatus, to: ReviewStatus) => Promise<void>;
 }) {
+  const [view, setView] = useState<ReviewStatus>("PENDING");
   const { run, isPending } = useActionPending();
+  const lists = { PENDING: pending, APPROVED: approved, HIDDEN: hidden };
+  const paged = usePagination(lists[view], 25);
+
+  const action = (wish: WishView, to: ReviewStatus, label: string, pendingLabel: string, variant: "default" | "outline") => (
+    <Button
+      size="sm"
+      variant={variant}
+      disabled={isPending(wish.id)}
+      onClick={() => run(wish.id, to, () => onChange(wish, view, to))}
+    >
+      {isPending(wish.id, to) ? pendingLabel : label}
+    </Button>
+  );
 
   return (
     <div>
-      <h2 className="mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Pending Wishes</h2>
+      <SectionHeading
+        title="Wishes"
+        description="Guests' wishes appear on your Wall of Wishes once you approve them."
+        action={
+          <Segmented
+            label="Show"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: "PENDING", label: "Pending", count: pending.length },
+              { value: "APPROVED", label: "Approved", count: approved.length },
+              { value: "HIDDEN", label: "Hidden", count: hidden.length },
+            ]}
+          />
+        }
+      />
 
-      {pending.length === 0 ? (
-        <p className="text-sm text-foreground/60">No pending wishes right now.</p>
+      {paged.total === 0 ? (
+        <EmptyState title={EMPTY[view].title} body={EMPTY[view].body} />
       ) : (
-        <div className="flex flex-col gap-4">
-          {pending.map((wish) => (
-            <div key={wish.id} className="flex items-start justify-between gap-4 rounded-[6px] bg-white p-4 border border-(--m-mist)">
-              <div>
-                <p className="text-base text-foreground italic">&ldquo;{wish.message}&rdquo;</p>
-                <p className="mt-2 text-xs text-foreground/60">
-                  {wish.guestName} &middot; {wish.dateSubmitted}
-                </p>
-              </div>
-              <div className="flex shrink-0 gap-2">
-                <button
-                  type="button"
-                  disabled={isPending(wish.id)}
-                  onClick={() => run(wish.id, "approve", () => onApprove(wish))}
-                  className="rounded-full bg-(--m-gold) px-3 py-1.5 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-                >
-                  {isPending(wish.id, "approve") ? "Approving…" : "Approve"}
-                </button>
-                <button
-                  type="button"
-                  disabled={isPending(wish.id)}
-                  onClick={() => run(wish.id, "hide", () => onHide(wish))}
-                  className="border rounded-full border-(--m-ink)/25 px-3 py-1.5 text-xs font-medium text-foreground hover:border-(--m-ink) disabled:opacity-60"
-                >
-                  {isPending(wish.id, "hide") ? "Hiding…" : "Hide"}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <h2 className="mt-10 mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Approved Wishes</h2>
-
-      {approved.length === 0 ? (
-        <p className="text-sm text-foreground/60">Nothing approved yet.</p>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {approved.map((wish) => (
-            <div key={wish.id} className="rounded-[6px] bg-white p-4 border border-(--m-mist)">
-              <p className="text-base text-foreground italic">&ldquo;{wish.message}&rdquo;</p>
-              <p className="mt-2 text-xs text-foreground/60">— {wish.guestName}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <h2 className="mt-10 mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Hidden Wishes</h2>
-      <p className="mb-5 max-w-2xl text-sm text-foreground/60">
-        Hidden wishes aren&apos;t deleted — they&apos;re kept here so you can bring
-        any of them back if you change your mind.
-      </p>
-
-      {hidden.length === 0 ? (
-        <p className="text-sm text-foreground/60">Nothing hidden right now.</p>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {hidden.map((wish) => (
-            <div key={wish.id} className="flex items-start justify-between gap-4 rounded-[6px] bg-white p-4 opacity-70 border border-(--m-mist)">
-              <div>
-                <p className="text-base text-foreground italic">&ldquo;{wish.message}&rdquo;</p>
-                <p className="mt-2 text-xs text-foreground/60">
-                  {wish.guestName} &middot; {wish.dateSubmitted}
-                </p>
-              </div>
-              <button
-                type="button"
-                disabled={isPending(wish.id)}
-                onClick={() => run(wish.id, "restore", () => onRestore(wish))}
-                className="shrink-0 border rounded-full border-(--m-ink)/25 px-3 py-1.5 text-xs font-medium text-foreground hover:border-(--m-ink) disabled:opacity-60"
-              >
-                {isPending(wish.id, "restore") ? "Restoring…" : "Restore"}
-              </button>
-            </div>
-          ))}
-        </div>
+        <>
+          <ul className="flex flex-col gap-3">
+            {paged.pageItems.map((wish) => (
+              <li key={wish.id}>
+                <Card className={cn("flex-row flex-wrap items-start justify-between gap-4 rounded-md p-4 shadow-none", view === "HIDDEN" && "opacity-75")}>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-base text-ink italic">&ldquo;{wish.message}&rdquo;</p>
+                    <p className="mt-2 text-[13px] text-muted-foreground">
+                      {wish.guestName} &middot; {wish.dateSubmitted}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    {view === "PENDING" && (
+                      <>
+                        {action(wish, "APPROVED", "Approve", "Approving…", "default")}
+                        {action(wish, "HIDDEN", "Hide", "Hiding…", "outline")}
+                      </>
+                    )}
+                    {view === "APPROVED" && action(wish, "HIDDEN", "Hide", "Hiding…", "outline")}
+                    {view === "HIDDEN" && action(wish, "APPROVED", "Restore", "Restoring…", "outline")}
+                  </div>
+                </Card>
+              </li>
+            ))}
+          </ul>
+          <Pagination page={paged.page} pageSize={paged.pageSize} total={paged.total} onPageChange={paged.setPage} onPageSizeChange={paged.setPageSize} />
+        </>
       )}
     </div>
   );

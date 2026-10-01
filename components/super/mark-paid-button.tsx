@@ -2,6 +2,11 @@
 
 import { useActionState, useState } from "react";
 import { markPaymentPaid } from "@/lib/actions/super";
+import { Button } from "@/components/ui/button";
+import { TEXT_ACTION } from "@/components/admin/form-styles";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 /**
  * "Mark as paid" for a pending or failed payment whose money staff know arrived
@@ -13,54 +18,56 @@ export default function MarkPaidButton({ reference, amountLabel }: { reference: 
   const [state, formAction, pending] = useActionState(markPaymentPaid.bind(null, reference), undefined);
   const today = new Date().toISOString().slice(0, 10);
 
-  if (state?.message) return <span className="text-[11px] text-olive">{state.message}</span>;
+  if (state?.message) return <span className="text-[13px] text-emerald">{state.message}</span>;
 
   if (!open) {
     return (
-      <button
+      <Button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-full border border-(--m-ink)/25 px-3 py-1 text-xs font-medium hover:border-(--m-ink)"
+        variant="outline"
+        size="sm"
       >
         Mark as paid
-      </button>
+      </Button>
     );
   }
 
   return (
-    <form action={formAction} className="flex w-64 flex-col gap-2 rounded-[6px] border border-(--m-mist) bg-(--m-paper) p-3 text-left">
-      <p className="text-xs text-foreground/75">
+    <form action={formAction} className="flex w-64 flex-col gap-2 rounded-[6px] border border-border bg-paper p-3 text-left">
+      <p className="text-xs text-muted-foreground">
         Only if the money arrived: this gives the wedding its plan as if Paystack confirmed {amountLabel} for{" "}
         <span className="font-mono">{reference}</span>.
       </p>
-      <label className="flex flex-col gap-1 text-[11px] text-foreground/60">
+      <Label className="flex-col items-stretch gap-1 text-[13px] text-muted-foreground">
         Paid on
-        <input type="date" name="paidOn" defaultValue={today} max={today} className="border border-(--m-mist) bg-white px-2 py-1 text-xs" />
-      </label>
-      <label className="flex flex-col gap-1 text-[11px] text-foreground/60">
+        <Input type="date" name="paidOn" defaultValue={today} max={today} className="py-1.5 text-[13px]" />
+      </Label>
+      <Label className="flex-col items-stretch gap-1 text-[13px] text-muted-foreground">
         How you know
-        <textarea
+        <Textarea
           name="note"
           required
           minLength={10}
           maxLength={500}
           rows={3}
           placeholder="e.g. Paystack success email, 27 Sept, same reference and amount"
-          className="border border-(--m-mist) bg-white px-2 py-1 text-xs"
+          className="py-1.5 text-[13px]"
         />
-      </label>
-      {state?.error && <p className="text-[11px] text-burnt-orange">{state.error}</p>}
+      </Label>
+      {state?.error && <p className="text-[13px] text-destructive">{state.error}</p>}
       <div className="flex gap-2">
-        <button
+        <Button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-(--m-ink) px-3 py-1 text-xs font-semibold text-(--m-paper) hover:bg-(--m-emerald) disabled:opacity-60"
+          variant="ink"
+          size="sm"
         >
           {pending ? "Saving…" : "Mark as paid"}
-        </button>
-        <button type="button" onClick={() => setOpen(false)} className="rounded-full px-3 py-1 text-xs hover:bg-(--m-mist)">
+        </Button>
+        <Button type="button" onClick={() => setOpen(false)} variant="link" size="xs" className={TEXT_ACTION}>
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );

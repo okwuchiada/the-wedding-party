@@ -1,8 +1,12 @@
 "use client";
 
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { holidayOn } from "@/lib/ng-holidays";
+import { PICKER_FIELD_CLASS, PICKER_PANEL_CLASS } from "./picker-styles";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -73,8 +77,6 @@ export default function DatePicker({
   const [open, setOpen] = useState(false);
   const [view, setView] = useState({ y: today.getUTCFullYear(), m: today.getUTCMonth() });
   const [focused, setFocused] = useState<Date>(today);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const fieldRef = useRef<HTMLButtonElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const id = useId();
   const noteId = `${id}-note`;
@@ -86,36 +88,22 @@ export default function DatePicker({
   const clamp = (d: Date) => (d < today ? today : d > maxDate ? maxDate : d);
   const showMonthOf = (d: Date) => setView({ y: d.getUTCFullYear(), m: d.getUTCMonth() });
 
-  const openPicker = () => {
-    const start = clamp(selected ?? today);
-    setFocused(start);
-    showMonthOf(start);
-    setOpen(true);
+  // Radix closes the popover on Escape or an outside click and returns focus to the field.
+  const onOpenChange = (next: boolean) => {
+    if (next) {
+      const start = clamp(selected ?? today);
+      setFocused(start);
+      showMonthOf(start);
+    }
+    setOpen(next);
   };
-  const close = (refocus = true) => {
-    setOpen(false);
-    if (refocus) fieldRef.current?.focus();
-  };
+  const close = () => setOpen(false);
   const pick = (d: Date) => {
     onChange(iso(d));
     close();
   };
 
-  // Close when clicking outside the field and calendar.
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [open]);
-
-  // After opening or a keyboard move, put focus on the active day.
-  const focusedKey = iso(focused);
-  useEffect(() => {
-    if (open) gridRef.current?.querySelector<HTMLButtonElement>('button[tabindex="0"]')?.focus();
-  }, [open, focusedKey]);
+  const focusActiveDay = () => gridRef.current?.querySelector<HTMLButtonElement>('button[tabindex="0"]')?.focus();
 
   const onGridKey = (e: React.KeyboardEvent) => {
     const steps: Record<string, () => Date> = {
@@ -134,6 +122,7 @@ export default function DatePicker({
     const next = clamp(step());
     setFocused(next);
     showMonthOf(next);
+    requestAnimationFrame(focusActiveDay);
   };
 
   const changeMonth = (y: number, m: number) => {
@@ -148,85 +137,84 @@ export default function DatePicker({
   const leading = utc(view.y, view.m, 1).getUTCDay();
 
   return (
-    <div ref={rootRef} className="relative">
+    <div>
       <input type="hidden" name={name} value={value} />
-      <button
-        ref={fieldRef}
-        type="button"
-        id={id}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-labelledby={labelledBy ? `${labelledBy} ${id}` : undefined}
-        aria-describedby={note ? noteId : undefined}
-        onClick={() => (open ? close(false) : openPicker())}
-        className={`flex w-full items-center justify-between gap-3 rounded-[6px] border bg-white px-3.5 py-3 text-left text-base transition-shadow ${
-          open ? "border-(--m-ink)/50 ring-3 ring-(--m-gold)/35" : "border-(--m-mist) hover:border-(--m-ink)/40"
-        }`}
-      >
-        <span className={selected ? "" : "text-(--m-ink)/50"}>{selected ? shortDate(selected) : placeholder}</span>
-        <CalendarDays aria-hidden size={19} className="shrink-0 text-(--m-ink)/60" />
-      </button>
+      <Popover open={open} onOpenChange={onOpenChange}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            id={id}
+            aria-labelledby={labelledBy ? `${labelledBy} ${id}` : undefined}
+            aria-describedby={note ? noteId : undefined}
+            className={PICKER_FIELD_CLASS}
+          >
+            <span className={selected ? "" : "text-ink/50"}>{selected ? shortDate(selected) : placeholder}</span>
+            <CalendarDays aria-hidden className="size-[19px] shrink-0 text-ink/60" />
+          </button>
+        </PopoverTrigger>
 
-      {open && (
-        <div
-          role="dialog"
+        <PopoverContent
+          align="start"
           aria-label="Choose your wedding date"
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              e.stopPropagation();
-              close();
-            }
+          // Start on the active day rather than the first button.
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+            focusActiveDay();
           }}
-          className="absolute top-[calc(100%+8px)] left-0 z-30 grid w-[min(100%,21rem)] gap-3 rounded-[8px] border border-(--m-mist) bg-white p-3.5 shadow-[0_24px_48px_-28px_rgb(22_32_74/0.55)]"
+          className={`${PICKER_PANEL_CLASS} w-[min(var(--radix-popover-trigger-width),21rem)]`}
         >
           <div className="flex items-center gap-1.5">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               aria-label="Previous month"
               disabled={atFirstMonth}
               onClick={() => changeMonth(view.y, view.m - 1)}
-              className="grid size-8 shrink-0 place-items-center rounded-full hover:bg-(--m-paper) disabled:opacity-30"
+              className="hover:bg-paper disabled:opacity-30"
             >
-              <ChevronLeft aria-hidden size={18} />
-            </button>
-            <select
-              aria-label="Month"
-              value={view.m}
-              onChange={(e) => changeMonth(view.y, Number(e.target.value))}
-              className="min-w-0 flex-1 border border-(--m-mist) bg-white px-2 py-1.5 text-sm font-semibold"
-            >
-              {MONTHS.map((m, i) => (
-                <option key={m} value={i} disabled={view.y === today.getUTCFullYear() && i < today.getUTCMonth()}>
-                  {m}
-                </option>
-              ))}
-            </select>
-            <select
-              aria-label="Year"
-              value={view.y}
-              onChange={(e) => changeMonth(Number(e.target.value), view.m)}
-              className="border border-(--m-mist) bg-white px-2 py-1.5 text-sm font-semibold"
-            >
-              {Array.from({ length: yearsAhead + 1 }, (_, i) => today.getUTCFullYear() + i).map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-            <button
+              <ChevronLeft aria-hidden className="size-[18px]" />
+            </Button>
+            <Select value={String(view.m)} onValueChange={(v) => changeMonth(view.y, Number(v))}>
+              <SelectTrigger size="sm" aria-label="Month" className="min-w-0 flex-1 font-semibold">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTHS.map((m, i) => (
+                  <SelectItem key={m} value={String(i)} disabled={view.y === today.getUTCFullYear() && i < today.getUTCMonth()}>
+                    {m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(view.y)} onValueChange={(v) => changeMonth(Number(v), view.m)}>
+              <SelectTrigger size="sm" aria-label="Year" className="font-semibold">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: yearsAhead + 1 }, (_, i) => today.getUTCFullYear() + i).map((y) => (
+                  <SelectItem key={y} value={String(y)}>
+                    {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               aria-label="Next month"
               disabled={atLastMonth}
               onClick={() => changeMonth(view.y, view.m + 1)}
-              className="grid size-8 shrink-0 place-items-center rounded-full hover:bg-(--m-paper) disabled:opacity-30"
+              className="hover:bg-paper disabled:opacity-30"
             >
-              <ChevronRight aria-hidden size={18} />
-            </button>
+              <ChevronRight aria-hidden className="size-[18px]" />
+            </Button>
           </div>
 
           <div ref={gridRef} role="group" aria-label={`${MONTHS[view.m]} ${view.y}`} onKeyDown={onGridKey} className="grid grid-cols-7 gap-1 text-center">
             {DAYS.map((d, i) => (
-              <span key={d} aria-hidden className={`pb-1 text-xs font-semibold ${i === 0 || i === 6 ? "text-(--m-emerald)" : "text-(--m-ink)/55"}`}>
+              <span key={d} aria-hidden className={`pb-1 text-xs font-semibold ${i === 0 || i === 6 ? "text-emerald" : "text-ink/55"}`}>
                 {d.slice(0, 2)}
               </span>
             ))}
@@ -253,54 +241,52 @@ export default function DatePicker({
                   onFocus={() => {
                     if (!isFocused) setFocused(date);
                   }}
-                  className={`relative aspect-square rounded-full text-sm font-medium tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--m-ink) disabled:cursor-not-allowed disabled:text-(--m-ink)/25 motion-reduce:transition-none ${
+                  className={`relative aspect-square rounded-full text-sm font-medium tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ink disabled:cursor-not-allowed disabled:text-ink/25 motion-reduce:transition-none ${
                     isSelected
-                      ? "bg-(--m-gold) font-bold text-(--m-ink)"
+                      ? "bg-gold font-bold text-ink"
                       : disabled
                         ? ""
-                        : `${isWeekend(date) ? "bg-(--m-emerald)/8" : ""} hover:bg-(--m-paper)`
-                  } ${key === iso(today) && !isSelected ? "ring-1 ring-(--m-mist) ring-inset" : ""}`}
+                        : `${isWeekend(date) ? "bg-emerald/8" : ""} hover:bg-paper`
+                  } ${key === iso(today) && !isSelected ? "ring-1 ring-mist ring-inset" : ""}`}
                 >
                   {i + 1}
-                  {holiday && <span aria-hidden className="absolute bottom-1 left-1/2 size-1.5 -translate-x-1/2 rounded-full bg-(--m-coral)" />}
+                  {holiday && <span aria-hidden className="absolute bottom-1 left-1/2 size-1.5 -translate-x-1/2 rounded-full bg-coral" />}
                 </button>
               );
             })}
           </div>
 
-          <div className="flex items-center justify-between gap-2 border-t border-(--m-mist) pt-3">
-            <span className="flex items-center gap-1.5 text-xs text-(--m-ink)/60">
-              <span aria-hidden className="size-1.5 rounded-full bg-(--m-coral)" /> Public holiday
+          <div className="flex items-center justify-between gap-2 border-t border-mist pt-3">
+            <span className="flex items-center gap-1.5 text-xs text-ink/60">
+              <span aria-hidden className="size-1.5 rounded-full bg-coral" /> Public holiday
             </span>
             <span className="flex gap-2">
               {value && (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="xs"
                   onClick={() => {
                     onChange("");
                     close();
                   }}
-                  className="rounded-full border border-(--m-ink)/25 px-3.5 py-1.5 text-sm font-medium hover:border-(--m-ink)"
+                  className="px-3.5 text-sm"
                 >
                   Clear
-                </button>
+                </Button>
               )}
-              <button
-                type="button"
-                onClick={() => close()}
-                className="rounded-full bg-(--m-ink) px-3.5 py-1.5 text-sm font-medium text-(--m-paper) hover:bg-(--m-emerald)"
-              >
+              <Button type="button" variant="ink" size="xs" onClick={close} className="px-3.5 text-sm font-medium">
                 Done
-              </button>
+              </Button>
             </span>
           </div>
-        </div>
-      )}
+        </PopoverContent>
+      </Popover>
 
       {note && (
         <p id={noteId} aria-live="polite" className="mt-2 flex flex-wrap gap-x-3 text-sm">
-          <span className="font-semibold text-(--m-emerald)">{note.countdown}</span>
-          {note.holiday && <span className="text-(--m-coral-deep)">{note.holiday}</span>}
+          <span className="font-semibold text-emerald">{note.countdown}</span>
+          {note.holiday && <span className="text-coral-deep">{note.holiday}</span>}
         </p>
       )}
     </div>

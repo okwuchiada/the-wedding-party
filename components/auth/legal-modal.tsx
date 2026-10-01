@@ -1,49 +1,29 @@
 "use client";
 
-import { useEffect } from "react";
 import LegalDocumentView from "@/components/marketing/legal-document";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import type { LegalDocument } from "@/lib/legal";
 
 export default function LegalModal({ doc, onClose }: { doc: LegalDocument | null; onClose: () => void }) {
-  useEffect(() => {
-    if (!doc) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [doc, onClose]);
-
-  if (!doc) return null;
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="legal-modal-title"
-      className="fixed inset-0 z-100 flex items-center justify-center bg-(--m-ink)/40 px-4 py-8"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="flex max-h-full w-full max-w-lg flex-col overflow-hidden rounded-[6px] bg-(--m-paper) border border-(--m-mist)"
+    <Dialog open={doc !== null} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        showCloseButton={false}
+        aria-describedby={undefined}
+        className="flex max-h-[calc(100%-4rem)] flex-col gap-0 overflow-hidden bg-paper p-0"
       >
-        <div className="flex-1 overflow-y-auto px-6 py-6">
-          <div id="legal-modal-title">
-            <LegalDocumentView doc={doc} compact />
-          </div>
-        </div>
-        <div className="flex justify-end border-t border-(--m-mist) px-6 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            autoFocus
-            className="rounded-full bg-(--m-ink) px-4 py-2 text-xs font-medium text-(--m-paper) hover:bg-(--m-emerald)"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
+        {/* The document shows its own title; this one names the dialog for screen readers. */}
+        <DialogTitle className="sr-only">{doc?.title}</DialogTitle>
+        <div className="flex-1 overflow-y-auto px-6 py-6">{doc && <LegalDocumentView doc={doc} compact />}</div>
+        <DialogFooter className="border-t px-6 py-4">
+          <DialogClose asChild>
+            <Button variant="ink" size="sm" autoFocus>
+              Close
+            </Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

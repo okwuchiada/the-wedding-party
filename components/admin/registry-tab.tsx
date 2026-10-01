@@ -18,6 +18,19 @@ import CategoryField from "./category-field";
 import { Pagination, usePagination } from "./pagination";
 import { useAdminMoney, useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { MoneyField, SelectInput, TextInput } from "@/components/ui/field";
+import { Notice } from "@/components/ui/notice";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { NG_BANKS, normaliseAccountNumber } from "@/lib/bank-account";
+import { FIELD, FILE_INPUT, TEXT_ACTION } from "@/components/admin/form-styles";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 
 function sumContributions(contributions: { amountCents: number }[]) {
@@ -52,6 +65,8 @@ function RegistryItemForm({
   const [state, formAction, pending] = useActionState(action, undefined);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  // The file upload is the default; a pasted link is the fallback for photos already online.
+  const [pasteLink, setPasteLink] = useState(false);
 
   useEffect(() => {
     if (state?.success) onCancel();
@@ -98,88 +113,72 @@ function RegistryItemForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 bg-ivory p-4 sm:grid-cols-2">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 rounded-[8px] bg-accent p-4 sm:grid-cols-2">
       {initialValues?.id && <input type="hidden" name="id" defaultValue={initialValues.id} />}
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-        Name
-        <input
-          name="name"
-          defaultValue={initialValues?.name}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
-        />
-      </label>
+      <TextInput label="Name" name="name" defaultValue={initialValues?.name} required />
 
       <CategoryField name="category" defaultValue={initialValues?.category} existing={categories} />
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-        Price ({currencySymbol(money)})
-        <input
-          name="price"
-          type="number"
-          min={1}
-          step="0.01"
-          defaultValue={initialValues?.price}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
-        />
-      </label>
+      <MoneyField
+        label={
+          <>
+            Price <span className="sr-only">in {money.currency}</span>
+          </>
+        }
+        symbol={currencySymbol(money)}
+        name="price"
+        min={1}
+        step="0.01"
+        defaultValue={initialValues?.price}
+        required
+      />
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-        Image URL
-        <input
-          name="image"
-          defaultValue={initialValues?.image}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
-        />
-      </label>
+      <TextInput label="Buy link (optional)" name="externalUrl" type="url" defaultValue={initialValues?.externalUrl ?? ""} placeholder="https://" />
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60 sm:col-span-2">
-        …or upload a photo
-        <input
-          name="file"
-          type="file"
-          accept="image/*,.heic,.heif"
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none file:mr-3 file:border-0 file:rounded-full file:bg-(--m-ink) file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ivory"
-        />
-        {initialValues?.image && (
-          <span className="mt-1 text-[11px] text-foreground/50">
-            Leave blank to keep the current image
-          </span>
+      <div className="flex flex-col gap-1.5 sm:col-span-2">
+        {pasteLink ? (
+          <TextInput label="Image link" name="image" defaultValue={initialValues?.image} placeholder="https://" />
+        ) : (
+          <>
+            <Label htmlFor="registry-photo" className="text-sm font-medium text-ink">
+              Photo
+            </Label>
+            <Input
+              id="registry-photo"
+              name="file"
+              type="file"
+              accept="image/*,.heic,.heif"
+              className={cn(FIELD, FILE_INPUT)}
+            />
+            {initialValues?.image && <input type="hidden" name="image" defaultValue={initialValues.image} />}
+            {initialValues?.image && <span className="text-[13px] text-muted-foreground">Leave empty to keep the current photo.</span>}
+          </>
         )}
-      </label>
-
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60 sm:col-span-2">
-        Buy link (optional)
-        <input
-          name="externalUrl"
-          defaultValue={initialValues?.externalUrl ?? ""}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
-        />
-      </label>
+        <Button size="xs" variant="link" className={cn(TEXT_ACTION, "self-start")} onClick={() => setPasteLink((v) => !v)}>
+          {pasteLink ? "Upload a photo instead" : "Paste an image link instead"}
+        </Button>
+      </div>
 
       {(uploadError || state?.error) && (
-        <p className="text-xs text-burnt-orange sm:col-span-2">{uploadError || state?.error}</p>
+        <div className="sm:col-span-2">
+          <Notice tone="error">{uploadError || state?.error}</Notice>
+        </div>
       )}
 
       <div className="flex gap-2 sm:col-span-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
-        >
+        <Button variant="outline" size="sm" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={pending || uploading}
-          className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-        >
+        </Button>
+        <Button type="submit" size="sm" disabled={pending || uploading}>
           {uploading ? "Uploading…" : pending ? "Saving…" : submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
   );
 }
+
+const OTHER_BANK = "__other";
 
 function BankDetailsForm({
   bankDetails,
@@ -189,7 +188,14 @@ function BankDetailsForm({
   onCancel: () => void;
 }) {
   const weddingId = useAdminWeddingId();
+  const money = useAdminMoney();
+  const naira = money.currency === "NGN";
   const [state, formAction, pending] = useActionState(saveBankDetails.bind(null, weddingId), undefined);
+  const knownBank = (NG_BANKS as readonly string[]).includes(bankDetails.bank);
+  const [bankChoice, setBankChoice] = useState(bankDetails.bank && !knownBank ? OTHER_BANK : bankDetails.bank);
+  const [account, setAccount] = useState(bankDetails.account);
+  const [showSwift, setShowSwift] = useState(Boolean(bankDetails.swift));
+  const digits = normaliseAccountNumber(account).length;
 
   useEffect(() => {
     if (state?.success) onCancel();
@@ -197,65 +203,55 @@ function BankDetailsForm({
   }, [state?.success]);
 
   return (
-    <form action={formAction} className="grid grid-cols-1 gap-3 bg-ivory p-4 sm:grid-cols-2">
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-        Account name
-        <input
-          name="name"
-          defaultValue={bankDetails.name}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
-        />
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-        Bank
-        <input
-          name="bank"
-          defaultValue={bankDetails.bank}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
-        />
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-        Account number
-        <input
-          name="account"
-          defaultValue={bankDetails.account}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
-        />
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-        Routing number (optional)
-        <input
-          name="routing"
-          defaultValue={bankDetails.routing}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
-        />
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
-        SWIFT / BIC (optional)
-        <input
-          name="swift"
-          defaultValue={bankDetails.swift ?? ""}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
-        />
-      </label>
+    <form action={formAction} className="grid grid-cols-1 gap-4 rounded-[8px] bg-accent p-4 sm:grid-cols-2">
+      {naira ? (
+        <>
+          <SelectInput
+            label="Bank"
+            name={bankChoice === OTHER_BANK ? undefined : "bank"}
+            value={bankChoice}
+            onValueChange={setBankChoice}
+            placeholder="Choose your bank"
+            options={[...NG_BANKS.map((b) => ({ value: b, label: b })), { value: OTHER_BANK, label: "Other bank" }]}
+            required
+          />
+          {bankChoice === OTHER_BANK && <TextInput label="Bank name" name="bank" defaultValue={knownBank ? "" : bankDetails.bank} required />}
+        </>
+      ) : (
+        <TextInput label="Bank" name="bank" defaultValue={bankDetails.bank} required />
+      )}
+      <TextInput
+        label="Account number"
+        name="account"
+        inputMode={naira ? "numeric" : undefined}
+        maxLength={naira ? 13 : undefined}
+        value={account}
+        onChange={(e) => setAccount(e.target.value)}
+        hint={naira ? (digits === 10 ? "✓ 10 digits" : `${digits} of 10 digits`) : undefined}
+        required
+      />
+      <TextInput label="Account name" name="name" defaultValue={bankDetails.name} autoComplete="off" required />
+      {showSwift ? (
+        <TextInput label="SWIFT / BIC (optional)" name="swift" defaultValue={bankDetails.swift ?? ""} hint="Only needed for gifts from banks abroad." />
+      ) : (
+        <Button size="xs" variant="link" className={cn(TEXT_ACTION, "self-end justify-self-start")} onClick={() => setShowSwift(true)}>
+          Guests abroad? Add a SWIFT code
+        </Button>
+      )}
 
-      {state?.error && <p className="text-xs text-burnt-orange sm:col-span-2">{state.error}</p>}
+      {state?.error && (
+        <div className="sm:col-span-2">
+          <Notice tone="error">{state.error}</Notice>
+        </div>
+      )}
 
       <div className="flex gap-2 sm:col-span-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
-        >
+        <Button variant="outline" size="sm" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-        >
-          {pending ? "Saving…" : "Save"}
-        </button>
+        </Button>
+        <Button type="submit" size="sm" disabled={pending}>
+          {pending ? "Saving…" : "Save bank details"}
+        </Button>
       </div>
     </form>
   );
@@ -279,11 +275,13 @@ export default function RegistryTab({
   const { confirm, confirmDialog } = useConfirm();
   const { run, isPending } = useActionPending();
   const { page, pageSize, pageItems, total, setPage, setPageSize } = usePagination(items);
+  const hasBank = Boolean(bankDetails.account);
 
   const handleDelete = async (id: string, name: string) => {
     const ok = await confirm({
       title: `Delete "${name}"?`,
       description: "This can't be undone.",
+      confirmLabel: "Delete",
     });
     if (!ok) return;
     setDeleteError("");
@@ -294,142 +292,178 @@ export default function RegistryTab({
   };
 
   return (
-    <div>
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Bank Details</h2>
-        {!editingBank && (
-          <button
-            type="button"
-            onClick={() => setEditingBank(true)}
-            className="text-xs text-foreground/60 hover:text-burnt-orange"
-          >
-            Edit
-          </button>
-        )}
-      </div>
-
-      {editingBank ? (
-        <div className="mb-10">
-          <BankDetailsForm bankDetails={bankDetails} onCancel={() => setEditingBank(false)} />
-        </div>
-      ) : (
-        <div className="mb-10 grid grid-cols-2 gap-4 rounded-[6px] border border-(--m-mist) bg-white p-4 text-sm sm:grid-cols-4">
-          <div>
-            <p className="text-xs text-foreground/50">Account name</p>
-            <p className="mt-1 text-foreground">{bankDetails.name}</p>
-          </div>
-          <div>
-            <p className="text-xs text-foreground/50">Bank</p>
-            <p className="mt-1 text-foreground">{bankDetails.bank}</p>
-          </div>
-          <div>
-            <p className="text-xs text-foreground/50">Account no.</p>
-            <p className="mt-1 text-foreground">{bankDetails.account}</p>
-          </div>
-          <div>
-            <p className="text-xs text-foreground/50">Routing</p>
-            <p className="mt-1 text-foreground">{bankDetails.routing || "—"}</p>
-          </div>
-          <div>
-            <p className="text-xs text-foreground/50">SWIFT / BIC</p>
-            <p className="mt-1 text-foreground">{bankDetails.swift ?? "—"}</p>
-          </div>
-        </div>
+    <div className="flex flex-col gap-10">
+      {!hasBank && !editingBank && (
+        <Notice tone="warning" action={<Button size="sm" onClick={() => setEditingBank(true)}>Add bank details</Button>}>
+          Guests can&apos;t give until you add bank details.
+        </Notice>
       )}
 
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Registry Items</h2>
-        {!adding && (
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
-          >
-            Add Item
-          </button>
+      <section>
+        {editingBank ? (
+          <>
+            <SectionHeading title="Where cash gifts go" />
+            <BankDetailsForm bankDetails={bankDetails} onCancel={() => setEditingBank(false)} />
+          </>
+        ) : hasBank ? (
+          <Card className="gap-0 rounded-md p-5 shadow-none block">
+            <SectionHeading
+              as="h3"
+              title="Where cash gifts go"
+              action={
+                <Button size="xs" className={TEXT_ACTION} variant="link" onClick={() => setEditingBank(true)}>
+                  Edit
+                </Button>
+              }
+            />
+            <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
+              <div>
+                <dt className="text-[13px] text-muted-foreground">Account name</dt>
+                <dd className="mt-1 text-ink">{bankDetails.name}</dd>
+              </div>
+              <div>
+                <dt className="text-[13px] text-muted-foreground">Bank</dt>
+                <dd className="mt-1 text-ink">{bankDetails.bank}</dd>
+              </div>
+              <div>
+                <dt className="text-[13px] text-muted-foreground">Account number</dt>
+                <dd className="mt-1 text-ink tabular-nums">{bankDetails.account}</dd>
+              </div>
+              {bankDetails.swift && (
+                <div>
+                  <dt className="text-[13px] text-muted-foreground">SWIFT / BIC</dt>
+                  <dd className="mt-1 text-ink">{bankDetails.swift}</dd>
+                </div>
+              )}
+            </dl>
+          </Card>
+        ) : null}
+      </section>
+
+      <section>
+        <SectionHeading
+          title="Registry items"
+          action={
+            !adding && items.length > 0 && (
+              <Button size="sm" onClick={() => setAdding(true)}>
+                Add a gift
+              </Button>
+            )
+          }
+        />
+
+        {adding && (
+          <div className="mb-5">
+            <RegistryItemForm
+              action={createRegistryItem.bind(null, weddingId)}
+              onCancel={() => setAdding(false)}
+              submitLabel="Add gift"
+              categories={categories}
+            />
+          </div>
         )}
-      </div>
 
-      {adding && (
-        <div className="mb-5">
-          <RegistryItemForm
-            action={createRegistryItem.bind(null, weddingId)}
-            onCancel={() => setAdding(false)}
-            submitLabel="Add Item"
-            categories={categories}
-          />
-        </div>
-      )}
+        {deleteError && (
+          <div className="mb-3">
+            <Notice tone="error">{deleteError}</Notice>
+          </div>
+        )}
 
-      {deleteError && <p className="mb-3 text-xs text-burnt-orange">{deleteError}</p>}
+        {items.length === 0 ? (
+          !adding && (
+            <EmptyState
+              title="No gifts yet"
+              body="Add a few things for your new home, or a fund guests can chip into."
+              action={
+                <Button size="sm" onClick={() => setAdding(true)}>
+                  Add your first gift
+                </Button>
+              }
+            />
+          )
+        ) : (
+          <>
+            <div className="overflow-hidden rounded-md border bg-card">
+              <Table className="min-w-150">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                      <span className="sr-only">Photo</span>
+                    </TableHead>
+                    <TableHead>Gift</TableHead>
+                    <TableHead>Raised</TableHead>
+                    <TableHead className="text-right">Goal</TableHead>
+                    <TableHead>Claimed by</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pageItems.map((item) => {
+                    const raised = sumContributions(item.contributions);
+                    const pct = Math.min(100, Math.round((raised / item.priceCents) * 100));
+                    return editingId === item.id ? (
+                      <TableRow key={item.id}>
+                        <TableCell colSpan={6} className="p-0 whitespace-normal">
+                          <RegistryItemForm
+                            action={updateRegistryItem.bind(null, weddingId)}
+                            categories={categories}
+                            initialValues={{
+                              id: item.id,
+                              name: item.name,
+                              category: item.category,
+                              price: item.priceCents / 100,
+                              image: item.image,
+                              externalUrl: item.externalUrl,
+                            }}
+                            onCancel={() => setEditingId(null)}
+                            submitLabel="Save changes"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      <TableRow key={item.id}>
+                        <TableCell className="w-14">
+                          {item.image ? (
+                            <Image src={item.image} alt="" width={40} height={40} className="size-10 rounded-[4px] object-cover" />
+                          ) : (
+                            <span className="block size-10 rounded-[4px] bg-accent" />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-semibold">{item.name}</span>
+                          <span className="block text-[13px] text-muted-foreground">{item.category}</span>
+                        </TableCell>
+                        <TableCell className="min-w-40">
+                          <span className="block h-1 overflow-hidden rounded-full bg-border" aria-hidden>
+                            <span className="block h-full bg-emerald" style={{ width: `${pct}%` }} />
+                          </span>
+                          <span className="mt-1 block text-[13px] tabular-nums">
+                            {formatMoney(raised, money)} <span className="text-muted-foreground">· {pct}%</span>
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{formatMoney(item.priceCents, money)}</TableCell>
+                        <TableCell className="text-muted-foreground">{item.claimedBy ?? "—"}</TableCell>
+                        <TableCell className="whitespace-nowrap text-right">
+                          <Button size="xs" variant="link" className={cn(TEXT_ACTION, "mr-3")} disabled={isPending(item.id)} onClick={() => setEditingId(item.id)}>
+                            Edit
+                          </Button>
+                          <Button size="xs" className={TEXT_ACTION} variant="link" disabled={isPending(item.id)} onClick={() => handleDelete(item.id, item.name)}>
+                            {isPending(item.id, "delete") ? "Deleting…" : "Delete"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </>
+        )}
+      </section>
 
-      <div className="overflow-x-auto rounded-[6px] border border-(--m-mist) bg-white">
-        <table className="w-full min-w-150 text-left text-sm">
-          <thead>
-            <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
-              <th className="px-4 py-3 font-medium">Item</th>
-              <th className="px-4 py-3 font-medium">Category</th>
-              <th className="px-4 py-3 font-medium">Goal</th>
-              <th className="px-4 py-3 font-medium">Raised</th>
-              <th className="px-4 py-3 font-medium">Claimed by</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pageItems.map((item) =>
-              editingId === item.id ? (
-                <tr key={item.id} className="border-b border-(--m-mist) last:border-0">
-                  <td colSpan={6} className="p-0">
-                    <RegistryItemForm
-                      action={updateRegistryItem.bind(null, weddingId)}
-                      categories={categories}
-                      initialValues={{
-                        id: item.id,
-                        name: item.name,
-                        category: item.category,
-                        price: item.priceCents / 100,
-                        image: item.image,
-                        externalUrl: item.externalUrl,
-                      }}
-                      onCancel={() => setEditingId(null)}
-                      submitLabel="Save Changes"
-                    />
-                  </td>
-                </tr>
-              ) : (
-                <tr key={item.id} className="border-b border-(--m-mist) last:border-0">
-                  <td className="px-4 py-3 text-foreground">{item.name}</td>
-                  <td className="px-4 py-3 text-foreground/70">{item.category}</td>
-                  <td className="px-4 py-3 text-foreground/70">{formatMoney(item.priceCents, money)}</td>
-                  <td className="px-4 py-3 text-foreground/70">
-                    {formatMoney(sumContributions(item.contributions), money)}
-                  </td>
-                  <td className="px-4 py-3 text-foreground/70">{item.claimedBy ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      disabled={isPending(item.id)}
-                      onClick={() => setEditingId(item.id)}
-                      className="mr-3 text-xs text-foreground/60 hover:text-burnt-orange disabled:opacity-60"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isPending(item.id)}
-                      onClick={() => handleDelete(item.id, item.name)}
-                      className="text-xs text-foreground/60 hover:text-burnt-orange disabled:opacity-60"
-                    >
-                      {isPending(item.id, "delete") ? "Deleting…" : "Delete"}
-                    </button>
-                  </td>
-                </tr>
-              )
-            )}
-          </tbody>
-        </table>
-      </div>
-      <Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
       {confirmDialog}
     </div>
   );

@@ -1,13 +1,9 @@
 import { resolveLayout, visibleSections, type SectionId } from "@/lib/layouts";
+import { formatNavDate } from "@/lib/nav-date";
+import { hasFeature } from "@/lib/plans";
 import { getStory, getWeddingById, guestPath } from "@/lib/tenant";
 import GuestNavClient from "./nav-client";
 import { getSectionsWithContent } from "./section-content";
-
-function formatNavDate(weddingDateISO: string) {
-  const [datePart] = weddingDateISO.split("T");
-  const [year, month, day] = datePart.split("-");
-  return `${month} · ${day} · ${year.slice(2)}`;
-}
 
 export default async function GuestNav({
   weddingId,
@@ -20,10 +16,13 @@ export default async function GuestNav({
   sections?: SectionId[];
 }) {
   const withContent = await getSectionsWithContent(weddingId);
-  const visible = (sections ?? visibleSections(resolveLayout((await getWeddingById(weddingId)).theme))).filter((id) =>
+  const wedding = await getWeddingById(weddingId);
+  const visible = (sections ?? visibleSections(resolveLayout(wedding.theme))).filter((id) =>
     withContent.has(id)
   );
   const story = await getStory(weddingId);
+  // Same rule as the gallery page: switched on by the couple and included in their plan.
+  const galleryOn = (story?.galleryEnabled ?? false) && hasFeature(wedding.plan, "gallery");
   const weddingDateISO = (story?.weddingDate ?? new Date()).toISOString();
 
   const brideInitial = story?.brideName?.trim().charAt(0).toUpperCase() || "";
@@ -32,7 +31,7 @@ export default async function GuestNav({
   return (
     <GuestNavClient
       basePath={guestPath(slug)}
-      show={{ rsvp: visible.includes("rsvp"), registry: visible.includes("registry") }}
+      show={{ rsvp: visible.includes("rsvp"), registry: visible.includes("registry"), gallery: galleryOn }}
       dateLabel={formatNavDate(weddingDateISO)}
       brideInitial={brideInitial}
       groomInitial={groomInitial}

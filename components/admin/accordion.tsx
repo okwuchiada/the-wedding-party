@@ -1,7 +1,7 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
-import { useId } from "react";
+import { Accordion, AccordionContent, AccordionItem as UiAccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { cn } from "@/lib/utils";
 
 /**
  * One collapsible panel. Closed panels stay mounted (just hidden) so any form
@@ -23,34 +23,25 @@ export function AccordionItem({
   onToggle: () => void;
   children: React.ReactNode;
 }) {
-  const id = useId();
   return (
-    <div className={`rounded-[8px] border bg-white transition-colors ${open ? "border-(--m-ink)/30" : "border-(--m-mist)"}`}>
-      <h2>
-        <button
-          type="button"
-          id={`${id}-button`}
-          aria-expanded={open}
-          aria-controls={`${id}-panel`}
-          onClick={onToggle}
-          className="flex w-full items-center justify-between gap-4 rounded-[8px] px-5 py-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--m-ink)"
-        >
+    <Accordion type="single" collapsible value={open ? "panel" : ""} onValueChange={onToggle}>
+      <UiAccordionItem
+        value="panel"
+        className={cn("rounded-lg border bg-white transition-colors last:border-b", open ? "border-ink/30" : "border-mist")}
+      >
+        <AccordionTrigger className="items-center rounded-lg px-5 py-4 hover:no-underline focus-visible:ring-ink/40 [&>svg]:size-5 [&>svg]:translate-y-0 [&>svg]:text-ink/60">
           <span className="min-w-0">
             <span className="block font-(family-name:--m-display) text-xl font-bold tracking-tight">{title}</span>
-            <span className={`mt-0.5 block truncate text-sm ${summaryTone === "warn" ? "text-(--m-coral-deep)" : "text-(--m-ink)/60"}`}>
+            <span className={cn("mt-0.5 block truncate text-sm font-normal", summaryTone === "warn" ? "text-coral-deep" : "text-ink/60")}>
               {summary}
             </span>
           </span>
-          <ChevronDown
-            aria-hidden
-            size={20}
-            className={`shrink-0 text-(--m-ink)/60 transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
-          />
-        </button>
-      </h2>
-      <div id={`${id}-panel`} role="region" aria-labelledby={`${id}-button`} hidden={!open} className="border-t border-(--m-mist) px-5 pt-4 pb-5">
-        {children}
-      </div>
-    </div>
+        </AccordionTrigger>
+        {/* forceMount keeps closed panels in the form; Radix hides them. */}
+        <AccordionContent forceMount className="border-t border-mist px-5 pt-4 pb-5">
+          {children}
+        </AccordionContent>
+      </UiAccordionItem>
+    </Accordion>
   );
 }

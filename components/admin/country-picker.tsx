@@ -1,8 +1,13 @@
 "use client";
 
 import { ChevronDown, Search, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { CountryOption } from "@/lib/countries";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { TEXT_ACTION } from "@/components/admin/form-styles";
+import { Label } from "@/components/ui/label";
 
 /** 🇳🇬 from "NG"; purely decorative. */
 const flag = (code: string) => String.fromCodePoint(...[...code].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
@@ -11,11 +16,7 @@ const CHIP_LIMIT = 12;
 
 /** A continent's tick box: checked when all its countries are, "mixed" when some are. */
 function ContinentBox({ checked, mixed, onChange, label }: { checked: boolean; mixed: boolean; onChange: () => void; label: string }) {
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (ref.current) ref.current.indeterminate = mixed;
-  }, [mixed]);
-  return <input ref={ref} type="checkbox" checked={checked} onChange={onChange} aria-label={label} className="size-4" />;
+  return <Checkbox checked={mixed ? "indeterminate" : checked} onCheckedChange={onChange} aria-label={label} />;
 }
 
 /**
@@ -65,32 +66,34 @@ export default function CountryPicker({ name, countries, defaultValue }: { name:
       <input type="hidden" name={name} value={chosen.map((c) => c.code).join(",")} />
 
       {chosen.length === 0 ? (
-        <p className="text-sm text-foreground/70">Everyone can view your site, wherever they are.</p>
+        <p className="text-sm text-muted-foreground">Everyone can view your site, wherever they are.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-foreground/70">
+          <p className="text-sm text-muted-foreground">
             Only visitors in {chosen.length === 1 ? "this country" : `these ${chosen.length} countries`} can view your site:
           </p>
           <ul className="flex flex-wrap gap-1.5">
             {visibleChips.map((c) => (
-              <li key={c.code} className="flex items-center gap-1 rounded-full border border-(--m-mist) bg-white py-0.5 pr-1 pl-2.5 text-xs">
+              <li key={c.code} className="flex items-center gap-1 rounded-full border border-border bg-card py-0.5 pr-1 pl-2.5 text-xs">
                 <span aria-hidden>{flag(c.code)}</span>
                 {c.name}
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   onClick={() => toggle([c.code], false)}
                   aria-label={`Remove ${c.name}`}
-                  className="grid size-5 place-items-center rounded-full text-foreground/50 hover:bg-(--m-mist) hover:text-foreground"
+                  className="size-5 text-muted-foreground hover:bg-border hover:text-ink"
                 >
-                  <X aria-hidden size={12} />
-                </button>
+                  <X aria-hidden className="size-3" />
+                </Button>
               </li>
             ))}
             {chosen.length > CHIP_LIMIT && (
               <li>
-                <button type="button" onClick={() => setShowAllChips((v) => !v)} className="px-2 py-0.5 text-xs underline underline-offset-4">
+                <Button type="button" variant="link" size="xs" onClick={() => setShowAllChips((v) => !v)} className="h-auto px-2 py-0.5 underline">
                   {showAllChips ? "Show fewer" : `+${chosen.length - CHIP_LIMIT} more`}
-                </button>
+                </Button>
               </li>
             )}
           </ul>
@@ -98,34 +101,35 @@ export default function CountryPicker({ name, countries, defaultValue }: { name:
       )}
 
       <div className="flex flex-wrap gap-2">
-        <button
+        <Button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="rounded-full border border-(--m-ink)/25 px-4 py-2 text-xs font-medium hover:border-(--m-ink)"
+          variant="outline"
+          size="sm"
         >
           {open ? "Done choosing" : chosen.length ? "Change countries" : "Limit to certain countries"}
-        </button>
+        </Button>
         {chosen.length > 0 && (
-          <button type="button" onClick={() => setSelected(new Set())} className="rounded-full px-4 py-2 text-xs font-medium hover:bg-(--m-mist)">
+          <Button type="button" onClick={() => setSelected(new Set())} variant="link" size="xs" className={TEXT_ACTION}>
             Allow everyone
-          </button>
+          </Button>
         )}
       </div>
 
       {open && (
-        <div className="flex flex-col rounded-md border border-(--m-mist) bg-white">
-          <label className="flex items-center gap-2 border-b border-(--m-mist) px-3 py-2.5">
-            <Search aria-hidden size={16} className="text-foreground/45" />
+        <div className="flex flex-col rounded-md border border-border bg-card">
+          <Label className="gap-2 border-b border-border px-3 py-1.5 font-normal">
+            <Search aria-hidden size={16} className="text-muted-foreground" />
             <span className="sr-only">Search countries</span>
-            <input
+            <Input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search countries, e.g. Ghana or UK"
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none p-0.5 "
+              className="h-8 min-w-0 flex-1 border-0 bg-transparent px-1 shadow-none"
             />
-          </label>
+          </Label>
           <ul className="max-h-96 overflow-y-auto">
             {continents.map(([continent, list]) => {
               const shown = list.filter(matches);
@@ -135,7 +139,7 @@ export default function CountryPicker({ name, countries, defaultValue }: { name:
               // Searching opens every group that has a match.
               const isOpen = Boolean(q) || expanded.has(continent);
               return (
-                <li key={continent} className="border-b border-(--m-mist) last:border-0">
+                <li key={continent} className="border-b border-border last:border-0">
                   <div className="flex items-center gap-3 px-3 py-2.5">
                     {!q && (
                       <ContinentBox
@@ -145,30 +149,31 @@ export default function CountryPicker({ name, countries, defaultValue }: { name:
                         label={`All of ${continent}`}
                       />
                     )}
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
                       onClick={() => toggleExpanded(continent)}
                       aria-expanded={isOpen}
-                      className="flex flex-1 items-center justify-between gap-2 text-left text-sm font-semibold"
+                      className="h-auto flex-1 justify-between gap-2 rounded-md px-1 py-0.5 text-left text-sm font-semibold hover:bg-transparent"
                     >
                       <span>
                         {continent}
-                        <span className="ml-2 text-xs font-normal text-foreground/55">
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
                           {count ? `${count} of ${codes.length} chosen` : `${codes.length} ${codes.length === 1 ? "country" : "countries"}`}
                         </span>
                       </span>
-                      {!q && <ChevronDown aria-hidden size={16} className={`text-foreground/50 transition-transform ${isOpen ? "rotate-180" : ""}`} />}
-                    </button>
+                      {!q && <ChevronDown aria-hidden size={16} className={`text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />}
+                    </Button>
                   </div>
                   {isOpen && (
                     <ul className="grid grid-cols-1 gap-x-4 pb-2 pl-10 pr-3 sm:grid-cols-2">
                       {shown.map((c) => (
                         <li key={c.code}>
-                          <label className="flex items-center gap-2 py-1 text-sm">
-                            <input type="checkbox" checked={selected.has(c.code)} onChange={(e) => toggle([c.code], e.target.checked)} className="size-4" />
+                          <Label className="gap-2 py-1 font-normal">
+                            <Checkbox checked={selected.has(c.code)} onCheckedChange={(v) => toggle([c.code], v === true)} />
                             <span aria-hidden>{flag(c.code)}</span>
                             {c.name}
-                          </label>
+                          </Label>
                         </li>
                       ))}
                     </ul>
@@ -177,7 +182,7 @@ export default function CountryPicker({ name, countries, defaultValue }: { name:
               );
             })}
             {q && continents.every(([, list]) => !list.some(matches)) && (
-              <li className="px-3 py-3 text-sm text-foreground/60">No country matches &ldquo;{query}&rdquo;.</li>
+              <li className="px-3 py-3 text-sm text-muted-foreground">No country matches &ldquo;{query}&rdquo;.</li>
             )}
           </ul>
         </div>

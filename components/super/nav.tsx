@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 export default function SuperNav({ links }: { links: { href: string; label: string }[] }) {
   const pathname = usePathname();
@@ -10,16 +11,17 @@ export default function SuperNav({ links }: { links: { href: string; label: stri
       {links.map((link) => {
         const active = link.href === "/super" ? pathname === "/super" : pathname.startsWith(link.href);
         return (
-          <Link
+          <Button
             key={link.href}
-            href={link.href}
-            aria-current={active ? "page" : undefined}
-            className={`rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
-              active ? "bg-(--m-ink) text-(--m-paper)" : "text-(--m-ink)/70 hover:bg-(--m-mist) hover:text-(--m-ink)"
-            }`}
+            asChild
+            variant={active ? "ink" : "ghost"}
+            size="sm"
+            className={active ? "text-sm font-medium hover:bg-ink" : "text-sm text-ink/70 hover:text-ink"}
           >
-            {link.label}
-          </Link>
+            <Link href={link.href} aria-current={active ? "page" : undefined}>
+              {link.label}
+            </Link>
+          </Button>
         );
       })}
     </nav>

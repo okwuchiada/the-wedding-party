@@ -3,10 +3,13 @@
 import { Check, Eye, EyeOff, X } from "lucide-react";
 import { useId, useState } from "react";
 import { passwordStrength } from "@/lib/password-rules";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { authInputClass } from "./fields";
 
-const METER_COLORS = ["", "bg-(--m-coral-deep)", "bg-(--m-gold)", "bg-(--m-emerald)", "bg-(--m-emerald)"];
-const LABEL_COLORS = ["", "text-(--m-coral-deep)", "text-(--m-ink)", "text-(--m-emerald)", "text-(--m-emerald)"];
+const METER_COLORS = ["", "bg-coral-deep", "bg-gold", "bg-emerald", "bg-emerald"];
+const LABEL_COLORS = ["", "text-coral-deep", "text-ink", "text-emerald", "text-emerald"];
 
 function StrengthMeter({ password, id }: { password: string; id: string }) {
   const { score, label, rules } = passwordStrength(password);
@@ -19,7 +22,7 @@ function StrengthMeter({ password, id }: { password: string; id: string }) {
             <span
               key={segment}
               className={`h-1.5 flex-1 rounded-full transition-colors motion-reduce:transition-none ${
-                score >= segment ? METER_COLORS[score] : "bg-(--m-mist)"
+                score >= segment ? METER_COLORS[score] : "bg-mist"
               }`}
             />
           ))}
@@ -30,7 +33,7 @@ function StrengthMeter({ password, id }: { password: string; id: string }) {
       </div>
       <ul className="grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
         {rules.map((rule) => (
-          <li key={rule.id} className={`flex items-center gap-1.5 ${rule.met ? "text-(--m-emerald)" : "text-(--m-ink)/60"}`}>
+          <li key={rule.id} className={`flex items-center gap-1.5 ${rule.met ? "text-emerald" : "text-ink/60"}`}>
             {rule.met ? <Check aria-hidden size={14} strokeWidth={2.5} /> : <X aria-hidden size={14} />}
             <span>
               {rule.label}
@@ -47,12 +50,15 @@ function StrengthMeter({ password, id }: { password: string; id: string }) {
 export default function PasswordField({
   label,
   hint,
+  error,
   showStrength = false,
   onChange,
   ...input
 }: {
   label: string;
   hint?: string;
+  /** A problem with what's been typed, shown under the field. */
+  error?: string;
   /** Show the strength meter and requirement checklist (for creating a password). */
   showStrength?: boolean;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">) {
@@ -61,39 +67,48 @@ export default function PasswordField({
   const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;
   const strengthId = showStrength ? `${id}-strength` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
 
   return (
-    <div className="flex flex-col gap-1.5 text-sm font-medium">
-      <label htmlFor={id}>{label}</label>
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={id}>{label}</Label>
       <div className="relative">
-        <input
+        <Input
           {...input}
           id={id}
           // Held in state so React's post-submit form reset can't clear it.
           value={value}
           type={visible ? "text" : "password"}
-          aria-describedby={[hintId, strengthId].filter(Boolean).join(" ") || undefined}
+          aria-describedby={[errorId, hintId, strengthId].filter(Boolean).join(" ") || undefined}
+          aria-invalid={error ? true : undefined}
           onChange={(e) => {
             setValue(e.target.value);
             onChange?.(e);
           }}
           // Room for the toggle so text never runs under it.
-          className={`${authInputClass} w-full pr-12`}
+          className={`${authInputClass} pr-12`}
         />
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? "Hide password" : "Show password"}
           aria-pressed={visible}
           aria-controls={id}
-          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-[6px] text-(--m-ink)/55 hover:text-(--m-ink) focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-(--m-ink)"
+          className="absolute inset-y-0 right-0 h-full w-11 rounded-l-none rounded-r-md text-ink/55 hover:bg-transparent hover:text-ink"
         >
-          {visible ? <EyeOff aria-hidden size={18} /> : <Eye aria-hidden size={18} />}
-        </button>
+          {visible ? <EyeOff aria-hidden className="size-[18px]" /> : <Eye aria-hidden className="size-[18px]" />}
+        </Button>
       </div>
       {hint && (
-        <span id={hintId} className="text-xs font-normal text-(--m-ink)/55">
+        <span id={hintId} className="text-xs text-ink/55">
           {hint}
+        </span>
+      )}
+      {error && (
+        <span id={errorId} className="text-[13px] font-normal text-(--m-coral-deep)">
+          {error}
         </span>
       )}
       {showStrength && <StrengthMeter password={value} id={strengthId!} />}

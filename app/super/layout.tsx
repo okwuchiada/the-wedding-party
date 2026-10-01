@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ToastProvider } from "@/components/ui/toast";
 import DashboardBar from "@/components/admin/dashboard-bar";
 import { BRAND_CLASS, BRAND_STYLE } from "@/components/marketing/brand";
 import SuperNav from "@/components/super/nav";
@@ -24,16 +24,18 @@ export default async function StaffConsoleLayout({ children }: { children: React
         <h1 className="font-(family-name:--m-display) text-4xl leading-none font-extrabold tracking-[-0.03em] sm:text-5xl">
           Staff console
         </h1>
-        <p className="mt-3 text-(--m-ink)/65">
+        <p className="mt-3 text-ink/65">
           Signed in as {staff.email} ({ROLE_LABELS[staff.role]}).{" "}
-          {/* <Link href="/dashboard" className="underline decoration-(--m-ink)/25 underline-offset-4 hover:decoration-(--m-ink)">
+          {/* <Link href="/dashboard" className="underline decoration-ink/25 underline-offset-4 hover:decoration-ink">
             Your weddings
           </Link> */}
         </p>
         <div className="mt-8">
           <SuperNav links={links} />
         </div>
-        <div className="mt-8">{children}</div>
+        <div className="mt-8">
+          <ToastProvider>{children}</ToastProvider>
+        </div>
       </div>
     </div>
   );

@@ -9,6 +9,9 @@ import { Pagination } from "@/components/super/pagination";
 import { RoleBadge } from "@/components/super/role-badge";
 import { StatusBadge } from "@/components/super/status-badge";
 import { date, Table } from "@/components/super/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { impersonateUser, reverifyPayment, sendUserPasswordReset, setWeddingStatus } from "@/lib/actions/super";
 import { requirePermission } from "@/lib/dal";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
@@ -83,49 +86,45 @@ export default async function WeddingCasePage({
 
   return (
     <div className="flex flex-col gap-8">
-      <Link href="/super/weddings" className="text-sm underline decoration-(--m-ink)/25 underline-offset-4">
+      <Link href="/super/weddings" className="text-sm underline decoration-ink/25 underline-offset-4">
         All weddings
       </Link>
 
       <section className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="font-(family-name:--m-display) text-3xl font-extrabold tracking-tight">{names}</h2>
-          <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm text-(--m-ink)/70">
+          <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm text-ink/70">
             /w/{wedding.slug} · <StatusBadge status={wedding.status} /> · {wedding.plan?.name ?? "no plan"}
             {wedding.comped ? " (comped)" : wedding.paidAt ? " (paid)" : ""}
             {wedding.story && ` · wedding ${date(wedding.story.weddingDate)}`}
           </p>
           {hasFeature(wedding.plan, "prioritySupport") && (
-            <p className="mt-2 inline-block rounded-full bg-(--m-gold) px-2.5 py-0.5 text-xs font-bold">Priority support</p>
+            <Badge variant="gold" className="mt-2">
+              Priority support
+            </Badge>
           )}
-          <p className="mt-1 text-sm text-(--m-ink)/60">
+          <p className="mt-1 text-sm text-ink/60">
             {closes ? `Site ${closes <= new Date() ? "closed" : "open until"} ${date(closes)}` : "Site stays online"}
             {wedding.customDomain && ` · ${wedding.customDomain}`}
           </p>
-          <p className="mt-1 text-sm text-(--m-ink)/60">
+          <p className="mt-1 text-sm text-ink/60">
             {wedding._count.rsvps} RSVPs · {wedding._count.registryItems} registry items · {wedding._count.contributions} contributions
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link
-            href={dashboardPath(wedding.id)}
-            className="rounded-full bg-(--m-ink) px-5 py-2.5 text-sm font-semibold text-(--m-paper) hover:bg-(--m-emerald)"
-          >
-            {allowed.edit ? "Open their dashboard" : "View their dashboard"}
-          </Link>
-          <a
-            href={guestPath(wedding.slug)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full border border-(--m-ink)/25 px-5 py-2.5 text-sm font-semibold hover:border-(--m-ink)"
-          >
-            Guest site
-          </a>
+          <Button asChild variant="ink">
+            <Link href={dashboardPath(wedding.id)}>{allowed.edit ? "Open their dashboard" : "View their dashboard"}</Link>
+          </Button>
+          <Button asChild variant="outline" className="font-semibold">
+            <a href={guestPath(wedding.slug)} target="_blank" rel="noopener noreferrer">
+              Guest site
+            </a>
+          </Button>
         </div>
       </section>
 
       {(allowed.status || allowed.comp) && (
-        <section className="flex flex-wrap items-center gap-3 rounded-[6px] border border-(--m-mist) bg-white p-4">
+        <section className="flex flex-wrap items-center gap-3 rounded-[6px] border border-border bg-card p-4">
           {allowed.status &&
             (wedding.status === "SUSPENDED" || wedding.status === "ARCHIVED" ? (
               <ActionButton action={setWeddingStatus.bind(null, wedding.id, "restore")} label="Restore" />
@@ -144,10 +143,10 @@ export default async function WeddingCasePage({
       )}
 
       {allowed.domain && (
-        <section className="flex flex-col gap-3 rounded-[6px] border border-(--m-mist) bg-white p-4">
+        <section className="flex flex-col gap-3 rounded-[6px] border border-border bg-card p-4">
           <div>
             <h3 className="font-(family-name:--m-display) text-xl font-bold tracking-tight">Custom domain</h3>
-            <p className="mt-1 text-sm text-(--m-ink)/65">
+            <p className="mt-1 text-sm text-ink/65">
               {hasFeature(wedding.plan, "customDomain")
                 ? "Their plan includes a custom domain."
                 : "Their plan doesn't include a custom domain; connect one only as an agreed exception."}{" "}
@@ -164,13 +163,13 @@ export default async function WeddingCasePage({
           <h3 className="font-(family-name:--m-display) text-2xl font-bold tracking-tight">Case notes</h3>
           {allowed.notes && <NoteForm weddingId={wedding.id} />}
           {wedding.supportNotes.length === 0 ? (
-            <p className="text-sm text-(--m-ink)/60">No notes yet.</p>
+            <p className="text-sm text-ink/60">No notes yet.</p>
           ) : (
             <ol className="flex flex-col gap-3">
               {wedding.supportNotes.map((note) => (
-                <li key={note.id} className="rounded-[6px] border border-(--m-mist) bg-white p-4">
+                <li key={note.id} className="rounded-[6px] border border-border bg-card p-4">
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{note.body}</p>
-                  <p className="mt-2 text-xs text-(--m-ink)/55">
+                  <p className="mt-2 text-xs text-ink/55">
                     {note.author?.name ?? note.author?.email ?? "Former staff"} · {when(note.createdAt)}
                   </p>
                 </li>
@@ -181,13 +180,13 @@ export default async function WeddingCasePage({
 
         <section className="flex flex-col gap-4">
           <h3 className="font-(family-name:--m-display) text-2xl font-bold tracking-tight">People</h3>
-          <ul className="flex flex-col divide-y divide-(--m-mist) rounded-[6px] border border-(--m-mist) bg-white">
+          <ul className="flex flex-col divide-y divide-border rounded-[6px] border border-border bg-card">
             {wedding.members.map((m) => (
               <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
                 <span className="flex flex-wrap items-center gap-x-1.5">
                   {m.user.email} {isStaff(m.user.role) && <RoleBadge role={m.user.role} />}
-                  <span className="text-(--m-ink)/55">({m.role.toLowerCase()})</span>
-                  {!m.user.passwordHash && <span className="text-(--m-ink)/55"> · invite pending</span>}
+                  <span className="text-ink/55">({m.role.toLowerCase()})</span>
+                  {!m.user.passwordHash && <span className="text-ink/55"> · invite pending</span>}
                 </span>
                 <span className="flex gap-1">
                   {allowed.impersonate && !isStaff(m.user.role) && (
@@ -207,27 +206,27 @@ export default async function WeddingCasePage({
 
           <h3 className="mt-4 font-(family-name:--m-display) text-2xl font-bold tracking-tight">Payments</h3>
           {wedding._count.payments === 0 ? (
-            <p className="text-sm text-(--m-ink)/60">No payments.</p>
+            <p className="text-sm text-ink/60">No payments.</p>
           ) : (
             <>
               <Table head={["Date", "Plan", "Amount", "Status", ""]}>
                 {wedding.payments.map((p) => (
-                  <tr key={p.id}>
-                    <td className="px-3 py-2.5 text-foreground/70">{date(p.createdAt)}</td>
-                    <td className="px-3 py-2.5">{p.plan.name}</td>
-                    <td className="px-3 py-2.5">{formatMoney(p.amountKobo, NAIRA)}</td>
-                    <td className="px-3 py-2.5">
+                  <TableRow key={p.id}>
+                    <TableCell className="py-2.5 text-muted-foreground">{date(p.createdAt)}</TableCell>
+                    <TableCell className="py-2.5">{p.plan.name}</TableCell>
+                    <TableCell className="py-2.5">{formatMoney(p.amountKobo, NAIRA)}</TableCell>
+                    <TableCell className="py-2.5">
                       <StatusBadge status={p.status} />
-                    </td>
-                    <td className="px-3 py-2.5">
+                    </TableCell>
+                    <TableCell className="py-2.5">
                       {p.status !== "SUCCESS" && (
                         <div className="flex flex-col items-start gap-1.5">
                           {allowed.reverify && <ActionButton action={reverifyPayment.bind(null, p.reference)} label="Check" />}
                           {allowed.resolve && <MarkPaidButton reference={p.reference} amountLabel={formatMoney(p.amountKobo, NAIRA)} />}
                         </div>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
               </Table>
               <Pagination
@@ -244,21 +243,21 @@ export default async function WeddingCasePage({
       <section>
         <h3 className="mb-3 font-(family-name:--m-display) text-2xl font-bold tracking-tight">Activity</h3>
         {activityTotal === 0 ? (
-          <p className="text-sm text-(--m-ink)/60">Nothing recorded yet.</p>
+          <p className="text-sm text-ink/60">Nothing recorded yet.</p>
         ) : (
           <>
             <Table head={["When", "Who", "What"]}>
               {activity.map((a) => {
                 const meta = (a.meta ?? {}) as { role?: keyof typeof ROLE_LABELS };
                 return (
-                  <tr key={a.id}>
-                    <td className="px-3 py-2.5 whitespace-nowrap text-foreground/70">{when(a.createdAt)}</td>
-                    <td className="px-3 py-2.5 text-foreground/80">
+                  <TableRow key={a.id}>
+                    <TableCell className="py-2.5 whitespace-nowrap text-muted-foreground">{when(a.createdAt)}</TableCell>
+                    <TableCell className="py-2.5 text-muted-foreground">
                       {a.actor?.email ?? "system"}
-                      {meta.role && <span className="text-foreground/50"> ({ROLE_LABELS[meta.role]})</span>}
-                    </td>
-                    <td className="px-3 py-2.5">{a.action}</td>
-                  </tr>
+                      {meta.role && <span className="text-muted-foreground"> ({ROLE_LABELS[meta.role]})</span>}
+                    </TableCell>
+                    <TableCell className="py-2.5">{a.action}</TableCell>
+                  </TableRow>
                 );
               })}
             </Table>

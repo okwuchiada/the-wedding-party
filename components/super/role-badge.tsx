@@ -2,11 +2,11 @@ import { ROLE_LABELS, type Role } from "@/lib/permissions";
 
 // Strength of colour tracks how much the access level can do.
 const ROLE_STYLES: Record<Role, string> = {
-  USER: "bg-(--m-mist)/60 text-(--m-ink)/75",
-  VIEWER: "bg-(--m-ink)/10 text-(--m-ink)",
-  SUPPORT: "bg-(--m-emerald)/15 text-(--m-emerald)",
-  ADMIN: "bg-(--m-gold)/35 text-(--m-ink)",
-  SUPER_ADMIN: "bg-(--m-ink) text-(--m-paper)",
+  USER: "bg-border/60 text-ink/75",
+  VIEWER: "bg-ink/10 text-ink",
+  SUPPORT: "bg-emerald/15 text-emerald",
+  ADMIN: "bg-gold/35 text-ink",
+  SUPER_ADMIN: "bg-ink text-paper",
 };
 
 /** A colour-coded pill for a user's access level. */

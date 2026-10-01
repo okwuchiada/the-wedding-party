@@ -17,12 +17,12 @@ export default async function StaffMemberPage({ params }: { params: Promise<{ us
 
   return (
     <div className="flex max-w-4xl flex-col gap-5">
-      <Link href="/super/staff" className="text-sm underline decoration-(--m-ink)/25 underline-offset-4">
+      <Link href="/super/staff" className="text-sm underline decoration-ink/25 underline-offset-4">
         All staff
       </Link>
       <div>
         <h2 className="font-(family-name:--m-display) text-2xl font-bold tracking-tight">{profile.values.fullName || profile.user.email}</h2>
-        <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm text-foreground/65">
+        <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
           {profile.user.email} · <RoleBadge role={profile.user.role} /> · on the team since{" "}
           {profile.user.createdAt.toISOString().slice(0, 10)}
         </p>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PAGE_SIZE_OPTIONS, pageWindow } from "@/lib/pagination";
 
 /**
@@ -51,59 +53,52 @@ export function Pagination({
   if (total === 0) return null;
 
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-foreground/70">
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-ink/70">
       <p>
         Showing {from}–{to} of {total}
       </p>
       <div className="flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-1.5">
-          Per page
-          <select
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value) as (typeof PAGE_SIZE_OPTIONS)[number])}
-            className="border border-(--m-mist) bg-white px-1.5 py-1 text-xs"
-          >
-            {PAGE_SIZE_OPTIONS.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </label>
-        <nav aria-label="Pagination" className="flex items-center gap-2">
-          <button
-            type="button"
-            disabled={page <= 1}
-            onClick={() => onPageChange(page - 1)}
-            className="disabled:opacity-40 enabled:hover:text-burnt-orange"
-          >
+        <div className="flex items-center gap-1.5">
+          <span>Per page</span>
+          <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v) as (typeof PAGE_SIZE_OPTIONS)[number])}>
+            <SelectTrigger size="sm" aria-label="Per page" className="gap-1 px-1.5 text-xs data-[size=sm]:h-6">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <SelectItem key={n} value={String(n)} className="text-xs">
+                  {n}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <nav aria-label="Pagination" className="flex items-center gap-1">
+          <Button type="button" variant="ghost" size="xs" disabled={page <= 1} onClick={() => onPageChange(page - 1)} className="font-medium disabled:opacity-40">
             Previous
-          </button>
+          </Button>
           {pageWindow(page, totalPages).map((p, i) =>
             p === "…" ? (
-              <span key={`gap-${i}`} className="text-foreground/40">
+              <span key={`gap-${i}`} className="px-1 text-ink/40">
                 …
               </span>
             ) : (
-              <button
+              <Button
                 key={p}
                 type="button"
+                variant={p === page ? "outline" : "ghost"}
+                size="icon-xs"
                 aria-current={p === page ? "page" : undefined}
                 onClick={() => onPageChange(p)}
-                className={p === page ? "font-semibold text-foreground" : "hover:text-burnt-orange"}
+                className="size-7 text-xs"
               >
                 {p}
-              </button>
+              </Button>
             )
           )}
-          <button
-            type="button"
-            disabled={page >= totalPages}
-            onClick={() => onPageChange(page + 1)}
-            className="disabled:opacity-40 enabled:hover:text-burnt-orange"
-          >
+          <Button type="button" variant="ghost" size="xs" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)} className="font-medium disabled:opacity-40">
             Next
-          </button>
+          </Button>
         </nav>
       </div>
     </div>
