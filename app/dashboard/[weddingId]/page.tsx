@@ -5,9 +5,9 @@ import { can } from "@/lib/permissions";
 import { canManageWedding, requireWeddingAccess } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { COPY_FIELDS } from "@/lib/copy";
-import { upgradeCharge } from "@/lib/billing";
 import { paystackConfigured } from "@/lib/paystack";
-import { hasFeature, siteClosesAt } from "@/lib/plans";
+import { hasFeature } from "@/lib/plans";
+import { billingView } from "@/lib/billing-view";
 import { getWeddingById, guestPath, moneyFormat } from "@/lib/tenant";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
 import { resolveTheme } from "@/lib/themes";
@@ -103,7 +103,6 @@ export default async function WeddingDashboardPage({
     prisma.plan.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { priceKobo: "asc" }] }),
     prisma.payment.findMany({ where: scope, include: { plan: true }, orderBy: { createdAt: "desc" } }),
   ]);
-  const paidKobo = payments.filter((p) => p.status === "SUCCESS").reduce((sum, p) => sum + p.amountKobo, 0);
   const copy = settings.copy;
   const initialTab = tabFromParam((await searchParams).tab, isOwner);
 
@@ -151,38 +150,16 @@ export default async function WeddingDashboardPage({
         brandingPlan: plans.find((p) => hasFeature(p, "removeBranding"))?.name ?? null,
         creditPlan: plans.find((p) => hasFeature(p, "customCredit"))?.name ?? null,
       }}
-      billing={{
-        currentPlan: wedding.plan
-          ? {
-              name: wedding.plan.name,
-              comped: wedding.comped,
-              free: wedding.plan.priceKobo === 0,
-              closesAt: siteClosesAt(wedding.plan, story?.weddingDate)?.toISOString() ?? null,
-            }
-          : null,
+      billing={billingView({
+        wedding,
+        weddingDate: story?.weddingDate ?? null,
+        plans,
+        payments,
+        attendingGuests: rsvps.filter((r) => r.attending).reduce((sum, r) => sum + r.guestCount, 0),
+        // Every stored upload counts against the limit, pending and hidden ones too (lib/actions/media.ts).
+        uploadsUsed: pendingMedia.length + approvedMedia.length + hiddenMedia.length,
         paymentsEnabled: paystackConfigured(),
-        plans: plans.map((plan) => ({
-          key: plan.key,
-          name: plan.name,
-          priceKobo: plan.priceKobo,
-          tagline: plan.tagline,
-          popular: plan.popular,
-          highlights: plan.highlights,
-          limitations: plan.limitations,
-          // Free plans need no checkout; weddings start on them.
-          chargeKobo: plan.priceKobo === 0 ? null : upgradeCharge(plan, wedding.plan, paidKobo),
-          current: plan.id === wedding.planId,
-        })),
-        payments: payments
-          .filter((p) => p.status !== "PENDING")
-          .map((p) => ({
-            reference: p.reference,
-            planName: p.plan.name,
-            amountKobo: p.amountKobo,
-            status: p.status,
-            date: (p.paidAt ?? p.createdAt).toISOString().slice(0, 10),
-          })),
-      }}
+      })}
       settings={{
         slug: wedding.slug,
         status: wedding.status,
