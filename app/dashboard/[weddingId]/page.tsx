@@ -5,17 +5,22 @@ import { can } from "@/lib/permissions";
 import { canManageWedding, requireWeddingAccess } from "@/lib/dal";
 import { prisma } from "@/lib/prisma";
 import { COPY_FIELDS } from "@/lib/copy";
-import { upgradeCharge } from "@/lib/billing";
 import { paystackConfigured } from "@/lib/paystack";
-import { hasFeature, siteClosesAt } from "@/lib/plans";
+import { hasFeature } from "@/lib/plans";
+import { billingView } from "@/lib/billing-view";
 import { getWeddingById, guestPath, moneyFormat } from "@/lib/tenant";
 import { coupleTitle, resolveLayout } from "@/lib/layouts";
 import { resolveTheme } from "@/lib/themes";
+import { getCountries } from "@/lib/countries";
+import { guestCapacity } from "@/lib/capacity";
+import { tabFromParam } from "@/lib/dashboard-tabs";
 
 export default async function WeddingDashboardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ weddingId: string }>;
+  searchParams: Promise<{ tab?: string | string[] }>;
 }) {
   const { weddingId } = await params;
   const { user, wedding, db, asStaff } = await requireWeddingAccess(weddingId, "view");
@@ -98,8 +103,8 @@ export default async function WeddingDashboardPage({
     prisma.plan.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { priceKobo: "asc" }] }),
     prisma.payment.findMany({ where: scope, include: { plan: true }, orderBy: { createdAt: "desc" } }),
   ]);
-  const paidKobo = payments.filter((p) => p.status === "SUCCESS").reduce((sum, p) => sum + p.amountKobo, 0);
   const copy = settings.copy;
+  const initialTab = tabFromParam((await searchParams).tab, isOwner);
 
   return (
     <>
@@ -141,39 +146,20 @@ export default async function WeddingDashboardPage({
         asoebiFabric: copy?.asoebiFabric ?? null,
         canCustomCredit: hasFeature(wedding.plan, "customCredit"),
         brandingRemoved: hasFeature(wedding.plan, "removeBranding"),
+        // Plans are sorted cheapest first, so these are the cheapest upgrades that unlock each.
+        brandingPlan: plans.find((p) => hasFeature(p, "removeBranding"))?.name ?? null,
+        creditPlan: plans.find((p) => hasFeature(p, "customCredit"))?.name ?? null,
       }}
-      billing={{
-        currentPlan: wedding.plan
-          ? {
-              name: wedding.plan.name,
-              comped: wedding.comped,
-              free: wedding.plan.priceKobo === 0,
-              closesAt: siteClosesAt(wedding.plan, story?.weddingDate)?.toISOString() ?? null,
-            }
-          : null,
+      billing={billingView({
+        wedding,
+        weddingDate: story?.weddingDate ?? null,
+        plans,
+        payments,
+        attendingGuests: rsvps.filter((r) => r.attending).reduce((sum, r) => sum + r.guestCount, 0),
+        // Every stored upload counts against the limit, pending and hidden ones too (lib/actions/media.ts).
+        uploadsUsed: pendingMedia.length + approvedMedia.length + hiddenMedia.length,
         paymentsEnabled: paystackConfigured(),
-        plans: plans.map((plan) => ({
-          key: plan.key,
-          name: plan.name,
-          priceKobo: plan.priceKobo,
-          tagline: plan.tagline,
-          popular: plan.popular,
-          highlights: plan.highlights,
-          limitations: plan.limitations,
-          // Free plans need no checkout; weddings start on them.
-          chargeKobo: plan.priceKobo === 0 ? null : upgradeCharge(plan, wedding.plan, paidKobo),
-          current: plan.id === wedding.planId,
-        })),
-        payments: payments
-          .filter((p) => p.status !== "PENDING")
-          .map((p) => ({
-            reference: p.reference,
-            planName: p.plan.name,
-            amountKobo: p.amountKobo,
-            status: p.status,
-            date: (p.paidAt ?? p.createdAt).toISOString().slice(0, 10),
-          })),
-      }}
+      })}
       settings={{
         slug: wedding.slug,
         status: wedding.status,
@@ -186,6 +172,7 @@ export default async function WeddingDashboardPage({
         guestLimit: wedding.plan?.maxGuests ?? 10_000,
         allowedCountries: wedding.allowedCountries,
         geoBypassToken: isOwner ? wedding.geoBypassToken : null,
+        countries: isOwner ? await getCountries() : [],
       }}
       members={members.map((m) => ({
         id: m.id,
@@ -201,6 +188,7 @@ export default async function WeddingDashboardPage({
         guestName: c.guestName,
         itemName: c.registryItem.name,
         amountCents: c.amountCents,
+        reference: c.reference,
         dateRequested: c.createdAt.toISOString().slice(0, 10),
       }))}
       confirmedContributions={confirmedContributions.map((c) => ({
@@ -208,6 +196,7 @@ export default async function WeddingDashboardPage({
         guestName: c.guestName,
         itemName: c.registryItem.name,
         amountCents: c.amountCents,
+        reference: c.reference,
         dateConfirmed: (c.confirmedAt ?? c.createdAt).toISOString().slice(0, 10),
       }))}
       pendingWishes={pendingWishes.map((w) => ({
@@ -220,6 +209,7 @@ export default async function WeddingDashboardPage({
         id: w.id,
         guestName: w.guestName,
         message: w.message,
+        dateSubmitted: w.createdAt.toISOString().slice(0, 10),
       }))}
       hiddenWishes={hiddenWishes.map((w) => ({
         id: w.id,
@@ -268,6 +258,8 @@ export default async function WeddingDashboardPage({
         type: m.type,
         dateUploaded: m.createdAt.toISOString().slice(0, 10),
       }))}
+      initialTab={initialTab}
+      capacity={guestCapacity(wedding.maxGuests, wedding.plan?.maxGuests)}
       rsvps={rsvps.map((r) => ({
         id: r.id,
         guestName: r.guestName,

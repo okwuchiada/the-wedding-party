@@ -32,6 +32,12 @@ import {
 import { AccordionItem } from "./accordion";
 import { HeroNamesPicker, HeroPicker, SectionsEditor, StoryStylePicker, TemplatePicker } from "./layout-picker";
 import { useAdminWeddingId } from "./wedding-context";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { useSuccessToast } from "@/components/ui/toast";
+import { TEXT_ACTION } from "@/components/admin/form-styles";
+import { cn } from "@/lib/utils";
+import { FormSelect } from "@/components/ui/form-select";
+import { Label } from "@/components/ui/label";
 
 
 const ROLE_LABELS: Record<FontRole, string> = {
@@ -100,6 +106,7 @@ export default function DesignTab({
     },
     undefined
   );
+  useSuccessToast(state, "Design saved");
 
   const choosePreset = (key: string) => {
     const preset = getPreset(key);
@@ -151,6 +158,13 @@ export default function DesignTab({
   const previewFonts = customEditable ? fonts : preset.fonts;
   const previewVars = JSON.stringify({ ...themeColorVars(previewColors), ...themeFontVars(previewFonts) });
   const frameRef = useRef<HTMLIFrameElement>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  useEffect(() => {
+    if (!previewOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => e.key === "Escape" && setPreviewOpen(false);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [previewOpen]);
   const applyPreview = useCallback(() => {
     // Same origin, so the dashboard can reach the guest page's theme wrapper directly.
     const root = frameRef.current?.contentDocument?.querySelector<HTMLElement>("[data-wedding-theme]");
@@ -207,7 +221,7 @@ export default function DesignTab({
 
         <div className="flex flex-col gap-3">
           <AccordionItem title="Layout" summary={templateInfo.name} open={openPanel === "layout"} onToggle={() => togglePanel("layout")}>
-            <p className="mb-4 text-sm text-foreground/60">The overall style of the page. Colours and fonts work with every layout.</p>
+            <p className="mb-4 text-sm text-muted-foreground">The overall style of the page. Colours and fonts work with every layout.</p>
             <TemplatePicker value={template} onChange={setTemplate} />
           </AccordionItem>
 
@@ -222,7 +236,7 @@ export default function DesignTab({
               <div className="flex flex-col gap-3">
                 <div>
                   <h3 className="text-sm font-semibold">Names on your site</h3>
-                  <p className="mt-0.5 text-xs text-foreground/60">Used everywhere your names appear: your site, emails to guests and your dashboard.</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Used everywhere your names appear: your site, emails to guests and your dashboard.</p>
                 </div>
                 <HeroNamesPicker value={nameStyle} names={names} onChange={setNameStyle} />
               </div>
@@ -230,7 +244,7 @@ export default function DesignTab({
           </AccordionItem>
 
           <AccordionItem title="How we met" summary={storySummary} open={openPanel === "story"} onToggle={() => togglePanel("story")}>
-            <p className="mb-4 text-sm text-foreground/60">How your story moments are laid out. Styles with photos use the ones you add in Our Story.</p>
+            <p className="mb-4 text-sm text-muted-foreground">How your story moments are laid out. Styles with photos use the ones you add in Our Story.</p>
             <StoryStylePicker value={storyChoice} template={template} onChange={setStoryChoice} />
           </AccordionItem>
 
@@ -239,9 +253,9 @@ export default function DesignTab({
           </AccordionItem>
 
           <AccordionItem title="Theme" summary={getPreset(presetKey).name} open={openPanel === "theme"} onToggle={() => togglePanel("theme")}>
-            <p className="mb-4 text-sm text-foreground/60">Start from a palette, then fine-tune it in Colours &amp; fonts.</p>
+            <p className="mb-4 text-sm text-muted-foreground">Start from a palette, then fine-tune it in Colours &amp; fonts.</p>
             {lockedThemes && (
-              <p className="mb-4 bg-cream px-3 py-2 text-xs text-foreground/70">
+              <p className="mb-4 bg-accent px-3 py-2 text-xs text-muted-foreground">
                 {isDraft
                   ? `${planName} includes ${allowedThemes.length} themes. You can preview the others; upgrade in Billing to publish with one.`
                   : `${planName} includes ${allowedThemes.length} themes. Upgrade in Billing to use the others.`}
@@ -258,14 +272,14 @@ export default function DesignTab({
                   aria-pressed={preset.key === presetKey}
                   // Live sites can only switch to themes their plan includes; drafts may preview any.
                   disabled={!included && !isDraft}
-                  className={`flex flex-col gap-2 rounded-[6px] bg-white p-3 text-left text-xs text-foreground transition-shadow disabled:cursor-not-allowed disabled:opacity-45 ${
-                    preset.key === presetKey ? "ring-2 ring-burnt-orange" : "ring-1 ring-olive/15 hover:ring-olive/40"
+                  className={`flex flex-col gap-2 rounded-md bg-card p-3 text-left text-xs text-ink transition-shadow disabled:cursor-not-allowed disabled:opacity-45 ${
+                    preset.key === presetKey ? "ring-2 ring-destructive" : "ring-1 ring-emerald/15 hover:ring-emerald/40"
                   }`}
                 >
                   <Swatches colors={preset.colors} />
                   <span className="flex items-center justify-between gap-2">
                     {preset.name}
-                    {!included && <span className="rounded-full bg-(--m-gold)/30 px-1.5 py-0.5 text-[10px] font-semibold">Upgrade</span>}
+                    {!included && <span className="rounded-full bg-gold/30 px-1.5 py-0.5 text-[13px] font-semibold">Upgrade</span>}
                   </span>
                 </button>
               );
@@ -281,7 +295,7 @@ export default function DesignTab({
             onToggle={() => togglePanel("colors")}
           >
           {!allowCustom && (
-            <p className="mt-2 bg-cream px-3 py-2 text-xs text-foreground/70">
+            <p className="mt-2 bg-accent px-3 py-2 text-xs text-muted-foreground">
               {isDraft
                 ? "Custom colors and fonts are shown in your preview. Choose a plan with custom themes to keep them when you publish."
                 : "Your plan uses the theme's own colors and fonts. Upgrade to customize them."}
@@ -291,9 +305,9 @@ export default function DesignTab({
           <fieldset disabled={!customEditable} className="mt-4 flex flex-col gap-5 disabled:opacity-50">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {COLOR_FIELDS.map(({ key, label }) => (
-                <label key={key} className="flex flex-col gap-1.5 text-xs text-foreground/60">
+                <Label key={key} className="flex-col items-stretch gap-1.5">
                   {label}
-                  <span className="flex items-center gap-2 border border-(--m-mist) bg-white px-2 py-1.5">
+                  <span className="flex items-center gap-2 border border-border bg-card px-2 py-1.5">
                     <input
                       type="color"
                       name={`color_${key}`}
@@ -301,14 +315,14 @@ export default function DesignTab({
                       onChange={(e) => setColors((prev) => ({ ...prev, [key]: e.target.value }))}
                       className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
                     />
-                    <span className="font-mono text-[11px] text-foreground/70">{colors[key]}</span>
+                    <span className="font-mono text-[13px] text-muted-foreground">{colors[key]}</span>
                   </span>
-                </label>
+                </Label>
               ))}
             </div>
 
             {lowContrast.length > 0 && (
-              <ul className="flex flex-col gap-1 text-xs text-burnt-orange">
+              <ul className="flex flex-col gap-1 text-xs text-destructive">
                 {lowContrast.map((pair) => (
                   <li key={pair.label}>
                     {pair.label} may be hard to read ({pair.ratio.toFixed(1)}:1; aim for 4.5:1).
@@ -319,61 +333,71 @@ export default function DesignTab({
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {(Object.keys(FONT_OPTIONS) as FontRole[]).map((role) => (
-                <label key={role} className="flex flex-col gap-1.5 text-xs text-foreground/60">
-                  {ROLE_LABELS[role]}
-                  <select
+                <div key={role} className="flex flex-col gap-1.5">
+                  <Label htmlFor={`font-${role}`}>{ROLE_LABELS[role]}</Label>
+                  <FormSelect
+                    id={`font-${role}`}
                     name={`font_${role}`}
                     value={fonts[role]}
-                    onChange={(e) => setFonts((prev) => ({ ...prev, [role]: e.target.value }))}
-                    className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground"
-                  >
-                    {FONT_OPTIONS[role].map((option) => (
-                      <option key={option.key} value={option.key}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={(next) => setFonts((prev) => ({ ...prev, [role]: next }))}
+                    options={FONT_OPTIONS[role].map((option) => ({ value: option.key, label: option.label }))}
+                  />
                   <span
                     style={{ fontFamily: `var(${fontCssVar(fonts[role])})` }}
-                    className="text-xl text-foreground"
+                    className="text-xl text-ink"
                   >
                     {sample}
                   </span>
-                </label>
+                </div>
               ))}
             </div>
           </fieldset>
           </AccordionItem>
         </div>
 
-        {state?.error && <p className="text-xs text-burnt-orange">{state.error}</p>}
-        {unsaved ? (
-          <p className="text-sm text-(--m-ink)/70">You have unsaved changes. The preview shows them; guests won&apos;t until you save.</p>
-        ) : (
-          state?.success && <p className="text-xs text-olive">Saved.</p>
+        {state?.error && <p className="text-[13px] text-destructive">{state.error}</p>}
+        {unsaved && (
+          <p className="text-sm text-muted-foreground">You have unsaved changes. The preview shows them; guests won&apos;t until you save.</p>
         )}
-        <button
+        <Button
           type="submit"
           disabled={pending}
-          className="self-start rounded-full bg-(--m-gold) px-6 py-2.5 text-sm font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
+          className="self-start"
         >
           {pending ? "Saving…" : "Save design"}
-        </button>
+        </Button>
       </form>
 
-      <section className="flex flex-col gap-2">
+      {/* On phones the preview is a full-screen sheet opened from a pinned button; one iframe serves both. */}
+      <section
+        role={previewOpen ? "dialog" : undefined}
+        aria-modal={previewOpen ? true : undefined}
+        aria-label={previewOpen ? "Preview" : undefined}
+        className={
+          previewOpen
+            ? "fixed inset-0 z-overlay flex flex-col gap-3 bg-card p-4 lg:static lg:z-auto lg:bg-transparent lg:p-0"
+            : "hidden flex-col gap-2 lg:flex"
+        }
+      >
         <div className="flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2.5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">
+          <h2 className="flex items-center gap-2.5 font-(family-name:--m-display) text-2xl font-bold tracking-tight text-ink">
             Preview
             {unsaved && (
-              <span className="rounded-full bg-(--m-gold)/25 px-2.5 py-0.5 font-(family-name:--m-body) text-xs font-semibold tracking-normal">
+              <span className="rounded-full bg-gold/25 px-2.5 py-0.5 font-(family-name:--m-body) text-[13px] font-semibold tracking-normal">
                 Unsaved changes
               </span>
             )}
           </h2>
-          <a href={guestUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-olive underline hover:text-burnt-orange">
-            Open in new tab
-          </a>
+          <span className="flex items-center gap-3">
+            <a href={guestUrl} target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({ variant: "link", size: "xs" }), TEXT_ACTION)}>
+              Open in new tab
+            </a>
+            {previewOpen && (
+              <Button variant="outline" size="sm" className="lg:hidden" onClick={() => setPreviewOpen(false)} autoFocus>
+                Close
+              </Button>
+            )}
+          </span>
         </div>
         <iframe
           ref={frameRef}
@@ -383,9 +407,15 @@ export default function DesignTab({
           }}
           src={previewUrl}
           title="Guest site preview"
-          className="h-[640px] w-full border border-(--m-mist) rounded-[6px] bg-white"
+          className="min-h-0 w-full flex-1 rounded-md border border-border bg-card lg:h-160 lg:flex-none"
         />
       </section>
+
+      {!previewOpen && (
+        <Button variant="ink" size="lg" className="fixed bottom-5 left-1/2 z-nav -translate-x-1/2 shadow-[0_12px_28px_-10px_rgb(22_32_74/0.6)] lg:hidden" onClick={() => setPreviewOpen(true)}>
+          Preview
+        </Button>
+      )}
     </div>
   );
 }

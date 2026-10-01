@@ -4,6 +4,7 @@ import { requireWeddingAccess } from "@/lib/dal";
 import { createPresignedUploadUrl } from "@/lib/s3";
 import { deleteUnusedUploads } from "@/lib/upload-cleanup";
 import { revalidateWedding } from "@/lib/tenant";
+import { moveInList } from "@/lib/reorder";
 import { uploadSizeError, weddingUploadFolder } from "@/lib/uploads";
 
 export type StoryPhotoFormState = { error?: string; success?: boolean } | undefined;
@@ -156,4 +157,13 @@ export async function bulkAddStoryPhotos(
   revalidateWedding(wedding);
 
   return { success: true };
+}
+
+/** Moves a photo one place earlier or later, renumbering every photo so the order has no ties. */
+export async function moveStoryPhoto(weddingId: string, id: string, direction: "up" | "down") {
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "moveStoryPhoto");
+  const photos = await db.storyPhoto.findMany({ where: { weddingId: wedding.id }, orderBy: [{ order: "asc" }, { id: "asc" }], select: { id: true } });
+  const ids = moveInList(photos.map((p) => p.id), id, direction);
+  await db.$transaction(ids.map((photoId, i) => db.storyPhoto.update({ where: { id: photoId, weddingId: wedding.id }, data: { order: i + 1 } })));
+  revalidateWedding(wedding);
 }

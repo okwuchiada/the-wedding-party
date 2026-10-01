@@ -1,8 +1,15 @@
 "use client";
 
 import { startTransition, useActionState, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { savePlan } from "@/lib/actions/super";
+import { ResultText } from "@/components/result-text";
 import { FEATURE_LABELS, UNLIMITED_GUESTS, type PlanFeature } from "@/lib/plans";
+import { MoneyInput } from "@/components/ui/money-input";
 
 export type PlanView = {
   id: string;
@@ -23,17 +30,17 @@ export type PlanView = {
   weddingCount: number;
 };
 
-const field = "w-full border border-(--m-mist) bg-white px-2.5 py-1.5 text-sm text-foreground outline-none focus:border-(--m-ink)/50 disabled:bg-(--m-paper) disabled:text-foreground/40";
-const label = "flex flex-col gap-1 text-xs text-foreground/60";
-const check = "flex items-center gap-2 text-sm text-foreground";
+const field = "h-8 px-2.5 py-1.5 text-ink disabled:bg-paper disabled:opacity-100 disabled:text-ink/40";
+const label = "flex-col items-stretch gap-1 text-xs font-normal text-ink/60";
+const check = "font-normal text-ink";
 
 /** One labelled group of settings: the label on the left, the fields on the right. */
 function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-1 gap-3 border-t border-(--m-mist) py-4 first-of-type:border-t-0 first-of-type:pt-0 sm:grid-cols-[9rem_1fr] sm:gap-6">
+    <div className="grid grid-cols-1 gap-3 border-t border-mist py-4 first-of-type:border-t-0 first-of-type:pt-0 sm:grid-cols-[9rem_1fr] sm:gap-6">
       <div>
         <h4 className="text-sm font-semibold">{title}</h4>
-        {hint && <p className="mt-0.5 text-xs text-foreground/50">{hint}</p>}
+        {hint && <p className="mt-0.5 text-xs text-ink/50">{hint}</p>}
       </div>
       <div>{children}</div>
     </div>
@@ -61,9 +68,9 @@ function LimitField({
   const [noLimit, setNoLimit] = useState(isNoLimit);
   const [number, setNumber] = useState(isNoLimit ? "" : String(value));
   return (
-    <div className={label}>
+    <div className={`flex ${label}`}>
       {title}
-      <input
+      <Input
         type="number"
         min={min}
         aria-label={title}
@@ -74,10 +81,10 @@ function LimitField({
         className={field}
       />
       <input type="hidden" name={name} value={noLimit ? noLimitValue : number} />
-      <label className="flex items-center gap-1.5 text-xs text-foreground/70">
-        <input type="checkbox" checked={noLimit} onChange={(e) => setNoLimit(e.target.checked)} />
+      <Label className="gap-1.5 text-xs font-normal text-ink/70">
+        <Checkbox checked={noLimit} onCheckedChange={(v) => setNoLimit(v === true)} />
         {noLimitLabel}
-      </label>
+      </Label>
     </div>
   );
 }
@@ -110,38 +117,40 @@ export default function PlanForm({
 
       <Section title="Basics">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <label className={label}>
+          <Label className={label}>
             Name
-            <input name="name" defaultValue={plan?.name} required className={field} />
-          </label>
-          <label className={label}>
-            Price (₦)
-            <input name="priceNaira" type="number" min={0} step="0.01" defaultValue={plan ? plan.priceKobo / 100 : ""} required className={field} />
-          </label>
-          <label className={label}>
+            <Input name="name" defaultValue={plan?.name} required className={field} />
+          </Label>
+          <Label className={label}>
+            <span>
+              Price <span className="sr-only">in naira</span>
+            </span>
+            <MoneyInput symbol="₦" name="priceNaira" min={0} step="0.01" defaultValue={plan ? plan.priceKobo / 100 : ""} required className="h-8" />
+          </Label>
+          <Label className={label}>
             Key
-            <input name="key" defaultValue={plan?.key} required className={field} />
-          </label>
-          <label className={label}>
+            <Input name="key" defaultValue={plan?.key} required className={field} />
+          </Label>
+          <Label className={label}>
             Order
-            <input name="sortOrder" type="number" defaultValue={plan?.sortOrder ?? 0} className={field} />
-          </label>
-          <label className={`${label} col-span-2 sm:col-span-4`}>
+            <Input name="sortOrder" type="number" defaultValue={plan?.sortOrder ?? 0} className={field} />
+          </Label>
+          <Label className={`${label} col-span-2 sm:col-span-4`}>
             Tagline
-            <input name="tagline" defaultValue={plan?.tagline ?? ""} maxLength={120} className={field} />
-          </label>
+            <Input name="tagline" defaultValue={plan?.tagline ?? ""} maxLength={120} className={field} />
+          </Label>
         </div>
         <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-          <label className={check}>
-            <input type="checkbox" name="active" defaultChecked={plan?.active ?? true} />
+          <Label className={check}>
+            <Checkbox name="active" defaultChecked={plan?.active ?? true} />
             On sale
-          </label>
-          <label className={check}>
-            <input type="checkbox" name="popular" defaultChecked={plan?.popular ?? false} />
+          </Label>
+          <Label className={check}>
+            <Checkbox name="popular" defaultChecked={plan?.popular ?? false} />
             Most popular
-          </label>
+          </Label>
         </div>
-        <p className="mt-2 text-xs text-foreground/50">A price of 0 makes this the free plan new weddings start on.</p>
+        <p className="mt-2 text-xs text-ink/50">A price of 0 makes this the free plan new weddings start on.</p>
       </Section>
 
       <Section title="Limits" hint="Months online count from the wedding date.">
@@ -169,28 +178,28 @@ export default function PlanForm({
       <Section title="Unlocks">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {(Object.keys(FEATURE_LABELS) as PlanFeature[]).map((f) => (
-            <label key={f} className={check}>
-              <input type="checkbox" name={`feature_${f}`} defaultChecked={plan?.features[f] === true} />
+            <Label key={f} className={check}>
+              <Checkbox name={`feature_${f}`} defaultChecked={plan?.features[f] === true} />
               {FEATURE_LABELS[f]}
-            </label>
+            </Label>
           ))}
         </div>
       </Section>
 
       <Section title="Themes">
-        <label className={check}>
-          <input type="checkbox" checked={allThemes} onChange={(e) => setAllThemes(e.target.checked)} />
+        <Label className={check}>
+          <Checkbox checked={allThemes} onCheckedChange={(v) => setAllThemes(v === true)} />
           Every theme
-        </label>
+        </Label>
         {/* Unticked themes aren't submitted, so "every theme" simply sends none. */}
         {!allThemes && (
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <p className="col-span-2 text-xs text-foreground/50 sm:col-span-3">Tick the themes this plan includes. None ticked means every theme.</p>
+            <p className="col-span-2 text-xs text-ink/50 sm:col-span-3">Tick the themes this plan includes. None ticked means every theme.</p>
             {themes.map((t) => (
-              <label key={t.key} className={check}>
-                <input type="checkbox" name="themes" value={t.key} defaultChecked={plan?.themes.includes(t.key) ?? false} />
+              <Label key={t.key} className={check}>
+                <Checkbox name="themes" value={t.key} defaultChecked={plan?.themes.includes(t.key) ?? false} />
                 {t.name}
-              </label>
+              </Label>
             ))}
           </div>
         )}
@@ -198,37 +207,32 @@ export default function PlanForm({
 
       <Section title="Pricing page text" hint="What couples read. Keep it in step with the limits and unlocks above.">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className={label}>
+          <Label className={label}>
             Features, one per line
-            <textarea name="highlights" rows={6} defaultValue={plan?.highlights.join("\n")} className={field} />
-          </label>
-          <label className={label}>
+            <Textarea name="highlights" rows={6} defaultValue={plan?.highlights.join("\n")} className="field-sizing-fixed text-ink" />
+          </Label>
+          <Label className={label}>
             Limits, one per line
-            <textarea name="limitations" rows={6} defaultValue={plan?.limitations.join("\n")} className={field} />
-          </label>
+            <Textarea name="limitations" rows={6} defaultValue={plan?.limitations.join("\n")} className="field-sizing-fixed text-ink" />
+          </Label>
         </div>
       </Section>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-(--m-mist) pt-4">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-full bg-(--m-ink) px-5 py-2 text-sm font-semibold text-(--m-paper) hover:bg-(--m-emerald) disabled:opacity-60"
-        >
+      <div className="flex flex-wrap items-center gap-3 border-t border-mist pt-4">
+        <Button type="submit" variant="ink" size="sm" disabled={pending} className="px-5 text-sm">
           {pending ? "Saving…" : plan ? "Save plan" : "Create plan"}
-        </button>
+        </Button>
         {onCancel && (
-          <button type="button" onClick={onCancel} className="rounded-full px-4 py-2 text-sm font-medium hover:bg-(--m-mist)">
+          <Button type="button" variant="ghost" size="sm" onClick={onCancel} className="text-sm">
             Cancel
-          </button>
+          </Button>
         )}
         {plan && plan.weddingCount > 0 && (
-          <span className="text-xs text-foreground/55">
+          <span className="text-xs text-ink/55">
             Changes apply to the {plan.weddingCount} wedding{plan.weddingCount === 1 ? "" : "s"} on this plan.
           </span>
         )}
-        {state?.error && <span className="text-sm text-burnt-orange">{state.error}</span>}
-        {state?.success && <span className="text-sm text-olive">Saved</span>}
+        <ResultText error={state?.error} message={state?.success ? "Saved" : undefined} className="text-sm" />
       </div>
     </form>
   );

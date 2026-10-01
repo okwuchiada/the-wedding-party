@@ -38,3 +38,10 @@ const MIN_CONTRIBUTION: Record<string, number> = {
 export function minContribution(currency: string) {
   return MIN_CONTRIBUTION[currency] ?? 20_00;
 }
+
+/** A readable name for a number-format locale, with a sample amount in that format. */
+export function localeLabel(locale: string, currency: string) {
+  const region = locale.split("-")[1];
+  const country = region ? new Intl.DisplayNames(["en"], { type: "region" }).of(region) : locale;
+  return `${country} · ${new Intl.NumberFormat(locale, { style: "currency", currency, minimumFractionDigits: 2 }).format(1234.56)}`;
+}

@@ -1,31 +1,38 @@
-import { GEO_BYPASS_PARAM } from "@/lib/geo";
+import { GEO_BYPASS_PARAM } from "@/lib/geo-param";
 
-export default function BlockedAccess({ codeRejected }: { codeRejected: boolean }) {
+/** Shown to guests outside the countries the couple allowed, with a field for their access code. */
+export default function BlockedAccess({ names, codeRejected }: { names: string | null; codeRejected: boolean }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-ivory p-6 text-center text-foreground">
-      <div className="max-w-lg font-(family-name:--serif)">
-        <p className="text-lg leading-relaxed">
-          This site is currently unavailable in your country. If you have an access code, please
-          enter it below.
-        </p>
-        <form method="GET" className="mt-5 flex justify-center gap-2">
-          <input
-            type="text"
-            name={GEO_BYPASS_PARAM}
-            placeholder="Access code"
-            autoComplete="off"
-            required
-            className="border border-olive/40 bg-white px-3 py-2.5 text-base"
-          />
-          <button type="submit" className="bg-foreground px-4 py-2.5 text-base text-ivory">
-            Enter
+    <main className="flex min-h-screen items-center justify-center bg-ivory p-6 text-foreground">
+      <div className="flex w-full max-w-md flex-col gap-5 text-center">
+        {names && <p className="font-(family-name:--script) text-4xl text-burnt-orange">{names}</p>}
+        <h1 className="font-(family-name:--serif) text-2xl">This site is only open in some countries</h1>
+        <p className="text-base text-foreground/75">If the couple sent you an access code, enter it here.</p>
+        <form method="GET" className="flex flex-col gap-3 text-left">
+          <div>
+            <label htmlFor="access-code" className="guest-label">
+              Access code
+            </label>
+            <input
+              id="access-code"
+              type="text"
+              name={GEO_BYPASS_PARAM}
+              autoComplete="off"
+              required
+              aria-invalid={codeRejected ? true : undefined}
+              aria-describedby={codeRejected ? "access-code-error" : undefined}
+              className="guest-input"
+            />
+          </div>
+          {codeRejected && (
+            <p id="access-code-error" role="alert" className="text-[15px] text-burnt-orange-dark">
+              That code didn&apos;t work. Check it and try again, or ask the couple for it.
+            </p>
+          )}
+          <button type="submit" className="guest-btn w-full">
+            Open the site
           </button>
         </form>
-        {codeRejected && (
-          <p className="mt-3 text-sm text-burnt-orange-dark">
-            That code didn&apos;t work. Please try again or reach out to the couple directly.
-          </p>
-        )}
       </div>
     </main>
   );

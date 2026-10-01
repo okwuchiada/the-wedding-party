@@ -1,3 +1,4 @@
+import { ToastProvider } from "@/components/ui/toast";
 import ImpersonationBanner from "@/components/admin/impersonation-banner";
 import { BRAND_CLASS, BRAND_STYLE } from "@/components/marketing/brand";
 import { getCurrentUser } from "@/lib/dal";
@@ -7,7 +8,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div style={BRAND_STYLE} className={`${BRAND_CLASS} min-h-screen`}>
       {user?.impersonatorId && <ImpersonationBanner email={user.email} />}
-      {children}
+      <ToastProvider>{children}</ToastProvider>
     </div>
   );
 }

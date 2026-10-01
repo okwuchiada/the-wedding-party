@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import PlanCard from "./plan-card";
 
@@ -16,14 +17,9 @@ export default async function Pricing() {
           key={plan.id}
           plan={plan}
           action={
-            <Link
-              href="/signup"
-              className={`block rounded-full px-5 py-3 text-center text-sm font-semibold ${
-                plan.popular ? "bg-(--m-gold) text-(--m-ink) hover:bg-(--m-paper)" : "bg-(--m-ink) text-(--m-paper) hover:bg-(--m-emerald)"
-              }`}
-            >
-              {plan.priceKobo === 0 ? "Start for free" : `Start with ${plan.name}`}
-            </Link>
+            <Button asChild variant={plan.popular ? "default" : "ink"} className={`w-full py-3 ${plan.popular ? "hover:bg-paper hover:text-ink" : ""}`}>
+              <Link href="/signup">{plan.priceKobo === 0 ? "Start for free" : `Start with ${plan.name}`}</Link>
+            </Button>
           }
         />
       ))}

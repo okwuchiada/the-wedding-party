@@ -135,3 +135,18 @@ export async function deleteMedia(weddingId: string, id: string) {
   await deleteUnusedUploads(db, wedding.id, [media.url]);
   revalidateWedding(wedding);
 }
+
+/** Moves a photo or video to any status; used to undo an approve, hide or restore. */
+export async function setMediaStatus(weddingId: string, id: string, status: "PENDING" | "APPROVED" | "HIDDEN") {
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "setMediaStatus");
+  await db.media.update({ where: { id, weddingId: wedding.id }, data: { status } });
+  revalidateWedding(wedding);
+}
+
+/** Moves several photos or videos at once (bulk approve or hide, and undoing it). */
+export async function setMediaStatusMany(weddingId: string, ids: string[], status: "PENDING" | "APPROVED" | "HIDDEN") {
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "setMediaStatusMany");
+  if (!Array.isArray(ids) || ids.length === 0) return;
+  await db.media.updateMany({ where: { id: { in: ids.slice(0, 200) }, weddingId: wedding.id }, data: { status } });
+  revalidateWedding(wedding);
+}

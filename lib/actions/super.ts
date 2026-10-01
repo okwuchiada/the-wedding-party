@@ -4,16 +4,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { audit } from "@/lib/audit";
 import { getCurrentUser, requirePermission } from "@/lib/dal";
-import { sendInvite } from "@/lib/invites";
 import { can, isStaff, ROLE_LABELS, STAFF_ROLES, type Role } from "@/lib/permissions";
 import { decrypt, getSessionCookie, createSession } from "@/lib/session";
-import { passwordResetEmail, sendMail } from "@/lib/mail";
-import { fulfillPayment } from "@/lib/payments";
+import { passwordResetEmail, sendMail, staffAccessEmail, staffWelcomeEmail } from "@/lib/mail";
+import { fulfillPayment, resolvePaymentManually } from "@/lib/payments";
 import { verifyTransaction } from "@/lib/paystack";
 import { FEATURE_LABELS, type PlanFeature } from "@/lib/plans";
 import { takeRateLimit } from "@/lib/rate-limit";
 import { THEME_PRESETS } from "@/lib/themes";
 import { prisma } from "@/lib/prisma";
+import { issueTempPassword } from "@/lib/staff-accounts";
 import { getStarterPlan } from "@/lib/starter-plan";
 import { revalidateWedding } from "@/lib/tenant";
 import { createUserToken } from "@/lib/tokens";
@@ -140,10 +140,16 @@ export async function setStaffRole(userId: string, role: Role): Promise<SuperAct
   await audit(admin.id, "staff.role", { meta: { userId: user.id, email: user.email, from: user.role, to: role } });
   revalidatePath("/super/staff");
   revalidatePath("/super/users");
-  return { message: role === "USER" ? `${user.email} no longer has staff access` : `${user.email} is now ${ROLE_LABELS[role]}` };
+  if (role === "USER") return { message: `${user.email} no longer has staff access` };
+  // Anyone still on a temporary password gets it with their welcome email instead.
+  const sent = role !== user.role && user.passwordHash && !user.mustChangePassword
+    ? await sendMail({ to: user.email, ...staffAccessEmail({ role: ROLE_LABELS[role] }) })
+    : false;
+  return { message: `${user.email} is now ${ROLE_LABELS[role]}${sent ? ". We've emailed them." : ""}` };
 }
 
-export type AddStaffState = { error?: string; message?: string } | undefined;
+/** `tempPassword` is only returned when the welcome email couldn't be sent, so the admin can pass it on. */
+export type AddStaffState = { error?: string; message?: string; tempPassword?: string } | undefined;
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -164,14 +170,40 @@ export async function addStaff(_prevState: AddStaffState, formData: FormData): P
     ? await prisma.user.update({ where: { id: existing.id }, data: { role } })
     : await prisma.user.create({ data: { email, role } });
   await audit(admin.id, "staff.add", { meta: { userId: user.id, email, role } });
-
-  let message = `${email} is now ${ROLE_LABELS[role]}.`;
-  if (!user.passwordHash) {
-    await sendInvite(user, null);
-    message = `Invite sent to ${email} as ${ROLE_LABELS[role]}.`;
-  }
   revalidatePath("/super/staff");
-  return { message };
+
+  // Someone with their own password keeps it; they're just told about the new access.
+  if (existing?.passwordHash && !existing.mustChangePassword) {
+    if (existing.role === role) return { message: `${email} already has ${ROLE_LABELS[role]} access.` };
+    const sent = await sendMail({ to: email, ...staffAccessEmail({ role: ROLE_LABELS[role] }) });
+    return { message: `${email} is now ${ROLE_LABELS[role]}.${sent ? " We've emailed them." : ""}` };
+  }
+
+  return sendStaffTempPassword(user.id, email, role);
+}
+
+/** Issues a temporary password and emails it; when email can't be sent, hands it to the admin once. */
+async function sendStaffTempPassword(userId: string, email: string, role: Role): Promise<AddStaffState> {
+  const { tempPassword, expiresAt } = await issueTempPassword(userId);
+  const sent = await sendMail({ to: email, ...staffWelcomeEmail({ role: ROLE_LABELS[role], email, tempPassword, expiresAt }) });
+  return sent
+    ? { message: `Added ${email} as ${ROLE_LABELS[role]}. We've emailed them a temporary password; they'll choose their own when they first sign in.` }
+    : {
+        message: `Added ${email} as ${ROLE_LABELS[role]}, but the email couldn't be sent. Give them this temporary password yourself (it's shown only once):`,
+        tempPassword,
+      };
+}
+
+/** For staff who haven't replaced their temporary password yet (or whose one expired). */
+export async function resendStaffPassword(userId: string): Promise<AddStaffState> {
+  const admin = await requirePermission("staff.manage");
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || !isStaff(user.role)) return { error: "Staff member not found" };
+  if (user.id === admin.id) return { error: "Use “Forgot password” for your own account" };
+  if (user.passwordHash && !user.mustChangePassword) return { error: "They've already set their own password" };
+  await audit(admin.id, "staff.temp_password", { meta: { userId: user.id, email: user.email } });
+  revalidatePath("/super/staff");
+  return sendStaffTempPassword(user.id, user.email, user.role);
 }
 
 export async function sendUserPasswordReset(userId: string): Promise<SuperActionResult> {
@@ -220,17 +252,65 @@ export async function reverifyPayment(reference: string): Promise<SuperActionRes
   const payment = await prisma.payment.findUnique({ where: { reference } });
   if (!payment) return { error: "Payment not found" };
 
+  let reported;
+  try {
+    reported = await verifyTransaction(reference);
+  } catch (err) {
+    console.error("[super] reverify: Paystack request failed", err);
+    return { error: "Paystack couldn't be reached or doesn't know this reference. Try again shortly." };
+  }
+
   let result;
   try {
-    result = await fulfillPayment(reference, await verifyTransaction(reference), "callback");
+    result = await fulfillPayment(reference, reported, "callback");
   } catch (err) {
-    console.error("[super] reverify failed", err);
-    return { error: "Paystack couldn't be reached or doesn't know this reference" };
+    // Paystack answered, but applying it failed on our side (e.g. the database timed out).
+    console.error("[super] reverify: applying the payment failed", err);
+    await audit(admin.id, "payment.reverify", { weddingId: payment.weddingId, meta: { reference, outcome: "error", paystackStatus: reported.status ?? null } });
+    return {
+      error: `Paystack says "${reported.status ?? "unknown"}", but saving it failed. Try again, or mark it paid by hand if the money arrived.`,
+    };
   }
   await audit(admin.id, "payment.reverify", { weddingId: payment.weddingId, meta: { reference, outcome: result.outcome } });
   if ("wedding" in result) revalidateWedding(result.wedding);
   revalidatePath("/super/payments");
-  return { message: `Paystack says: ${result.outcome}` };
+  const messages: Record<typeof result.outcome, SuperActionResult> = {
+    fulfilled: { message: "Paid. The wedding now has its plan." },
+    already: { message: "Already recorded as paid." },
+    failed: { error: "Paystack says this charge failed." },
+    mismatch: { error: "Paystack's amount or currency doesn't match this payment. Check it before marking it paid." },
+    unknown: { error: `Paystack says "${reported.status ?? "unknown"}": the payment isn't finished yet.` },
+  };
+  return messages[result.outcome];
+}
+
+export type ResolvePaymentState = SuperActionResult | undefined;
+
+/**
+ * Marks a pending or failed payment as paid by hand, when staff have proof the
+ * money arrived (e.g. Paystack's success email) but it couldn't be applied
+ * automatically. Requires a note; gives the wedding its plan exactly as a
+ * verified payment would.
+ */
+export async function markPaymentPaid(reference: string, _prev: ResolvePaymentState, formData: FormData): Promise<ResolvePaymentState> {
+  const admin = await requirePermission("payment.resolve");
+  const note = String(formData.get("note") ?? "").trim();
+  if (note.length < 10) return { error: "Say how you know it was paid (at least 10 characters), e.g. the Paystack email and its date." };
+  if (note.length > 500) return { error: "Keep the note under 500 characters." };
+  // The day the money arrived (from the Paystack email); defaults to now.
+  const paidOn = String(formData.get("paidOn") ?? "");
+  const now = new Date();
+  if (paidOn && (!/^\d{4}-\d{2}-\d{2}$/.test(paidOn) || Number.isNaN(Date.parse(paidOn)) || paidOn > now.toISOString().slice(0, 10))) {
+    return { error: "Choose the date it was paid (not in the future)." };
+  }
+  const paidAt = paidOn ? new Date(Math.min(Date.parse(`${paidOn}T12:00:00Z`), now.getTime())) : now;
+
+  const result = await resolvePaymentManually(reference, { staffId: admin.id, note, paidAt });
+  if (!("wedding" in result)) return { error: "Payment not found" };
+  await audit(admin.id, "payment.manual", { weddingId: result.wedding.id, meta: { reference, note, outcome: result.outcome } });
+  revalidateWedding(result.wedding);
+  revalidatePath("/super/payments");
+  return { message: result.outcome === "fulfilled" ? "Marked as paid. The wedding now has its plan." : "Already recorded as paid." };
 }
 
 // ─── Plans ───────────────────────────────────────────────────────────────────

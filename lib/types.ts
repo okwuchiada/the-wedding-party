@@ -14,6 +14,8 @@ export type PendingContributionView = {
   guestName: string;
   itemName: string;
   amountCents: number;
+  /** What the guest put on their transfer, e.g. "HONEY-4827"; null for older gifts. */
+  reference: string | null;
   dateRequested: string;
 };
 
@@ -22,52 +24,32 @@ export type ConfirmedContributionView = {
   guestName: string;
   itemName: string;
   amountCents: number;
+  reference: string | null;
   dateConfirmed: string;
 };
 
-export type PendingWishView = {
+/** A guest's wish, whichever list it's in (pending, approved or hidden). */
+export type WishView = {
   id: string;
   guestName: string;
   message: string;
   dateSubmitted: string;
 };
+export type PendingWishView = WishView;
+export type ApprovedWishView = WishView;
+export type HiddenWishView = WishView;
 
-export type ApprovedWishView = {
-  id: string;
-  guestName: string;
-  message: string;
-};
-
-export type HiddenWishView = {
-  id: string;
-  guestName: string;
-  message: string;
-  dateSubmitted: string;
-};
-
-export type PendingMediaView = {
+/** A guest's photo or video, whichever list it's in. */
+export type MediaView = {
   id: string;
   guestName: string;
   url: string;
   type: "PHOTO" | "VIDEO";
   dateUploaded: string;
 };
-
-export type ApprovedMediaView = {
-  id: string;
-  guestName: string;
-  url: string;
-  type: "PHOTO" | "VIDEO";
-  dateUploaded: string;
-};
-
-export type HiddenMediaView = {
-  id: string;
-  guestName: string;
-  url: string;
-  type: "PHOTO" | "VIDEO";
-  dateUploaded: string;
-};
+export type PendingMediaView = MediaView;
+export type ApprovedMediaView = MediaView;
+export type HiddenMediaView = MediaView;
 
 export type RsvpView = {
   id: string;

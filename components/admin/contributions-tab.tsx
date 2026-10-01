@@ -1,10 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import type { ConfirmedContributionView, PendingContributionView } from "@/lib/types";
 import { formatMoney } from "@/lib/money";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SectionHeading } from "@/components/ui/section-heading";
+import { Segmented } from "@/components/ui/segmented";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Pagination, usePagination } from "./pagination";
+import { useConfirm } from "./use-confirm";
 import { useActionPending } from "./use-action-pending";
 import { useAdminMoney } from "./wedding-context";
 
+type View = "pending" | "confirmed";
 
 export default function ContributionsTab({
   pending,
@@ -15,79 +24,119 @@ export default function ContributionsTab({
   confirmed: ConfirmedContributionView[];
   onConfirm: (contribution: PendingContributionView) => Promise<void>;
 }) {
+  const [view, setView] = useState<View>("pending");
   const { run, isPending } = useActionPending();
+  const { confirm, confirmDialog } = useConfirm();
   const money = useAdminMoney();
+  const pendingPage = usePagination(pending);
+  const confirmedPage = usePagination(confirmed);
+
+  const handleConfirm = async (c: PendingContributionView) => {
+    const ok = await confirm({
+      title: `Confirm ${formatMoney(c.amountCents, money)} from ${c.guestName}?`,
+      description: c.reference
+        ? `Check your bank app for a transfer with the reference ${c.reference} before confirming.`
+        : `Check your bank app for a transfer from ${c.guestName} before confirming.`,
+      confirmLabel: "Confirm",
+      danger: false,
+    });
+    if (!ok) return;
+    await run(c.id, "confirm", () => onConfirm(c));
+  };
 
   return (
     <div>
-      <h2 className="mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Pending Contributions</h2>
+      <SectionHeading
+        title="Contributions"
+        description="Guests tell you here when they've sent money for a gift. Confirm each one once it's in your account."
+        action={
+          <Segmented
+            label="Show"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: "pending", label: "To confirm", count: pending.length },
+              { value: "confirmed", label: "Confirmed", count: confirmed.length },
+            ]}
+          />
+        }
+      />
 
-      {pending.length === 0 ? (
-        <p className="text-sm text-foreground/60">No pending contributions right now.</p>
-      ) : (
-        <div className="overflow-x-auto rounded-[6px] border border-(--m-mist) bg-white">
-          <table className="w-full min-w-150 text-left text-sm">
-            <thead>
-              <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
-                <th className="px-4 py-3 font-medium">Guest</th>
-                <th className="px-4 py-3 font-medium">Item</th>
-                <th className="px-4 py-3 font-medium">Amount</th>
-                <th className="px-4 py-3 font-medium">Requested</th>
-                <th className="px-4 py-3 font-medium">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pending.map((c) => (
-                <tr key={c.id} className="border-b border-(--m-mist) last:border-0">
-                  <td className="px-4 py-3 text-foreground">{c.guestName}</td>
-                  <td className="px-4 py-3 text-foreground/70">{c.itemName}</td>
-                  <td className="px-4 py-3 text-foreground/70">{formatMoney(c.amountCents, money)}</td>
-                  <td className="px-4 py-3 text-foreground/70">{c.dateRequested}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      disabled={isPending(c.id)}
-                      onClick={() => run(c.id, "confirm", () => onConfirm(c))}
-                      className="rounded-full bg-(--m-gold) px-3 py-1.5 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
-                    >
-                      {isPending(c.id, "confirm") ? "Confirming…" : "Confirm"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {view === "pending" &&
+        (pending.length === 0 ? (
+          <EmptyState title="Nothing to confirm" body="When a guest says they've sent money, it shows here for you to check." />
+        ) : (
+          <>
+            <div className="overflow-hidden rounded-md border bg-card">
+              <Table className="min-w-150">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Guest</TableHead>
+                    <TableHead>Gift</TableHead>
+                    <TableHead>Reference</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Sent</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Action</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingPage.pageItems.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-semibold">{c.guestName}</TableCell>
+                      <TableCell className="text-muted-foreground">{c.itemName}</TableCell>
+                      <TableCell className="font-mono text-[13px]">{c.reference ?? "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatMoney(c.amountCents, money)}</TableCell>
+                      <TableCell className="text-muted-foreground">{c.dateRequested}</TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" disabled={isPending(c.id)} onClick={() => handleConfirm(c)}>
+                          {isPending(c.id, "confirm") ? "Confirming…" : "Confirm"}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <Pagination page={pendingPage.page} pageSize={pendingPage.pageSize} total={pendingPage.total} onPageChange={pendingPage.setPage} onPageSizeChange={pendingPage.setPageSize} />
+          </>
+        ))}
 
-      <h2 className="mt-10 mb-5 font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">Confirmed Contributions</h2>
+      {view === "confirmed" &&
+        (confirmed.length === 0 ? (
+          <EmptyState title="No confirmed gifts yet" body="Gifts you confirm move here and count towards each registry item." />
+        ) : (
+          <>
+            <div className="overflow-hidden rounded-md border bg-card">
+              <Table className="min-w-150">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Guest</TableHead>
+                    <TableHead>Gift</TableHead>
+                    <TableHead>Reference</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Confirmed</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {confirmedPage.pageItems.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-semibold">{c.guestName}</TableCell>
+                      <TableCell className="text-muted-foreground">{c.itemName}</TableCell>
+                      <TableCell className="font-mono text-[13px]">{c.reference ?? "—"}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatMoney(c.amountCents, money)}</TableCell>
+                      <TableCell className="text-muted-foreground">{c.dateConfirmed}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <Pagination page={confirmedPage.page} pageSize={confirmedPage.pageSize} total={confirmedPage.total} onPageChange={confirmedPage.setPage} onPageSizeChange={confirmedPage.setPageSize} />
+          </>
+        ))}
 
-      {confirmed.length === 0 ? (
-        <p className="text-sm text-foreground/60">No confirmed contributions yet.</p>
-      ) : (
-        <div className="overflow-x-auto rounded-[6px] border border-(--m-mist) bg-white">
-          <table className="w-full min-w-150 text-left text-sm">
-            <thead>
-              <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
-                <th className="px-4 py-3 font-medium">Guest</th>
-                <th className="px-4 py-3 font-medium">Item</th>
-                <th className="px-4 py-3 font-medium">Amount</th>
-                <th className="px-4 py-3 font-medium">Confirmed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {confirmed.map((c) => (
-                <tr key={c.id} className="border-b border-(--m-mist) last:border-0">
-                  <td className="px-4 py-3 text-foreground">{c.guestName}</td>
-                  <td className="px-4 py-3 text-foreground/70">{c.itemName}</td>
-                  <td className="px-4 py-3 text-foreground/70">{formatMoney(c.amountCents, money)}</td>
-                  <td className="px-4 py-3 text-foreground/70">{c.dateConfirmed}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {confirmDialog}
     </div>
   );
 }

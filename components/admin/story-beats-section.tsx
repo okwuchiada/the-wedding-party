@@ -7,6 +7,7 @@ import {
   addStoryBeat,
   createStoryBeatUploadUrl,
   deleteStoryBeat,
+  moveStoryBeat,
   updateStoryBeat,
   type StoryBeatFormState,
 } from "@/lib/actions/story-beats";
@@ -15,6 +16,16 @@ import { compressImage } from "@/lib/image-compress";
 import { useConfirm } from "./use-confirm";
 import { useAdminWeddingId } from "./wedding-context";
 import { useActionPending } from "./use-action-pending";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Notice } from "@/components/ui/notice";
+import { SectionHeading } from "@/components/ui/section-heading";
+import MoveButtons from "./move-buttons";
+import { FIELD, FILE_INPUT, TEXT_ACTION } from "@/components/admin/form-styles";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 export type StoryBeatView = {
   id: string;
@@ -86,59 +97,56 @@ function BeatForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 bg-ivory p-4 sm:grid-cols-2">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 bg-accent p-4 sm:grid-cols-2">
       {initialValues?.id && <input type="hidden" name="id" defaultValue={initialValues.id} />}
       {initialValues?.photoUrl && (
         <input type="hidden" name="existingPhotoUrl" defaultValue={initialValues.photoUrl} />
       )}
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      <Label className="flex-col items-stretch gap-1.5">
         Label (e.g. &ldquo;The Drawing&rdquo;)
-        <input
+        <Input
           name="year"
           defaultValue={initialValues?.year}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
-      </label>
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60">
+      </Label>
+      <Label className="flex-col items-stretch gap-1.5">
         Order
-        <input
+        <Input
           name="order"
           type="number"
           defaultValue={initialValues?.order ?? 0}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
-      </label>
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60 sm:col-span-2">
+      <Label className="flex-col items-stretch gap-1.5 sm:col-span-2">
         Title
-        <input
+        <Input
           name="title"
           defaultValue={initialValues?.title}
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
         />
-      </label>
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60 sm:col-span-2">
+      <Label className="flex-col items-stretch gap-1.5 sm:col-span-2">
         Story text
-        <textarea
+        <Textarea
           name="text"
           rows={3}
           defaultValue={initialValues?.text}
-          className="resize-none border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none"
+          className="resize-none"
         />
-      </label>
+      </Label>
 
-      <label className="flex flex-col gap-1.5 text-xs text-foreground/60 sm:col-span-2">
+      <Label className="flex-col items-stretch gap-1.5 sm:col-span-2">
         Photo (optional)
-        <input
+        <Input
           name="file"
           type="file"
           accept="image/*,.heic,.heif"
-          className="border border-(--m-mist) bg-white px-3 py-2 text-sm text-foreground outline-none file:mr-3 file:border-0 file:rounded-full file:bg-(--m-ink) file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ivory"
+          className={cn(FIELD, FILE_INPUT)}
         />
         {initialValues?.photoUrl && (
-          <span className="mt-1 flex items-center gap-2 text-[11px] text-foreground/50">
+          <span className="mt-1 flex items-center gap-2 text-[13px] text-muted-foreground">
             <Image
               src={initialValues.photoUrl} unoptimized={!canOptimizeImage(initialValues.photoUrl)}
               alt=""
@@ -149,27 +157,28 @@ function BeatForm({
             Leave blank to keep the current photo
           </span>
         )}
-      </label>
+      </Label>
 
       {(uploadError || state?.error) && (
-        <p className="text-xs text-burnt-orange sm:col-span-2">{uploadError || state?.error}</p>
+        <p className="text-[13px] text-destructive sm:col-span-2">{uploadError || state?.error}</p>
       )}
 
       <div className="flex gap-2 sm:col-span-2">
-        <button
+        <Button
           type="button"
           onClick={onCancel}
-          className="border rounded-full border-(--m-ink)/25 px-4 py-2 text-xs font-medium text-foreground transition-colors hover:border-(--m-ink)"
+          variant="outline"
+          size="sm"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
           disabled={pending || uploading}
-          className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) transition-colors hover:bg-(--m-ink) hover:text-(--m-paper) disabled:opacity-60"
+          size="sm"
         >
           {uploading ? "Uploading…" : pending ? "Saving…" : submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -185,7 +194,7 @@ export default function StoryBeatsSection({ beats }: { beats: StoryBeatView[] })
 
   const handleDelete = async (id: string) => {
     const ok = await confirm({
-      title: "Delete this beat?",
+      title: "Remove this moment?",
       description: "This can't be undone.",
     });
     if (!ok) return;
@@ -194,104 +203,86 @@ export default function StoryBeatsSection({ beats }: { beats: StoryBeatView[] })
       try {
         await deleteStoryBeat(weddingId, id);
       } catch {
-        setDeleteError("Couldn't delete that beat.");
+        setDeleteError("Couldn't remove that moment.");
       }
     });
   };
 
+  const move = (id: string, direction: "up" | "down") => run(id, direction, () => moveStoryBeat(weddingId, id, direction));
+
   return (
-    <div className="mt-10">
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-(family-name:--m-display) font-bold tracking-tight text-2xl text-foreground">
-          How We Met Timeline
-        </h2>
-        {!adding && (
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="rounded-full bg-(--m-gold) px-4 py-2 text-xs font-semibold text-(--m-ink) hover:bg-(--m-ink) hover:text-(--m-paper)"
-          >
-            Add Beat
-          </button>
-        )}
-      </div>
-      <p className="mb-4 max-w-2xl text-sm text-foreground/60">
-        These appear as the alternating timeline on the public &ldquo;How We
-        Met&rdquo; section, in order. Photos are optional — beats without one
-        show a placeholder.
-      </p>
+    <section className="mt-12">
+      <SectionHeading
+        title="How we met: moments"
+        description="These show as the timeline in your How we met section, in this order. Photos are optional."
+        action={
+          !adding && (
+            <Button size="sm" onClick={() => setAdding(true)}>
+              Add a moment
+            </Button>
+          )
+        }
+      />
 
       {adding && (
         <div className="mb-5">
-          <BeatForm action={addStoryBeat.bind(null, weddingId)} onCancel={() => setAdding(false)} submitLabel="Add Beat" />
+          <BeatForm action={addStoryBeat.bind(null, weddingId)} onCancel={() => setAdding(false)} submitLabel="Add moment" />
         </div>
       )}
 
-      {deleteError && <p className="mb-3 text-xs text-burnt-orange">{deleteError}</p>}
+      {deleteError && (
+        <div className="mb-3">
+          <Notice tone="error">{deleteError}</Notice>
+        </div>
+      )}
 
-      <div className="overflow-x-auto rounded-[6px] border border-(--m-mist) bg-white">
-        <table className="w-full min-w-150 text-left text-sm">
-          <thead>
-            <tr className="border-b border-(--m-mist) text-xs text-foreground/50">
-              <th className="px-4 py-3 font-medium">Order</th>
-              <th className="px-4 py-3 font-medium">Label</th>
-              <th className="px-4 py-3 font-medium">Title</th>
-              <th className="px-4 py-3 font-medium">Photo</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {beats.map((beat) =>
-              editingId === beat.id ? (
-                <tr key={beat.id} className="border-b border-(--m-mist) last:border-0">
-                  <td colSpan={5} className="p-0">
-                    <BeatForm
-                      action={updateStoryBeat.bind(null, weddingId)}
-                      initialValues={beat}
-                      onCancel={() => setEditingId(null)}
-                      submitLabel="Save Changes"
-                    />
-                  </td>
-                </tr>
-              ) : (
-                <tr key={beat.id} className="border-b border-(--m-mist) last:border-0">
-                  <td className="px-4 py-3 text-foreground/70">{beat.order}</td>
-                  <td className="px-4 py-3 text-foreground/70">{beat.year}</td>
-                  <td className="px-4 py-3 text-foreground">{beat.title}</td>
-                  <td className="px-4 py-3">
-                    {beat.photoUrl ? (
-                      <span className="bg-olive/10 px-2 py-1 text-xs text-olive">
-                        Yes
-                      </span>
-                    ) : (
-                      <span className="text-foreground/40">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      disabled={isPending(beat.id)}
-                      onClick={() => setEditingId(beat.id)}
-                      className="mr-3 text-xs text-foreground/60 hover:text-burnt-orange disabled:opacity-60"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isPending(beat.id)}
-                      onClick={() => handleDelete(beat.id)}
-                      className="text-xs text-foreground/60 hover:text-burnt-orange disabled:opacity-60"
-                    >
-                      {isPending(beat.id, "delete") ? "Deleting…" : "Delete"}
-                    </button>
-                  </td>
-                </tr>
-              )
-            )}
-          </tbody>
-        </table>
-      </div>
+      {beats.length === 0 && !adding ? (
+        <EmptyState title="No moments yet" body="Add a few moments, like where you met or the proposal, to tell your story in order." />
+      ) : (
+        <ol className="flex flex-col gap-3">
+          {beats.map((beat, index) =>
+            editingId === beat.id ? (
+              <li key={beat.id}>
+                <BeatForm
+                  action={updateStoryBeat.bind(null, weddingId)}
+                  initialValues={beat}
+                  onCancel={() => setEditingId(null)}
+                  submitLabel="Save changes"
+                />
+              </li>
+            ) : (
+              <li key={beat.id} className="flex items-center gap-4 rounded-[8px] border border-border bg-card p-3">
+                {beat.photoUrl ? (
+                  <Image src={beat.photoUrl} unoptimized={!canOptimizeImage(beat.photoUrl)} alt="" width={56} height={56} className="size-14 shrink-0 rounded-[6px] object-cover" />
+                ) : (
+                  <span className="size-14 shrink-0 rounded-[6px] bg-accent" aria-hidden />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold text-muted-foreground">{beat.year}</p>
+                  <p className="font-semibold text-ink">{beat.title}</p>
+                  {beat.text && <p className="truncate text-[13px] text-muted-foreground">{beat.text}</p>}
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <MoveButtons
+                    name={beat.title}
+                    first={index === 0}
+                    last={index === beats.length - 1}
+                    disabled={isPending(beat.id)}
+                    onMove={(direction) => move(beat.id, direction)}
+                  />
+                  <Button size="xs" variant="link" className={cn(TEXT_ACTION, "ml-2")} disabled={isPending(beat.id)} onClick={() => setEditingId(beat.id)}>
+                    Edit
+                  </Button>
+                  <Button size="xs" variant="link" className={cn(TEXT_ACTION, "ml-3")} disabled={isPending(beat.id)} onClick={() => handleDelete(beat.id)}>
+                    {isPending(beat.id, "delete") ? "Removing…" : "Remove"}
+                  </Button>
+                </div>
+              </li>
+            )
+          )}
+        </ol>
+      )}
       {confirmDialog}
-    </div>
+    </section>
   );
 }

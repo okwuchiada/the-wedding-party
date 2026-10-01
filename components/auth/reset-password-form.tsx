@@ -42,7 +42,7 @@ export default function ResetPasswordForm({
       <input type="hidden" name="token" value={token} />
       {/* Lets password managers save the new password against the right account. */}
       <input type="email" name="username" value={email} autoComplete="username" readOnly hidden />
-      <p className="rounded-[6px] bg-(--m-paper) px-3 py-2 text-sm text-(--m-ink)/75">{email}</p>
+      <p className="rounded-md bg-paper px-3 py-2 text-sm text-ink/75">{email}</p>
       <PasswordField
         label="New password"
         showStrength

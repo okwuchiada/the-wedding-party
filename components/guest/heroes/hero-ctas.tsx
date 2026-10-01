@@ -23,13 +23,13 @@ export default function HeroCtas({
   return (
     <div className={`flex flex-wrap gap-3 ${align === "center" ? "justify-center" : ""}`}>
       {showRsvp && (
-        <a href="#rsvp" className={`px-6 py-3 text-sm font-medium transition-colors ${primary}`}>
-          RSVP Now
+        <a href="#rsvp" className={`inline-flex min-h-11 items-center px-6 py-3 text-sm font-medium transition-colors ${primary}`}>
+          RSVP
         </a>
       )}
       {showRegistry && (
-        <a href="#registry" className={`px-6 py-3 text-sm font-medium transition-colors ${secondary}`}>
-          View Registry
+        <a href="#registry" className={`inline-flex min-h-11 items-center px-6 py-3 text-sm font-medium transition-colors ${secondary}`}>
+          See the registry
         </a>
       )}
     </div>
