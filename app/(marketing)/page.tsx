@@ -1,10 +1,12 @@
 import { Camera, HeartHandshake, Link2, PenLine } from "lucide-react";
 import Link from "next/link";
+import { connection } from "next/server";
 import Faq, { LANDING_FAQS } from "@/components/marketing/faq";
 import FeatureShowcase from "@/components/marketing/feature-showcase";
 import Pricing from "@/components/marketing/pricing";
 import ThemeShowcase from "@/components/marketing/theme-showcase";
 import { Button } from "@/components/ui/button";
+import { THEME_PRESETS } from "@/lib/themes";
 
 const STEPS = [
   {
@@ -29,12 +31,28 @@ const STEPS = [
   },
 ];
 
+/** How many cloth strips the hero shows; the full set lives in the dashboard's Design tab. */
+const HERO_STRIPS = 8;
 
-export default function LandingPage() {
+/** A fresh random pick of themes for each visit (Fisher-Yates). */
+function randomThemeKeys(count: number) {
+  const keys = THEME_PRESETS.map((p) => p.key);
+  for (let i = keys.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [keys[i], keys[j]] = [keys[j], keys[i]];
+  }
+  return keys.slice(0, count);
+}
+
+export default async function LandingPage() {
+  // Pick per request, not at build time, so each visit gets its own mix.
+  await connection();
+  const themeKeys = randomThemeKeys(HERO_STRIPS);
+
   return (
     <>
       <section className="mx-auto max-w-6xl px-5 pt-10 pb-20 sm:px-8 sm:pt-14">
-        <ThemeShowcase>
+        <ThemeShowcase themeKeys={themeKeys}>
           <h1 className="font-(family-name:--m-display) text-5xl leading-[0.95] font-extrabold tracking-[-0.03em] sm:text-7xl">
             One link for your whole wedding.
           </h1>

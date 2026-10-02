@@ -35,6 +35,7 @@ import { useAdminWeddingId } from "./wedding-context";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useSuccessToast } from "@/components/ui/toast";
 import { TEXT_ACTION } from "@/components/admin/form-styles";
+import { clothStyle } from "@/components/marketing/cloth";
 import { cn } from "@/lib/utils";
 import { FormSelect } from "@/components/ui/form-select";
 import { Label } from "@/components/ui/label";
@@ -276,6 +277,7 @@ export default function DesignTab({
                     preset.key === presetKey ? "ring-2 ring-destructive" : "ring-1 ring-emerald/15 hover:ring-emerald/40"
                   }`}
                 >
+                  <span aria-hidden className="h-10 rounded-sm" style={clothStyle(preset.key, preset.colors, 0)} />
                   <Swatches colors={preset.colors} />
                   <span className="flex items-center justify-between gap-2">
                     {preset.name}

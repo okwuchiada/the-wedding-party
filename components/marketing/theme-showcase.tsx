@@ -6,17 +6,18 @@ import { clothStyle } from "./cloth";
 import SitePreview from "./site-preview";
 
 /**
- * The hero's woven band: one cloth strip per theme. Choosing a strip
+ * The hero's woven band: one cloth strip for each theme picked for this visit. Choosing a strip
  * re-dyes the sample guest site with that theme's real colors and fonts.
  */
-export default function ThemeShowcase({ children }: { children: React.ReactNode }) {
-  const [active, setActive] = useState("blush-rose");
+export default function ThemeShowcase({ themeKeys, children }: { themeKeys: string[]; children: React.ReactNode }) {
+  const presets = themeKeys.map((key) => THEME_PRESETS.find((p) => p.key === key)).filter((p) => p !== undefined);
+  const [active, setActive] = useState(presets[0]?.key ?? THEME_PRESETS[0].key);
   const preset = THEME_PRESETS.find((p) => p.key === active) ?? THEME_PRESETS[0];
   const stripRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Radio-group keys: arrows move the choice, Home/End jump to the ends.
   const onKeyDown = (e: React.KeyboardEvent, index: number) => {
-    const last = THEME_PRESETS.length - 1;
+    const last = presets.length - 1;
     const next =
       e.key === "ArrowRight" || e.key === "ArrowDown" ? (index === last ? 0 : index + 1)
       : e.key === "ArrowLeft" || e.key === "ArrowUp" ? (index === 0 ? last : index - 1)
@@ -25,7 +26,7 @@ export default function ThemeShowcase({ children }: { children: React.ReactNode 
       : null;
     if (next === null) return;
     e.preventDefault();
-    setActive(THEME_PRESETS[next].key);
+    setActive(presets[next].key);
     stripRefs.current[next]?.focus();
   };
 
@@ -34,7 +35,7 @@ export default function ThemeShowcase({ children }: { children: React.ReactNode 
       <div>
         {children}
         <div role="radiogroup" aria-label="Site theme" className="mt-12 flex h-40 gap-px sm:h-48 sm:gap-1">
-          {THEME_PRESETS.map((p, i) => {
+          {presets.map((p, i) => {
             const selected = p.key === active;
             return (
               <button
