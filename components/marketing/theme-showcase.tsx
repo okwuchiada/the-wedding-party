@@ -2,23 +2,11 @@
 
 import { useRef, useState } from "react";
 import { THEME_PRESETS } from "@/lib/themes";
+import { clothStyle } from "./cloth";
 import SitePreview from "./site-preview";
 
-type Colors = (typeof THEME_PRESETS)[number]["colors"];
-
-/** A narrow aso-oke strip: fine warp stripes in the theme's colors, repeated down its length. */
-function stripeCloth(c: Colors, offset: number) {
-  const bands: [string, number][] = [
-    [c.primary, 22], [c.ivory, 3], [c.accent, 10], [c.cream, 4], [c.primaryDark, 6],
-    [c.ivory, 2], [c.accentDark, 14], [c.cream, 3], [c.primary, 5], [c.foreground, 2],
-  ];
-  let y = 0;
-  const stops = bands.map(([color, h]) => `${color} ${y}px ${(y += h)}px`).join(", ");
-  return { backgroundImage: `repeating-linear-gradient(to bottom, ${stops})`, backgroundPositionY: `${offset}px` };
-}
-
 /**
- * The hero's woven band: one aso-oke-style strip per theme. Choosing a strip
+ * The hero's woven band: one cloth strip per theme. Choosing a strip
  * re-dyes the sample guest site with that theme's real colors and fonts.
  */
 export default function ThemeShowcase({ children }: { children: React.ReactNode }) {
@@ -61,7 +49,7 @@ export default function ThemeShowcase({ children }: { children: React.ReactNode 
                 tabIndex={selected ? 0 : -1}
                 onClick={() => setActive(p.key)}
                 onKeyDown={(e) => onKeyDown(e, i)}
-                style={{ animationDelay: `${i * 90}ms`, ...stripeCloth(p.colors, i * -17) }}
+                style={{ animationDelay: `${i * 90}ms`, ...clothStyle(p.key, p.colors, i * -17) }}
                 className={`weave-in group relative flex flex-1 flex-col overflow-hidden rounded-[2px] outline-offset-4 transition-[flex-grow] duration-500 focus-visible:outline-2 focus-visible:outline-(--m-ink) motion-reduce:transition-none ${
                   selected ? "grow-[2.2]" : "grow"
                 }`}
