@@ -114,6 +114,7 @@ export default async function AdminPage() {
         bridePhone: story?.bridePhone ?? null,
         groomPhone: story?.groomPhone ?? null,
         galleryEnabled: story?.galleryEnabled ?? false,
+        rsvpOpen: story?.rsvpOpen ?? true,
       }}
       storyPhotos={storyPhotos}
       storyBeats={storyBeats}

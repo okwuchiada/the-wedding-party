@@ -34,6 +34,7 @@ export type StoryContentView = {
   bridePhone: string | null;
   groomPhone: string | null;
   galleryEnabled: boolean;
+  rsvpOpen: boolean;
 };
 
 export type StoryPhotoView = {

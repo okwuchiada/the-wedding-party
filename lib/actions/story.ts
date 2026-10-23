@@ -98,3 +98,22 @@ export async function setGalleryEnabled(enabled: boolean) {
   revalidatePath("/admin");
   revalidatePath("/gallery");
 }
+
+export async function setRsvpOpen(open: boolean) {
+  await verifySession();
+
+  await prisma.storyContent.upsert({
+    where: { id: "main" },
+    update: { rsvpOpen: open },
+    create: {
+      id: "main",
+      brideName: "",
+      groomName: "",
+      weddingDate: new Date(),
+      rsvpOpen: open,
+    },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/");
+}

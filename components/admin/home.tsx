@@ -28,7 +28,7 @@ import { logout } from "@/lib/actions/auth";
 import { confirmContribution } from "@/lib/actions/contributions";
 import { approveWish, hideWish } from "@/lib/actions/wishes";
 import { approveMedia, deleteMedia, hideMedia } from "@/lib/actions/media";
-import { setGalleryEnabled } from "@/lib/actions/story";
+import { setGalleryEnabled, setRsvpOpen } from "@/lib/actions/story";
 
 function formatNaira(cents: number) {
   return `₦${(cents / 100).toLocaleString("en-NG")}`;
@@ -87,6 +87,14 @@ export default function AdminHome({
     const next = !galleryEnabled;
     await setGalleryEnabled(next);
     setGalleryEnabledState(next);
+  };
+
+  const [rsvpOpen, setRsvpOpenState] = useSyncedState(story.rsvpOpen);
+
+  const handleToggleRsvp = async () => {
+    const next = !rsvpOpen;
+    await setRsvpOpen(next);
+    setRsvpOpenState(next);
   };
 
   const handleConfirmContribution = async (contribution: PendingContributionView) => {
@@ -274,7 +282,9 @@ export default function AdminHome({
             onRestore={handleRestoreWish}
           />
         )}
-        {activeTab === "RSVPs" && <RsvpTab rsvps={rsvps} />}
+        {activeTab === "RSVPs" && (
+          <RsvpTab rsvps={rsvps} rsvpOpen={rsvpOpen} onToggleRsvp={handleToggleRsvp} />
+        )}
         {activeTab === "Our Story" && (
           <StoryTab story={story} photos={storyPhotos} storyBeats={storyBeats} />
         )}

@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import type { RsvpView } from "@/lib/types";
 import {
+  cancelRsvp,
   createRsvpAdmin,
   deleteRsvp,
   importRsvps,
@@ -264,7 +265,15 @@ function exportGuestList(rsvps: RsvpView[]) {
   URL.revokeObjectURL(url);
 }
 
-export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
+export default function RsvpTab({
+  rsvps,
+  rsvpOpen,
+  onToggleRsvp,
+}: {
+  rsvps: RsvpView[];
+  rsvpOpen: boolean;
+  onToggleRsvp: () => Promise<void>;
+}) {
   const attendingGuests = rsvps
     .filter((r) => r.attending)
     .reduce((sum, r) => sum + r.guestCount, 0);
@@ -289,6 +298,21 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
     });
   };
 
+  const handleCancel = async (id: string, name: string) => {
+    const ok = await confirm({
+      title: `Cancel ${name}'s RSVP?`,
+      description: "They'll stay on the list as not attending, and their seat is freed.",
+      confirmLabel: "Cancel RSVP",
+      cancelLabel: "Keep",
+    });
+    if (!ok) return;
+    setDeleteError("");
+    await run(id, "cancel", async () => {
+      const result = await cancelRsvp(id);
+      if (result.error) setDeleteError(result.error);
+    });
+  };
+
   const handleSend = async (id: string) => {
     setSendError("");
     await run(id, "send", async () => {
@@ -299,6 +323,29 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
 
   return (
     <div>
+      <div className="mb-8 flex items-center justify-between gap-4 bg-white p-4 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
+        <div>
+          <h2 className="font-(family-name:--serif) text-xl text-foreground">RSVP Form</h2>
+          <p className="mt-1 text-xs text-foreground/60">
+            {rsvpOpen
+              ? "Open — guests can RSVP on the site."
+              : "Paused — the form is hidden and guests see a closed message. You can still add RSVPs here."}
+          </p>
+        </div>
+        <button
+          type="button"
+          disabled={isPending("rsvp-form")}
+          onClick={() => run("rsvp-form", "toggle", onToggleRsvp)}
+          className={`shrink-0 px-4 py-2 text-xs font-medium transition-colors disabled:opacity-60 ${
+            rsvpOpen
+              ? "border border-olive/30 text-foreground hover:border-burnt-orange hover:text-burnt-orange"
+              : "bg-burnt-orange text-ivory hover:bg-burnt-orange-dark"
+          }`}
+        >
+          {isPending("rsvp-form", "toggle") ? "Saving…" : rsvpOpen ? "Pause RSVPs" : "Resume RSVPs"}
+        </button>
+      </div>
+
       <div className="mb-8 grid grid-cols-2 gap-4 sm:max-w-md">
         <div className="bg-white p-4 shadow-[0_18px_40px_-20px_rgba(58,46,40,0.45)]">
           <p className="text-[10.5px] tracking-[.16em] text-foreground/55 uppercase">Attending</p>
@@ -418,6 +465,16 @@ export default function RsvpTab({ rsvps }: { rsvps: RsvpView[] }) {
                       >
                         Edit
                       </button>
+                      {r.attending && (
+                        <button
+                          type="button"
+                          disabled={isPending(r.id)}
+                          onClick={() => handleCancel(r.id, r.guestName)}
+                          className="mr-3 text-xs text-foreground/60 hover:text-burnt-orange disabled:opacity-60"
+                        >
+                          {isPending(r.id, "cancel") ? "Cancelling…" : "Cancel"}
+                        </button>
+                      )}
                       <button
                         type="button"
                         disabled={isPending(r.id)}

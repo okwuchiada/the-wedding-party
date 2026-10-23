@@ -91,6 +91,7 @@ model StoryContent {
   bridePhone     String?
   groomPhone     String?
   galleryEnabled Boolean  @default(false)
+  rsvpOpen       Boolean  @default(true)
   updatedAt      DateTime @updatedAt
 }
 
