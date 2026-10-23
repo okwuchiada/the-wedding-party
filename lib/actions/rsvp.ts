@@ -56,6 +56,14 @@ export async function submitRsvp(
     };
   }
 
+  const story = await prisma.storyContent.findUnique({
+    where: { id: "main" },
+    select: { rsvpOpen: true },
+  });
+  if (story && !story.rsvpOpen) {
+    return { error: "RSVPs are closed right now. Please contact the couple directly." };
+  }
+
   const ip = await getClientIp();
   const userAgent = (await headers()).get("user-agent");
 
@@ -133,6 +141,18 @@ export async function submitRsvp(
 export async function deleteRsvp(id: string): Promise<{ error?: string }> {
   await verifySession();
   await prisma.rsvp.delete({ where: { id } });
+  revalidatePath("/admin");
+  return {};
+}
+
+// Keeps the guest on the list as declined, freeing their seat.
+export async function cancelRsvp(id: string): Promise<{ error?: string }> {
+  await verifySession();
+  const rsvp = await prisma.rsvp.findUnique({ where: { id }, select: { attending: true } });
+  if (!rsvp) return { error: "RSVP not found" };
+  if (!rsvp.attending) return { error: "This RSVP is already declined" };
+  // Any confirmation sent was for attending, so it no longer applies.
+  await prisma.rsvp.update({ where: { id }, data: { attending: false, confirmationSentAt: null } });
   revalidatePath("/admin");
   return {};
 }

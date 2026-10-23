@@ -1,6 +1,13 @@
+import { prisma } from "@/lib/prisma";
 import RsvpForm from "./rsvp-form";
 
-export default function Rsvp() {
+export default async function Rsvp() {
+  const story = await prisma.storyContent.findUnique({
+    where: { id: "main" },
+    select: { rsvpOpen: true },
+  });
+  const rsvpOpen = story?.rsvpOpen ?? true;
+
   return (
     <section id="rsvp" className="bg-cream px-4 py-20 sm:px-6 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
@@ -9,14 +16,25 @@ export default function Rsvp() {
           Will you join us?
         </h2>
         <p className="mt-6 text-base text-foreground/80 sm:text-lg">
-          We&apos;d love to celebrate with you. Please let us know if you&apos;ll
-          be able to make it.
+          {rsvpOpen ? (
+            <>
+              We&apos;d love to celebrate with you. Please let us know if you&apos;ll
+              be able to make it.
+            </>
+          ) : (
+            <>
+              RSVPs are closed right now. If you need to reach us about your
+              RSVP, please contact the couple directly.
+            </>
+          )}
         </p>
       </div>
 
-      <div className="mt-14">
-        <RsvpForm />
-      </div>
+      {rsvpOpen && (
+        <div className="mt-14">
+          <RsvpForm />
+        </div>
+      )}
     </section>
   );
 }
