@@ -3,10 +3,10 @@ import { can, isStaff, PERMISSIONS, type Permission } from "@/lib/permissions";
 
 const matrix: Record<string, Permission[]> = {
   VIEWER: ["console.view", "wedding.view"],
-  SUPPORT: ["console.view", "wedding.view", "wedding.edit", "user.reset", "payment.reverify", "notes.write"],
+  SUPPORT: ["console.view", "wedding.view", "wedding.edit", "user.reset", "payment.reverify", "notes.write", "support.respond"],
   ADMIN: [
     "console.view", "wedding.view", "wedding.edit", "wedding.manage", "wedding.status", "wedding.comp",
-    "user.reset", "user.impersonate", "payment.reverify", "payment.resolve", "notes.write",
+    "user.reset", "user.impersonate", "payment.reverify", "payment.resolve", "notes.write", "support.respond",
   ],
   SUPER_ADMIN: Object.keys(PERMISSIONS) as Permission[],
 };

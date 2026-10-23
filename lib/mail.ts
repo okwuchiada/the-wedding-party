@@ -331,3 +331,39 @@ export function staffAccessEmail({ role }: { role: string }) {
     }),
   };
 }
+
+/** To a couple: the Vowly team has answered their support request. */
+export function supportReplyEmail({ subject }: { subject: string }) {
+  return {
+    subject: `Re: ${subject}`,
+    html: editorialBand({
+      eyebrow: "Support",
+      headline: "We've replied",
+      subline: escapeHtml(subject),
+      bodyHtml: accountActionBody(
+        "The Vowly team has answered your support request. Read the reply and respond in your dashboard.",
+        "Read the reply",
+        `${SITE_URL}/dashboard/support`,
+        "Replying by email doesn't reach us; please reply from your dashboard."
+      ),
+    }),
+  };
+}
+
+/** To the support inbox (SUPPORT_EMAIL): a couple has raised a new request. */
+export function supportRequestStaffEmail({ requestId, subject, from, topic }: { requestId: string; subject: string; from: string; topic: string }) {
+  return {
+    subject: `New support request: ${subject}`,
+    html: editorialBand({
+      eyebrow: "Support request",
+      headline: "A couple needs help",
+      subline: escapeHtml(topic),
+      bodyHtml: accountActionBody(
+        `${escapeHtml(from)} asked: <strong>${escapeHtml(subject)}</strong>`,
+        "Open the request",
+        `${SITE_URL}/super/requests/${encodeURIComponent(requestId)}`,
+        "Answer it in Staff console → Requests."
+      ),
+    }),
+  };
+}

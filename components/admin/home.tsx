@@ -315,6 +315,7 @@ export default function AdminHome({
           <ContributionsTab
             pending={pendingContributions}
             confirmed={confirmedContributions}
+            items={registryItems.map((item) => ({ id: item.id, name: item.name }))}
             onConfirm={handleConfirmContribution}
           />
         )}

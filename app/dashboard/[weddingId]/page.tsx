@@ -201,6 +201,7 @@ export default async function WeddingDashboardPage({
         amountCents: c.amountCents,
         reference: c.reference,
         dateConfirmed: (c.confirmedAt ?? c.createdAt).toISOString().slice(0, 10),
+        recorded: c.recordedByCouple ? { registryItemId: c.registryItemId, note: c.note } : undefined,
       }))}
       pendingWishes={pendingWishes.map((w) => ({
         id: w.id,

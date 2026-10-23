@@ -26,6 +26,8 @@ export type ConfirmedContributionView = {
   amountCents: number;
   reference: string | null;
   dateConfirmed: string;
+  /** Set for gifts the couple recorded themselves (received outside the site); only these can be edited. */
+  recorded?: { registryItemId: string; note: string | null };
 };
 
 /** A guest's wish, whichever list it's in (pending, approved or hidden). */

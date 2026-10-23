@@ -80,7 +80,7 @@ export default async function DashboardIndexPage() {
               <li key={wedding.id}>
                 <Link
                   href={dashboardPath(wedding.id)}
-                  className="group flex h-full flex-col overflow-hidden rounded-[6px] border border-border bg-card transition-shadow hover:shadow-[0_24px_48px_-32px_rgb(22_32_74/0.5)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                  className="group flex h-full flex-col overflow-hidden rounded-md border border-border bg-card transition-shadow hover:shadow-[0_24px_48px_-32px_rgb(22_32_74/0.5)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
                 >
                   <span aria-hidden className="flex h-2">
                     {(["primary", "cream", "accent", "background", "primaryDark"] as const).map((k, i) => (

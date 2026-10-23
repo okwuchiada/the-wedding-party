@@ -5,6 +5,7 @@ import { takeGuestRateLimit } from "@/lib/rate-limit";
 import { moneyFormat, resolveGuestAction, revalidateDashboard, revalidateWedding, weddingTheme } from "@/lib/tenant";
 import { isTransferReference } from "@/lib/transfer-reference";
 import { contributionNotificationEmail, emailPalette, sendMail } from "@/lib/mail";
+import { parseRecordedGift } from "@/lib/recorded-gift";
 
 // Each one emails the couple; per guest IP per wedding and hour.
 const CONTRIBUTIONS_PER_HOUR = 20;
@@ -103,4 +104,55 @@ export async function unconfirmContribution(weddingId: string, contributionId: s
     data: { status: "AWAITING_CONFIRMATION", confirmedAt: null },
   });
   revalidateWedding(wedding);
+}
+
+// ─── Gifts received outside the site ─────────────────────────────────────────
+
+export type RecordedGiftState = { error?: string; success?: boolean } | undefined;
+
+/** The couple records a gift they got another way (cash, a direct transfer). It counts as confirmed straight away. */
+export async function recordContribution(weddingId: string, _prevState: RecordedGiftState, formData: FormData): Promise<RecordedGiftState> {
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "recordContribution");
+  const gift = parseRecordedGift(formData);
+  if ("error" in gift) return { error: gift.error };
+
+  const item = await db.registryItem.findUnique({ where: { id: gift.registryItemId, weddingId: wedding.id }, select: { id: true } });
+  if (!item) return { error: "That gift is no longer on your registry" };
+
+  await db.contribution.create({
+    data: { ...gift, weddingId: wedding.id, status: "CONFIRMED", confirmedAt: new Date(), recordedByCouple: true },
+  });
+  revalidateWedding(wedding);
+  return { success: true };
+}
+
+/** Corrects a gift the couple recorded. Gifts guests sent through the site can't be edited. */
+export async function updateRecordedContribution(
+  weddingId: string,
+  contributionId: string,
+  _prevState: RecordedGiftState,
+  formData: FormData
+): Promise<RecordedGiftState> {
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "updateRecordedContribution");
+  const gift = parseRecordedGift(formData);
+  if ("error" in gift) return { error: gift.error };
+
+  const [existing, item] = await Promise.all([
+    db.contribution.findUnique({ where: { id: contributionId, weddingId: wedding.id }, select: { recordedByCouple: true } }),
+    db.registryItem.findUnique({ where: { id: gift.registryItemId, weddingId: wedding.id }, select: { id: true } }),
+  ]);
+  if (!existing?.recordedByCouple) return { error: "Only gifts you recorded yourself can be edited" };
+  if (!item) return { error: "That gift is no longer on your registry" };
+
+  await db.contribution.update({ where: { id: contributionId, weddingId: wedding.id }, data: gift });
+  revalidateWedding(wedding);
+  return { success: true };
+}
+
+export async function deleteRecordedContribution(weddingId: string, contributionId: string): Promise<{ error?: string }> {
+  const { wedding, db } = await requireWeddingAccess(weddingId, "edit", "deleteRecordedContribution");
+  const { count } = await db.contribution.deleteMany({ where: { id: contributionId, weddingId: wedding.id, recordedByCouple: true } });
+  if (count === 0) return { error: "Only gifts you recorded yourself can be deleted" };
+  revalidateWedding(wedding);
+  return {};
 }

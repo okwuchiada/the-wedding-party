@@ -23,7 +23,7 @@ export default async function AccountPage() {
   });
   const only = memberships.length === 1 ? memberships[0].wedding : null;
   const back = only
-    ? { href: dashboardPath(only.id), label: `Back to ${coupleTitle(only.story, resolveLayout(only.theme).heroNames) ?? only.slug}` }
+    ? { href: dashboardPath(only.id), label: `Back to dashboard` }
     : { href: "/dashboard", label: "Your weddings" };
 
   return (

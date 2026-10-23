@@ -10,6 +10,12 @@ export default function DashboardBar({ showConsole = false }: { showConsole?: bo
     <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-5 sm:px-8">
       <BrandLink href="/dashboard" />
       <nav className="flex items-center gap-1 text-sm font-medium whitespace-nowrap sm:gap-2">
+        {/* Couples raise requests here; staff answer them in Staff console → Requests. */}
+        {!showConsole && (
+          <Link href="/dashboard/support" className={linkClass}>
+            Support
+          </Link>
+        )}
         {/* Staff keep their details in the console; couples on their account page. */}
         <Link href={showConsole ? "/super/profile" : "/dashboard/account"} className={linkClass}>
           {showConsole ? "My profile" : "Account"}

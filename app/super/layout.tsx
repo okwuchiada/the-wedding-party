@@ -4,11 +4,14 @@ import { BRAND_CLASS, BRAND_STYLE } from "@/components/marketing/brand";
 import SuperNav from "@/components/super/nav";
 import { requirePermission } from "@/lib/dal";
 import { can, ROLE_LABELS } from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
 
 export default async function StaffConsoleLayout({ children }: { children: React.ReactNode }) {
   const staff = await requirePermission("console.view");
+  const waiting = await prisma.supportRequest.count({ where: { status: { not: "RESOLVED" } } });
   const links = [
     { href: "/super", label: "Overview" },
+    { href: "/super/requests", label: waiting ? `Requests (${waiting})` : "Requests" },
     { href: "/super/weddings", label: "Weddings" },
     { href: "/super/users", label: "Users" },
     { href: "/super/payments", label: "Payments" },

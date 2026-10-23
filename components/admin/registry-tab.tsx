@@ -114,7 +114,7 @@ function RegistryItemForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 rounded-[8px] bg-accent p-4 sm:grid-cols-2">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 rounded-lg bg-accent p-4 sm:grid-cols-2">
       {initialValues?.id && <input type="hidden" name="id" defaultValue={initialValues.id} />}
 
       <TextInput label="Name" name="name" defaultValue={initialValues?.name} required />

@@ -14,7 +14,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 
 export const ROLE_DESCRIPTIONS: Record<StaffRole, string> = {
   VIEWER: "Read-only: can look up weddings, users and payments, and open dashboards without changing anything.",
-  SUPPORT: "Helps couples: can edit wedding content, send reset links, re-check payments and leave notes.",
+  SUPPORT: "Helps couples: can answer support requests, edit wedding content, send reset links, re-check payments and leave notes.",
   ADMIN: "Runs operations: everything Support can do, plus settings, members, suspensions, comps and 'view as'.",
   SUPER_ADMIN: "Full access, including managing staff and plans.",
 };
@@ -36,6 +36,7 @@ export const PERMISSIONS = {
   "payment.reverify": HELPERS, // ask Paystack about a payment again
   "payment.resolve": OPERATORS, // mark a payment paid by hand when Paystack's record can't be applied
   "notes.write": HELPERS, // internal notes on a wedding
+  "support.respond": HELPERS, // reply to couples' support requests and change their status
   "staff.manage": SUPER, // add staff and change their roles
   "plans.manage": SUPER, // create and edit plans
 } as const satisfies Record<string, readonly StaffRole[]>;

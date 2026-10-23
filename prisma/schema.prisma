@@ -33,19 +33,22 @@ enum ContributionStatus {
 }
 
 model Contribution {
-  id             String             @id @default(cuid())
-  wedding        Wedding            @relation(fields: [weddingId], references: [id], onDelete: Cascade)
-  weddingId      String
-  registryItem   RegistryItem       @relation(fields: [registryItemId], references: [id])
-  registryItemId String
-  guestName      String
-  amountCents    Int
-  note           String?
+  id               String             @id @default(cuid())
+  wedding          Wedding            @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  weddingId        String
+  registryItem     RegistryItem       @relation(fields: [registryItemId], references: [id])
+  registryItemId   String
+  guestName        String
+  amountCents      Int
+  note             String?
   // What the guest put on their bank transfer, e.g. "HONEY-4827".
-  reference      String?
-  status         ContributionStatus @default(AWAITING_CONFIRMATION)
-  createdAt      DateTime           @default(now())
-  confirmedAt    DateTime?
+  reference        String?
+  status           ContributionStatus @default(AWAITING_CONFIRMATION)
+  // Added by the couple for a gift received outside the site (cash at the
+  // reception, a transfer straight to their account). Saved as confirmed.
+  recordedByCouple Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  confirmedAt      DateTime?
 
   @@index([weddingId])
 }
@@ -203,6 +206,10 @@ model User {
   auditLogs    AuditLog[]
   supportNotes SupportNote[]
   staffProfile StaffProfile?        @relation("StaffProfileOwner")
+
+  supportRequests  SupportRequest[] @relation("SupportRequester")
+  assignedRequests SupportRequest[] @relation("SupportAssignee")
+  supportMessages  SupportMessage[]
 }
 
 enum WeddingStatus {
@@ -236,21 +243,22 @@ model Wedding {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
-  members       WeddingMember[]
-  theme         WeddingTheme?
-  copy          WeddingCopy?
-  story         StoryContent?
-  bankDetails   BankDetails?
-  registryItems RegistryItem[]
-  contributions Contribution[]
-  media         Media[]
-  wishes        Wish[]
-  rsvps         Rsvp[]
-  storyPhotos   StoryPhoto[]
-  storyBeats    StoryBeat[]
-  payments      Payment[]
-  auditLogs     AuditLog[]
-  supportNotes  SupportNote[]
+  members         WeddingMember[]
+  theme           WeddingTheme?
+  copy            WeddingCopy?
+  story           StoryContent?
+  bankDetails     BankDetails?
+  registryItems   RegistryItem[]
+  contributions   Contribution[]
+  media           Media[]
+  wishes          Wish[]
+  rsvps           Rsvp[]
+  storyPhotos     StoryPhoto[]
+  storyBeats      StoryBeat[]
+  payments        Payment[]
+  auditLogs       AuditLog[]
+  supportNotes    SupportNote[]
+  supportRequests SupportRequest[]
 }
 
 enum WeddingRole {
@@ -415,6 +423,52 @@ model SupportNote {
   createdAt DateTime @default(now())
 
   @@index([weddingId, createdAt])
+}
+
+enum SupportRequestStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+// A couple asking the Vowly team for help (Dashboard → Support). Staff answer it
+// in Staff console → Requests; both sides add SupportMessages to the thread.
+model SupportRequest {
+  id          String               @id @default(cuid())
+  requester   User                 @relation("SupportRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  requesterId String
+  // The wedding it's about, if any.
+  wedding     Wedding?             @relation(fields: [weddingId], references: [id], onDelete: SetNull)
+  weddingId   String?
+  // One of SUPPORT_TOPICS (lib/support.ts), e.g. "billing".
+  topic       String
+  subject     String
+  status      SupportRequestStatus @default(OPEN)
+  // The staff member handling it.
+  assignee    User?                @relation("SupportAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  assigneeId  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  messages SupportMessage[]
+
+  @@index([status, updatedAt])
+  @@index([requesterId, updatedAt])
+}
+
+model SupportMessage {
+  id        String         @id @default(cuid())
+  request   SupportRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  requestId String
+  author    User?          @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId  String?
+  // From the Vowly team rather than the couple.
+  fromStaff Boolean        @default(false)
+  body      String
+  createdAt DateTime       @default(now())
+
+  @@index([requestId, createdAt])
 }
 
 // Countries a wedding can limit its guest site to (Settings → Who can view the
